@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAGIC - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; All Publications</a>
+        <h1>MAGIC: A Multi-Hop and Graph-Based Benchmark for Inter-Context Conflicts in Retrieval-Augmented Generation</h1>
+        <div class="meta">
+            <span class="venue-badge">EMNLP 2025 Findings</span>
+        </div>
+        <div class="authors">Jungyeon Lee, Kangmin Lee, Taeuk Kim</div>
+    </div>
+</div>
+
+<div class="detail-content">
+    <div class="section">
+        <h2>One-Line Summary</h2>
+        <p>A benchmark that systematically generates knowledge conflicts between retrieved documents in RAG systems using knowledge graphs, and evaluates conflict detection and localization capabilities in multi-hop reasoning settings.</p>
+    </div>
+
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2507.21544v3/x1.png" alt="MAGIC three-hop conflict example">
+        <figcaption><strong>Figure 1.</strong> A 3-hop conflict example: Subtle inconsistencies regarding the release order of songs appear across multiple documents. Detecting such conflicts requires multi-step reasoning.</figcaption>
+    </figure>
+
+    <div class="section">
+        <h2>Background & Motivation</h2>
+        <p>Retrieval-Augmented Generation (RAG) is a technique that retrieves external documents to enhance LLM responses. But what happens when retrieved documents <strong>contradict each other</strong> or <strong>conflict with the model's internal knowledge</strong>?</p>
+        <div class="highlight-box">
+            <p><strong>Limitations of Existing Benchmarks:</strong> Existing datasets (ECON, WikiContradict) consist of 78% single-hop conflicts, covering only simple contradictions. In real-world settings, complex contradictions that can only be discovered by connecting multiple documents are far more common.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method: KG-Based Conflict Generation Framework</h2>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2507.21544v3/x2.png" alt="MAGIC framework overview">
+            <figcaption><strong>Figure 2.</strong> Overall architecture of the MAGIC framework: Subgraphs are extracted from Wikidata5M, knowledge conflicts are generated, and then converted into natural language documents.</figcaption>
+        </figure>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Subgraph Extraction</div>
+                <div class="step-desc">Filter 825 relations from Wikidata5M down to 46, and extract subgraphs via DFS traversal</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Conflict Generation</div>
+                <div class="step-desc">Generate diverse conflicts using o3-mini with subgraph-level few-shot prompting, including human verification</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Text Conversion</div>
+                <div class="step-desc">Convert to natural language with GPT-4o-mini; verify triplet coverage with Claude 3.5 Sonnet (accuracy: 95.21%)</div>
+            </div>
+        </div>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2507.21544v3/x4.png" alt="Four conflict types">
+            <figcaption><strong>Figure 4.</strong> Four conflict types: Combinations of single-hop/multi-hop x single-conflict/multi-conflict enable evaluation at varying levels of difficulty.</figcaption>
+        </figure>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <p>MAGIC consists of 1,080 instances and evaluates two capabilities: <strong>conflict identification (ID)</strong> and <strong>conflict localization (LOC)</strong>.</p>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>Benchmark</th><th>ID Score (%)</th><th>LOC Score (%)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>ECON (existing)</td><td>74.73</td><td>57.09</td></tr>
+                <tr><td>WikiContradict (existing)</td><td>69.93</td><td>55.74</td></tr>
+                <tr><td class="highlight-cell">MAGIC (proposed)</td><td class="highlight-cell">64.54</td><td class="highlight-cell">40.51</td></tr>
+            </tbody>
+        </table>
+
+        <div class="figures-row">
+            <figure class="paper-figure">
+                <img src="https://arxiv.org/html/2507.21544v3/x9.png" alt="Performance by conflict type">
+                <figcaption><strong>Figure 7.</strong> Performance by conflict type: Multi-hop conflicts (46.13%) are far more challenging than single-hop conflicts (70.91%).</figcaption>
+            </figure>
+            <figure class="paper-figure">
+                <img src="https://arxiv.org/html/2507.21544v3/x11.png" alt="Context length impact">
+                <figcaption><strong>Figure 9.</strong> Conflict detection performance degrades as context length increases.</figcaption>
+            </figure>
+        </div>
+
+        <ul class="key-points">
+            <li><strong>Best Performance:</strong> GPT-4o-mini achieves the highest with ID 83.61% and LOC 55%, yet still falls far short of human performance (ID 92.5%, LOC 83.3%)</li>
+            <li><strong>Multi-hop vs Single-hop:</strong> Average ID score drops sharply from 70.91% to 46.13% for multi-hop conflicts</li>
+            <li><strong>Difficulty of Localization:</strong> Pinpointing the exact location of conflicts is much harder than detecting their existence (LOC << ID)</li>
+            <li><strong>Context Length Effect:</strong> Performance decreases as document length increases</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>RAG is currently the most widely used LLM deployment pattern. If contradictions in retrieved results go undetected, incorrect information may be delivered to users. MAGIC leverages the <strong>interpretable structure</strong> of knowledge graphs to trace the causes and effects of conflicts, and is the first to systematically evaluate <strong>multi-hop conflicts</strong>, which are common in real-world settings.</p>
+    </div>
+
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://arxiv.org/abs/2507.21544" target="_blank" class="paper-link">arXiv Paper</a>
+        </div>
+    </div>
+
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-rag">RAG / Knowledge</span>
+        <span class="tag tag-benchmark">Benchmark</span>
+        <span class="tag tag-kg">Knowledge Graph</span>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="../index.html">&#8592; Back to All Publications</a></p>
+    <p style="margin-top:8px;">Hanyang University NLP Lab | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniKnow - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; All Publications</a>
+        <h1>UniKnow: A Unified Framework for Reliable Language Model Behavior across Parametric and External Knowledge</h1>
+        <div class="meta">
+            <span class="venue-badge">arXiv 2025</span>
+        </div>
+        <div class="authors">Youna Kim, Hyuhng Joon Kim, Minjoon Choi, Sungmin Cho, Hyunsoo Cho, Sang-goo Lee, Taeuk Kim</div>
+    </div>
+</div>
+
+<div class="detail-content">
+    <div class="section">
+        <h2>One-Line Summary</h2>
+        <p>A framework that comprehensively evaluates and addresses 4 scenarios — conflict, distraction, absence, etc. — that arise when LLMs integrate parametric (internal) and external knowledge.</p>
+    </div>
+
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2502.13648v1/x1.png" alt="Four knowledge scenarios">
+        <figcaption><strong>Figure 1.</strong> UniKnow's 4 knowledge scenarios: Classified as Conflict, External-Only, Parametric-Only, and Unknown based on the presence of parametric knowledge (PK) and external knowledge (EK).</figcaption>
+    </figure>
+
+    <div class="section">
+        <h2>Background & Motivation</h2>
+        <p>LLMs utilize both their internally learned knowledge (parametric knowledge) and externally retrieved knowledge (external knowledge) via RAG and similar methods. However, various situations arise depending on the relationship between these two knowledge sources:</p>
+        <ul class="key-points">
+            <li><strong>Conflict:</strong> Internal knowledge and external knowledge contradict each other</li>
+            <li><strong>External-Only:</strong> Relevant knowledge exists only in external sources, not in parametric memory</li>
+            <li><strong>Parametric-Only:</strong> External knowledge is distracting noise and only internal knowledge is accurate</li>
+            <li><strong>Unknown:</strong> No knowledge source has the answer</li>
+        </ul>
+        <div class="highlight-box">
+            <p><strong>Core Problem:</strong> Existing methods focus on specific scenarios (e.g., only conflicts) and exhibit bias where performance degrades in other scenarios.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method</h2>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2502.13648v1/x2.png" alt="UniKnow overview">
+            <figcaption><strong>Figure 2.</strong> Overall architecture of the UniKnow framework: Systematically evaluates 4 scenarios across 7 QA datasets.</figcaption>
+        </figure>
+
+        <p><strong>Parametric Knowledge Estimation:</strong> For each question, 10 samples are drawn; if 70% or more are correct, relevant PK is deemed present</p>
+        <p style="margin-top:8px;"><strong>Context Construction:</strong> 4 types — original, conflict-generated, irrelevant random, and inaccurately retrieved contexts enable scenario-specific evaluation</p>
+        <p style="margin-top:8px;"><strong>Evaluation Scope:</strong> 7 datasets total: NQ, TriviaQA, HotpotQA, SQuAD, BioASQ, TextbookQA, RelationExtraction</p>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+
+        <div class="figures-row">
+            <figure class="paper-figure">
+                <img src="https://arxiv.org/html/2502.13648v1/x4.png" alt="EM scores by scenario">
+                <figcaption><strong>Figure 4.</strong> EM scores by scenario: Confirms that each method is biased toward specific scenarios.</figcaption>
+            </figure>
+            <figure class="paper-figure">
+                <img src="https://arxiv.org/html/2502.13648v1/x6.png" alt="Error type distributions">
+                <figcaption><strong>Figure 6.</strong> Error type distributions: Parametric errors are highest in the Conflict scenario, and hallucinations are most frequent in the Unknown scenario.</figcaption>
+            </figure>
+        </div>
+
+        <ul class="key-points">
+            <li><strong>LM_UniKnow Achieves Best Performance:</strong> Training that covers all scenarios yields the best overall performance — "broader scenario coverage leads to better results"</li>
+            <li><strong>Difficulty of Conflict Resolution:</strong> Processing external knowledge that conflicts with existing PK is much harder than integrating new information</li>
+            <li><strong>Answerability vs Reliability Trade-off:</strong> Answerability-focused methods excel at P-Only but hallucinate on Unknown; abstention-focused methods show the opposite pattern</li>
+            <li><strong>Scale Effect:</strong> As model size increases, abstention ability consistently improves, but improvement on E-Only remains marginal</li>
+        </ul>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2502.13648v1/x7.png" alt="Accuracy and Reliability scores">
+            <figcaption><strong>Figure 7.</strong> Accuracy (Acc) and Reliability (Rely) scores: LM_UniKnow achieves the highest reliability while maintaining accuracy.</figcaption>
+        </figure>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>In reality, knowledge conflicts, distractions, and absences can occur simultaneously. Rather than handling only one situation well, a comprehensive approach is needed to build <strong>AI that is reliable across all knowledge states</strong>. UniKnow provides a systematic evaluation framework and training methodology for this purpose.</p>
+    </div>
+
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://arxiv.org/abs/2502.13648" target="_blank" class="paper-link">arXiv Paper</a>
+        </div>
+    </div>
+
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-rag">RAG / Knowledge</span>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="../index.html">&#8592; Back to All Publications</a></p>
+    <p style="margin-top:8px;">Hanyang University NLP Lab | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

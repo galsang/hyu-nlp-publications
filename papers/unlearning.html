@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Localization & Unlearning - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; All Publications</a>
+        <h1>Does Localization Inform Unlearning? A Rigorous Examination of Local Parameter Attribution for Knowledge Unlearning in Language Models</h1>
+        <div class="meta">
+            <span class="venue-badge">EMNLP 2025</span>
+        </div>
+        <div class="authors">Hwiyeong Lee, Uiji Hwang, Hyelim Lim, Taeuk Kim</div>
+    </div>
+</div>
+
+<div class="detail-content">
+    <div class="section">
+        <h2>One-Line Summary</h2>
+        <p>We rigorously test the prevailing assumption that "identifying and modifying specific parameters can effectively remove unwanted knowledge" through controlled experiments, and demonstrate that this assumption does not hold.</p>
+    </div>
+
+    <div class="section">
+        <h2>Background & Motivation</h2>
+        <p>"Unlearning" specific knowledge from LLMs is becoming increasingly important for privacy protection (GDPR "right to be forgotten"), harmful content removal, and copyright compliance.</p>
+
+        <p style="margin-top: 12px;">The core assumption of existing approaches:</p>
+        <div class="highlight-box">
+            <p><strong>Assumption:</strong> Specific knowledge is stored "locally" in specific parameters of the model, so finding and modifying those parameters should be sufficient to remove the knowledge.</p>
+        </div>
+
+        <p style="margin-top: 12px;">This study fundamentally re-examines the validity of this assumption.</p>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Design</h2>
+        <p>We design controlled experiments that eliminate confounders overlooked by prior work:</p>
+
+        <ul class="key-points">
+            <li><strong>Parameter Locality Verification:</strong> Comparing modification of parameters presumed to "store knowledge" versus modification of other parameters</li>
+            <li><strong>Diverse Localization Methods:</strong> Using multiple parameter attribution methods to verify consistency of results</li>
+            <li><strong>General Capability Preservation:</strong> Evaluating whether overall language capabilities are maintained after knowledge removal</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Key Findings</h2>
+        <ul class="key-points">
+            <li><strong>"Parameter Locality ≠ Effective Removal":</strong> Modifying parameters presumed to store the knowledge does not guarantee effective knowledge removal</li>
+            <li><strong>Effectiveness of Non-Local Modification:</strong> Modifying "unrelated" parameters can achieve comparable or even better unlearning results — calling the locality assumption itself into question</li>
+            <li><strong>Trade-off with General Capabilities:</strong> Localized approaches struggle to balance knowledge removal with preservation of general capabilities</li>
+            <li><strong>Methodological Implications:</strong> Effective unlearning requires new approaches that go beyond parameter locality</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>As regulations like the EU's GDPR "right to be forgotten" tighten, removing specific information from AI is a critical challenge both technically and legally. This study rigorously demonstrates the <strong>fundamental limitations</strong> of widely used localization-based unlearning methods, providing a foundation for the research community to explore more effective approaches. It delivers the important lesson that "knowing where to modify" does not mean "being able to effectively forget."</p>
+    </div>
+
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://arxiv.org/abs/2505.16252" target="_blank" class="paper-link">arXiv Paper</a>
+        </div>
+    </div>
+
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-safety">Safety / Unlearning</span>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="../index.html">&#8592; Back to All Publications</a></p>
+    <p style="margin-top:8px;">Hanyang University NLP Lab | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

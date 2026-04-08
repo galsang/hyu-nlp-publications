@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIDAS - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; All Publications</a>
+        <h1>Memorization or Reasoning? Exploring the Idiom Understanding of LLMs</h1>
+        <div class="meta">
+            <span class="venue-badge">EMNLP 2025</span>
+        </div>
+        <div class="authors">Jisu Kim, Youngwoo Shin, Uiji Hwang, Jihun Choi, Richeng Xuan, Taeuk Kim</div>
+    </div>
+</div>
+
+<div class="detail-content">
+    <div class="section">
+        <h2>One-Line Summary</h2>
+        <p>A systematic study that analyzes whether LLMs simply memorize idioms or genuinely understand them through reasoning, across 64,660 idioms in 6 languages.</p>
+    </div>
+
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2505.16216v1/x1.png" alt="MIDAS framework examining four factors">
+        <figcaption><strong>Figure 1.</strong> The MIDAS framework: Systematically analyzes 4 factors involved in idiom understanding (memorization, compositionality, contextual cues, and reasoning).</figcaption>
+    </figure>
+
+    <div class="section">
+        <h2>Background & Motivation</h2>
+        <p>Idioms such as "It's raining cats and dogs" have meanings that differ from their literal interpretation. When LLMs process such idioms, are they <strong>simply memorizing</strong> from training data, or are they <strong>reasoning</strong> from context? To answer this fundamental question, we conduct large-scale experiments across 6 languages.</p>
+    </div>
+
+    <div class="section">
+        <h2>MIDAS Dataset</h2>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2505.16216v1/x2.png" alt="Sample English idiom entry">
+            <figcaption><strong>Figure 2.</strong> MIDAS data example: Each idiom includes the expression, figurative meaning, and example sentence.</figcaption>
+        </figure>
+
+        <ul class="key-points">
+            <li><strong>Scale:</strong> 64,660 idioms across 6 languages (English, German, Chinese, Korean, Arabic, Turkish), totaling 70,909 instances</li>
+            <li><strong>Composition:</strong> Each idiom includes a figurative meaning and example sentence</li>
+            <li><strong>Evaluation:</strong> 5-choice MCQ with similarity-based distractors + continuation task</li>
+            <li><strong>Compositionality Assessment:</strong> Compositionality scores on a 1-5 scale assigned via LLM prompting</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>Language</th><th>Best MCQ Accuracy</th><th>Memorization Rate Range</th><th>Context Effect</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>English</td><td>91.13% (GPT-4o)</td><td>67-81%</td><td>Slight improvement</td></tr>
+                <tr><td>Chinese</td><td>95.65% (DeepSeek-V3)</td><td>High</td><td>Slight improvement</td></tr>
+                <tr><td>Korean</td><td>72.72% (GPT-4o)</td><td>26-37%</td><td class="highlight-cell">~30%p improvement</td></tr>
+                <tr><td>Turkish</td><td>71.82% (GPT-4o)</td><td>Low</td><td class="highlight-cell">~25%p improvement</td></tr>
+            </tbody>
+        </table>
+
+        <div class="figures-row">
+            <figure class="paper-figure">
+                <img src="https://arxiv.org/html/2505.16216v1/x3.png" alt="Context impact on accuracy">
+                <figcaption><strong>Figure 3.</strong> Accuracy changes with context provided: The effect of context is dramatically large for low-resource languages (Korean, Turkish).</figcaption>
+            </figure>
+            <figure class="paper-figure">
+                <img src="https://arxiv.org/html/2505.16216v1/x4.png" alt="Reasoning method comparison">
+                <figcaption><strong>Figure 4.</strong> Reasoning model (QwQ) vs base model (Qwen2.5) comparison: Reasoning ability improves idiom understanding.</figcaption>
+            </figure>
+        </div>
+
+        <div class="section" style="margin-top:20px;">
+            <h2>Key Findings</h2>
+            <ul class="key-points">
+                <li><strong>Hybrid Processing:</strong> LLMs process idioms through a <strong>hybrid approach</strong> that combines contextual cues and reasoning, rather than pure memorization or pure reasoning</li>
+                <li><strong>Impact of Memorization:</strong> 3.82-15.83% higher accuracy on memorized idioms — with gaps exceeding 10%p for Korean/Turkish</li>
+                <li><strong>Compositionality and Performance:</strong> Correctly answered idioms have 14-44% higher compositionality scores, suggesting that component meanings are leveraged for reasoning</li>
+                <li><strong>Superiority of Reasoning Models:</strong> The reasoning-specialized model (QwQ) consistently outperforms the base model (Qwen2.5)</li>
+                <li><strong>Double-Edged Nature of Chain-of-Thought:</strong> CoT can be detrimental for high-performing languages, suggesting trade-offs in reasoning model training</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>Idiom understanding serves as a litmus test for deep language comprehension. The <strong>finding that LLMs utilize reasoning rather than mere memorization</strong> provides evidence that these models "understand" language meaning to some extent. At the same time, the large performance gaps in low-resource languages point to directions for advancing multilingual AI.</p>
+    </div>
+
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://arxiv.org/abs/2505.16216" target="_blank" class="paper-link">arXiv Paper</a>
+        </div>
+    </div>
+
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-nlp">NLP Fundamentals</span>
+        <span class="tag tag-benchmark">Benchmark</span>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="../index.html">&#8592; Back to All Publications</a></p>
+    <p style="margin-top:8px;">Hanyang University NLP Lab | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

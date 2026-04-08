@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FCMR - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; All Publications</a>
+        <h1>FCMR: Robust Evaluation of Financial Cross-Modal Multi-Hop Reasoning</h1>
+        <div class="meta">
+            <span class="venue-badge">ACL 2025</span>
+        </div>
+        <div class="authors">Seunghee Kim, Changhyeon Kim, Taeuk Kim</div>
+    </div>
+</div>
+
+<div class="detail-content">
+    <div class="section">
+        <h2>One-Line Summary</h2>
+        <p>A benchmark that evaluates multimodal multi-hop reasoning across text reports, tables, and charts in the financial domain at 3 difficulty levels. Even the best-performing model achieves only 30.4% on the Hard level.</p>
+    </div>
+
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2412.12567v2/x1.png" alt="FCMR vs existing benchmarks">
+        <figcaption><strong>Figure 1.</strong> Limitations of existing benchmarks (MMQA): Only 0.8% of instances utilize all three modalities. FCMR addresses this issue to require genuine cross-modal reasoning.</figcaption>
+    </figure>
+
+    <div class="section">
+        <h2>Background & Motivation</h2>
+        <p>Real-world financial analysis requires <strong>comprehensively</strong> reading text reports, verifying numbers in tables, and identifying trends in charts. However, existing benchmarks had two critical problems:</p>
+        <div class="highlight-box">
+            <p><strong>Data Contamination:</strong> GPT-4o achieves 43.4% on MMQA without images — suggesting that existing benchmarks may already be included in training data. On FCMR, performance without images drops to 14.71%, significantly reducing contamination risk.</p>
+        </div>
+    </div>
+
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2412.12567v2/x2.png" alt="Hard-level example">
+        <figcaption><strong>Figure 2.</strong> Hard-level example: Requires 3-hop cross-modal reasoning — identifying company information from text, verifying financial figures from tables, and analyzing trends from charts.</figcaption>
+    </figure>
+
+    <div class="section">
+        <h2>Proposed Method: CMRGen Pipeline</h2>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2412.12567v2/x3.png" alt="CMRGen framework">
+            <figcaption><strong>Figure 3.</strong> CMRGen dataset generation framework: Combines SEC EDGAR 10-K reports (text), WRDS Compustat financial statements (tables), and synthetic charts (images) to automatically generate questions at 3 difficulty levels.</figcaption>
+        </figure>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Data Construction</div>
+                <div class="step-desc">SEC EDGAR 10-K reports (text) + WRDS Compustat (tables) + matplotlib/plotly (charts)</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Question Generation</div>
+                <div class="step-desc">Trend, Ranking, Conditional, and Arithmetic operation templates</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Paraphrasing & Filtering</div>
+                <div class="step-desc">2-stage LLM paraphrasing + bias removal, at $0.004 per question</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>Easy</th><th>Medium</th><th>Hard</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Claude 3.5 Sonnet</td><td>75.43%</td><td>50.82%</td><td class="highlight-cell">30.39%</td></tr>
+                <tr><td>GPT-4o</td><td>64.20%</td><td>43.70%</td><td>24.37%</td></tr>
+                <tr><td>Gemini 1.5 Pro</td><td>-</td><td>-</td><td>Low</td></tr>
+            </tbody>
+        </table>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2412.12567v2/x5.png" alt="Fine-grained reasoning stage analysis">
+            <figcaption><strong>Figure 5.</strong> Fine-grained reasoning stage analysis: The Information Retrieval stage emerges as the primary failure point across all models.</figcaption>
+        </figure>
+
+        <ul class="key-points">
+            <li><strong>Ceiling of Best Performance:</strong> Even Claude 3.5 Sonnet achieves only 30.39% accuracy on Hard</li>
+            <li><strong>Key Bottleneck:</strong> The information retrieval stage is the biggest failure factor — finding the right information is the hardest part</li>
+            <li><strong>Error Types:</strong> Chart trend interpretation errors (35 cases), ranking judgment mistakes (16 cases), numerical interpretation errors (17 cases)</li>
+            <li><strong>Optimization Potential:</strong> Applying modality integration + 4-stage reasoning + Self-Refine improves Hard from 32% to 46%</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>Finance is a domain where accuracy is paramount. For AI to assist in financial analysis, it must accurately connect and reason across multiple data formats. FCMR is a benchmark that is <strong>robust against data contamination</strong> while reflecting real financial settings, with the practical advantage of large-scale generation at only $0.004 per question.</p>
+    </div>
+
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://aclanthology.org/2025.acl-long.1138/" target="_blank" class="paper-link">ACL Anthology</a>
+            <a href="https://arxiv.org/abs/2412.12567" target="_blank" class="paper-link">arXiv Paper</a>
+        </div>
+    </div>
+
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-multimodal">Multimodal</span>
+        <span class="tag tag-benchmark">Benchmark</span>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="../index.html">&#8592; Back to All Publications</a></p>
+    <p style="margin-top:8px;">Hanyang University NLP Lab | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

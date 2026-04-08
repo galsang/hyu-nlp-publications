@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniACBench - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; All Publications</a>
+        <h1>OmniACBench: A Benchmark for Evaluating Context-Grounded Acoustic Control in Omni-Modal Models</h1>
+        <div class="meta">
+            <span class="venue-badge">arXiv 2026</span>
+        </div>
+        <div class="authors">Seunghee Kim, Bumkyu Park, Kyudan Jung, Joosung Lee, Soyoon Kim, Jeonghoon Kim, Taeuk Kim, Hwiyeol Jo</div>
+    </div>
+</div>
+
+<div class="detail-content">
+    <div class="section">
+        <h2>One-Line Summary</h2>
+        <p>A benchmark that evaluates omni-modal models' ability to generate contextually appropriate tone and speech given voice instructions, text scripts, and images, across 6 acoustic dimensions.</p>
+    </div>
+
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2603.23938v1/x1.png" alt="Comparison of omni-modal benchmarks">
+        <figcaption><strong>Figure 1.</strong> Comparison with existing omni-modal benchmarks: OmniACBench is the first benchmark to evaluate acoustic control capability grounded in multimodal context.</figcaption>
+    </figure>
+
+    <div class="section">
+        <h2>Background & Motivation</h2>
+        <p>While state-of-the-art AI models can respond with voice, there is a critical difference between simply reading text aloud and speaking <strong>with a tone appropriate to the situation</strong>. Just as one's tone should differ when delivering sad news versus offering congratulations, AI must also generate speech that matches the context.</p>
+        <div class="highlight-box">
+            <p><strong>Key Question:</strong> Can a model that understands text well and recognizes images also respond appropriately to a request to "read this in the right tone"?</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Benchmark Design</h2>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2603.23938v1/x2.png" alt="Construction pipeline">
+            <figcaption><strong>Figure 2.</strong> OmniACBench construction pipeline: Illustrates the 3-stage process with representative examples.</figcaption>
+        </figure>
+
+        <p>6 evaluation dimensions:</p>
+        <ul class="key-points">
+            <li><strong>Speech Rate:</strong> Ability to control speaking speed (fast/slow)</li>
+            <li><strong>Phonation:</strong> Phonation types such as whispering and shouting</li>
+            <li><strong>Pronunciation:</strong> Pronunciation characteristics such as emphasis and intonation</li>
+            <li><strong>Emotion:</strong> Emotional expression including joy, sadness, anger, etc.</li>
+            <li><strong>Global Accent:</strong> Accents such as British English, American English, etc.</li>
+            <li><strong>Timbre:</strong> Voice quality characteristics such as child-like or elderly voices</li>
+        </ul>
+
+        <p style="margin-top: 16px;">Benchmark scale: 3,559 instances (97.78% retained from an initial 3,640 after 2-stage quality verification)</p>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2603.23938v1/x3.png" alt="Performance results">
+            <figcaption><strong>Figure 3.</strong> Results across all evaluation metrics: Most models fall significantly short of baseline performance, particularly on abstract acoustic properties (emotion, accent).</figcaption>
+        </figure>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>Metric</th><th>MiniCPM-o 4.5 (Best)</th><th>Random Baseline</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>WER (↓)</td><td class="highlight-cell">1.04</td><td>-</td></tr>
+                <tr><td>Emotion Accuracy</td><td>21.44%</td><td>16.7%</td></tr>
+                <tr><td>Global Accent</td><td>39.34%</td><td>25.0%</td></tr>
+            </tbody>
+        </table>
+
+        <div class="highlight-box">
+            <p><strong>3 Failure Patterns:</strong></p>
+        </div>
+        <ul class="key-points">
+            <li><strong>Direct Control Failure:</strong> Some properties like timbre cannot be controlled even with explicit instructions</li>
+            <li><strong>Implicit Reasoning Failure:</strong> Failure to infer appropriate acoustic properties from context</li>
+            <li><strong>Multimodal Grounding Failure:</strong> Success with text alone but failure in multimodal contexts — the core bottleneck</li>
+        </ul>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2603.23938v1/x4.png" alt="Linear probing visualization">
+            <figcaption><strong>Figure 4.</strong> Linear probing analysis: Visualizes how context-related information is processed across internal model layers.</figcaption>
+        </figure>
+
+        <p>Diagnostic findings: Individually, text generation is perfect (WER 0.09-0.14) and visual cue reasoning achieves 92-97.5% accuracy, but failures occur in the process of <strong>integrating these into speech output</strong>.</p>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>As voice AI assistants become ubiquitous, not only "what is said" but also <strong>"how it is said"</strong> becomes important. This benchmark is the first to provide systematic evaluation criteria for generating natural speech that matches the context, and reveals fundamental limitations in current models' "multimodal grounding" capabilities.</p>
+    </div>
+
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://arxiv.org/abs/2603.23938" target="_blank" class="paper-link">arXiv Paper</a>
+        </div>
+    </div>
+
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-multimodal">Multimodal</span>
+        <span class="tag tag-benchmark">Benchmark</span>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="../index.html">&#8592; Back to All Publications</a></p>
+    <p style="margin-top:8px;">Hanyang University NLP Lab | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

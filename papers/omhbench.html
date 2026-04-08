@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OMHBench - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; All Publications</a>
+        <h1>OMHBench: Benchmarking Balanced and Grounded Omni-Modal Multi-Hop Reasoning</h1>
+        <div class="meta">
+            <span class="venue-badge">ACL 2026 Findings</span>
+        </div>
+        <div class="authors">Seunghee Kim, Ingyu Bang, Seokgyu Jang, Changhyeon Kim, Sanghwan Bae, Jihun Choi, Richeng Xuan, Taeuk Kim</div>
+    </div>
+</div>
+
+<div class="detail-content">
+    <div class="section">
+        <h2>One-Line Summary</h2>
+        <p>A benchmark that systematically and in a balanced manner evaluates multi-hop reasoning across three modalities — text, image, and audio — using 6,144 questions.</p>
+    </div>
+
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2508.16198v2/x1.png" alt="Comparison of OMU and CMR benchmarks">
+        <figcaption><strong>Figure 1.</strong> Limitations of existing benchmarks: OMU (left) lacks textual context and contains modality shortcuts, while CMR (right) excludes audio and has imbalanced reasoning paths. OMHBench addresses both of these limitations.</figcaption>
+    </figure>
+
+    <div class="section">
+        <h2>Background & Motivation</h2>
+        <p>While state-of-the-art AI models claim to handle text, images, and audio simultaneously, their ability to <strong>reason across these modalities</strong> has not been properly validated. Analyzing existing benchmarks revealed two critical problems:</p>
+        <div class="highlight-box">
+            <p><strong>Problem 1 (OMU benchmarks):</strong> "Modality shortcuts" exist that allow 70-80% of questions to be solved without visual or audio inputs</p>
+        </div>
+        <div class="highlight-box">
+            <p><strong>Problem 2 (CMR benchmarks):</strong> Balancing reasoning paths causes performance to drop by up to 18%, suggesting that existing results were overestimated</p>
+        </div>
+    </div>
+
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2508.16198v2/x2.png" alt="Task formulation examples">
+        <figcaption><strong>Figure 2.</strong> OMHBench task examples: Answers must be derived through diverse reasoning paths such as image→text, image→text→audio, etc. Attributes are unique to each modality, but entities are shared.</figcaption>
+    </figure>
+
+    <div class="section">
+        <h2>Benchmark Construction Pipeline</h2>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2508.16198v2/x5.png" alt="OMHBench construction pipeline">
+            <figcaption><strong>Figure 5.</strong> OMHBench construction pipeline: A balanced benchmark is created through a 4-stage process.</figcaption>
+        </figure>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Table Construction</div>
+                <div class="step-desc">Compose 3 tables of 10 entities x 3 attributes with shared entities</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Multi-Hop QA Generation</div>
+                <div class="step-desc">Generate 3-hop questions by combining 8 operation types including Lookup, Ranking, and Comparison</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Omni-Modal Conversion</div>
+                <div class="step-desc">Text (LLM), images (matplotlib/seaborn), audio (Kokoro TTS)</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Reasoning Path Diversification</div>
+                <div class="step-desc">Evenly distribute across 6 modality orderings (T-V-S, V-S-T, etc.)</div>
+            </div>
+        </div>
+
+        <p style="margin-top: 16px;">Quality assurance: Entity anonymization, QA-based consistency verification, question rephrasing with 3 LLMs, TTS verification (WER: 0.03, STOI: 99.2)</p>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>Type</th><th>Average Accuracy</th><th>PBS (Balance Score)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Gemini 3 Flash</td><td>Commercial</td><td class="highlight-cell">78.3%</td><td>-</td></tr>
+                <tr><td>Qwen3-Omni 30B</td><td>Open-source (Best)</td><td>46.8%</td><td>Low</td></tr>
+                <tr><td>Most open-source models</td><td>Open-source</td><td>~0%</td><td>Near 0</td></tr>
+            </tbody>
+        </table>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2508.16198v2/x6.png" alt="Core trends">
+            <figcaption><strong>Figure 6.</strong> Key trends: A large performance gap between commercial and open-source models, difficulty with the audio modality, and sensitivity to changes in reasoning paths are confirmed.</figcaption>
+        </figure>
+
+        <ul class="key-points">
+            <li><strong>Commercial vs Open-source:</strong> Large gap between commercial models (Gemini 78.3%) and open-source models (Qwen 46.8%)</li>
+            <li><strong>Audio Difficulty:</strong> Performance drops significantly as audio appears later in the reasoning path</li>
+            <li><strong>Cross-Domain Gap:</strong> Up to 21.8% performance difference between Economics and Nutrition domains</li>
+            <li><strong>Path Balance Score:</strong> Most models exhibit low PBS, indicating poor robustness to reasoning path variations</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>Building truly "omni-modal" AI requires more than handling each modality independently. OMHBench addresses the <strong>modality shortcut</strong> and <strong>path imbalance</strong> issues in existing benchmarks to evaluate genuine cross-modal reasoning ability. By precisely identifying weaknesses in the audio modality, it provides direction for the development of next-generation multimodal AI.</p>
+    </div>
+
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://arxiv.org/abs/2508.16198" target="_blank" class="paper-link">arXiv Paper</a>
+        </div>
+    </div>
+
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-multimodal">Multimodal</span>
+        <span class="tag tag-benchmark">Benchmark</span>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="../index.html">&#8592; Back to All Publications</a></p>
+    <p style="margin-top:8px;">Hanyang University NLP Lab | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

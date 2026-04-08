@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAILOpt - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; All Publications</a>
+        <h1>Investigating the Influence of Prompt-Specific Shortcuts in AI Generated Text Detection</h1>
+        <div class="meta">
+            <span class="venue-badge">arXiv 2024</span>
+        </div>
+        <div class="authors">Choonghyun Park, Hyuhng Joon Kim, Junyeob Kim, Youna Kim, Taeuk Kim, Hyunsoo Cho, Hwiyeol Jo, Sang-goo Lee, Kang Min Yoo</div>
+    </div>
+</div>
+
+<div class="detail-content">
+    <div class="section">
+        <h2>One-Line Summary</h2>
+        <p>We reveal that AI-generated text detectors are vulnerable to "prompt-specific shortcuts" caused by limited prompt diversity in training data, and propose both the FAILOpt attack that exploits this vulnerability and a defense method that leverages it.</p>
+    </div>
+
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2406.16275v1/x1.png" alt="Detection failure from prompt-specific shortcuts">
+        <figcaption><strong>Figure 1.</strong> Detection failure due to prompt-specific shortcuts: The detector relies on specific prompt patterns rather than text content for its judgments, revealing a critical vulnerability.</figcaption>
+    </figure>
+
+    <div class="section">
+        <h2>Background & Motivation</h2>
+        <p>With the emergence of ChatGPT and similar tools, detecting AI-written text has become a critical challenge for academia and education. However, if the training data for detectors <strong>lacks prompt diversity</strong>, "shortcuts" can form where detectors rely on prompt characteristics rather than text content.</p>
+        <div class="highlight-box">
+            <p><strong>Key Insight:</strong> Detectors were not actually judging "whether this text was written by AI" but rather responding to "whether this text was generated with a specific prompt."</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method: FAILOpt</h2>
+        <p>FAILOpt is a 2-stage technique that iteratively searches for prompts that fool detectors:</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Candidate Generation</div>
+                <div class="step-desc">Analyze differences between LLM and human outputs to generate instructions that make AI text more human-like</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Instruction Selection</div>
+                <div class="step-desc">Select the most effective instructions at fooling detectors from generated candidates (6 iterations, top-2 selection per iteration)</div>
+            </div>
+        </div>
+
+        <p style="margin-top:16px;">Examples of discovered effective instructions:</p>
+        <ul class="key-points">
+            <li>"Include witty remarks and irony"</li>
+            <li>"Provide structured and systematic answers"</li>
+            <li>"Use specific examples and technical terminology"</li>
+        </ul>
+        <p style="margin-top:8px;">These instructions serve to remove the characteristic markers of AI text that detectors relied upon.</p>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2406.16275v1/x2.png" alt="FAILOpt first iteration">
+            <figcaption><strong>Figure 2.</strong> Results on the ELI5 dataset from FAILOpt's first iteration: Demonstrates a significant drop in detector performance.</figcaption>
+        </figure>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>Dataset</th><th>Attack Success Rate (ASR)</th><th>AUROC Change</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>gpt-3.5-turbo-0301</td><td>ELI5</td><td>46.55%</td><td>93.33% → 78.17%</td></tr>
+                <tr><td>gpt-3.5-turbo-0613</td><td>ELI5</td><td class="highlight-cell">95.72%</td><td class="highlight-cell">98.23% → 62.49%</td></tr>
+            </tbody>
+        </table>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2406.16275v1/x3.png" alt="Defense via augmentation">
+            <figcaption><strong>Figure 3.</strong> Defense effectiveness: Augmenting training data with FAILOpt-generated text consistently improves detector robustness.</figcaption>
+        </figure>
+
+        <ul class="key-points">
+            <li><strong>Attack Success:</strong> 95.72% ASR on gpt-3.5-turbo-0613, with AUROC dropping from 98.23% to 62.49%, effectively neutralizing the detector</li>
+            <li><strong>Supervised Detector Vulnerability:</strong> Perplexity-based and non-learning methods like DetectGPT are less vulnerable — learning-based detectors rely more on shortcuts</li>
+            <li><strong>Defense Effectiveness:</strong> Augmenting with FAILOpt data improves performance across all datasets and attack types</li>
+            <li><strong>Generalization:</strong> Effectiveness confirmed across various generation models, tasks, and attack types</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>AI text detection is central to academic integrity and information trustworthiness. This study reveals a <strong>fundamental vulnerability</strong> of current detectors while also presenting a <strong>dual-purpose solution</strong> that leverages the same attack technique for defense. It applies the security principle of "know your enemy to defend yourself" to AI detection.</p>
+    </div>
+
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://arxiv.org/abs/2406.16275" target="_blank" class="paper-link">arXiv Paper</a>
+        </div>
+    </div>
+
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-detection">Detection</span>
+        <span class="tag tag-safety">Safety</span>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="../index.html">&#8592; Back to All Publications</a></p>
+    <p style="margin-top:8px;">Hanyang University NLP Lab | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>
