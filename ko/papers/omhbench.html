@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OMHBench - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="../../papers/omhbench.html">EN</a>
+        <a href="omhbench.html" class="active">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; 전체 논문 목록</a>
+        <h1>OMHBench: Benchmarking Balanced and Grounded Omni-Modal Multi-Hop Reasoning</h1>
+        <div class="meta">
+            <span class="venue-badge">ACL 2026 Findings</span>
+        </div>
+        <div class="authors">Seunghee Kim, Ingyu Bang, Seokgyu Jang, Changhyeon Kim, Sanghwan Bae, Jihun Choi, Richeng Xuan, Taeuk Kim</div>
+    </div>
+</div>
+
+<div class="detail-content">
+    <div class="section">
+        <h2>한줄 요약</h2>
+        <p>텍스트, 이미지, 오디오 세 가지 모달리티에 걸친 멀티홉 추론을 6,144개의 질문으로 체계적이고 균형 있게 평가하는 벤치마크입니다.</p>
+    </div>
+
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2508.16198v2/x1.png" alt="OMU와 CMR 벤치마크 비교">
+        <figcaption><strong>Figure 1.</strong> 기존 벤치마크의 한계: OMU(왼쪽)는 텍스트 맥락이 부족하고 모달리티 지름길이 존재하며, CMR(오른쪽)은 오디오를 제외하고 추론 경로가 불균형합니다. OMHBench는 이 두 가지 한계를 모두 해결합니다.</figcaption>
+    </figure>
+
+    <div class="section">
+        <h2>배경 및 동기</h2>
+        <p>최신 AI 모델들이 텍스트, 이미지, 오디오를 동시에 처리할 수 있다고 주장하지만, <strong>모달리티 간 추론 능력</strong>은 제대로 검증되지 않았습니다. 기존 벤치마크를 분석한 결과 두 가지 심각한 문제가 발견되었습니다:</p>
+        <div class="highlight-box">
+            <p><strong>문제 1 (OMU 벤치마크):</strong> 시각 또는 오디오 입력 없이도 70-80%의 질문을 풀 수 있는 "모달리티 지름길"이 존재</p>
+        </div>
+        <div class="highlight-box">
+            <p><strong>문제 2 (CMR 벤치마크):</strong> 추론 경로를 균형화하면 성능이 최대 18%까지 하락하여, 기존 결과가 과대평가되었음을 시사</p>
+        </div>
+    </div>
+
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2508.16198v2/x2.png" alt="태스크 구성 예시">
+        <figcaption><strong>Figure 2.</strong> OMHBench 태스크 예시: 이미지→텍스트, 이미지→텍스트→오디오 등 다양한 추론 경로를 통해 답을 도출해야 합니다. 속성은 각 모달리티에 고유하지만, 엔티티는 공유됩니다.</figcaption>
+    </figure>
+
+    <div class="section">
+        <h2>벤치마크 구축 파이프라인</h2>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2508.16198v2/x5.png" alt="OMHBench 구축 파이프라인">
+            <figcaption><strong>Figure 5.</strong> OMHBench 구축 파이프라인: 4단계 과정을 통해 균형 잡힌 벤치마크를 생성합니다.</figcaption>
+        </figure>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">테이블 구성</div>
+                <div class="step-desc">공유 엔티티를 포함한 10개 엔티티 x 3개 속성의 테이블 3개 구성</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">멀티홉 QA 생성</div>
+                <div class="step-desc">Lookup, Ranking, Comparison 등 8가지 연산 유형을 조합하여 3-hop 질문 생성</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">옴니모달 변환</div>
+                <div class="step-desc">텍스트(LLM), 이미지(matplotlib/seaborn), 오디오(Kokoro TTS)</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">추론 다양화</div>
+                <div class="step-desc">6가지 모달리티 순서(T-V-S, V-S-T 등)에 걸쳐 균등 분배</div>
+            </div>
+        </div>
+
+        <p style="margin-top: 16px;">품질 보증: 엔티티 익명화, QA 기반 일관성 검증, 3개 LLM을 활용한 질문 재구성, TTS 검증 (WER: 0.03, STOI: 99.2)</p>
+    </div>
+
+    <div class="section">
+        <h2>실험 결과</h2>
+        <table class="results-table">
+            <thead>
+                <tr><th>모델</th><th>유형</th><th>평균 정확도</th><th>PBS (균형 점수)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Gemini 3 Flash</td><td>상용</td><td class="highlight-cell">78.3%</td><td>-</td></tr>
+                <tr><td>Qwen3-Omni 30B</td><td>오픈소스 (최고)</td><td>46.8%</td><td>낮음</td></tr>
+                <tr><td>대부분의 오픈소스 모델</td><td>오픈소스</td><td>~0%</td><td>거의 0</td></tr>
+            </tbody>
+        </table>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2508.16198v2/x6.png" alt="주요 경향">
+            <figcaption><strong>Figure 6.</strong> 주요 경향: 상용 모델과 오픈소스 모델 간의 큰 성능 격차, 오디오 모달리티의 어려움, 추론 경로 변화에 대한 민감성이 확인됩니다.</figcaption>
+        </figure>
+
+        <ul class="key-points">
+            <li><strong>상용 vs 오픈소스:</strong> 상용 모델(Gemini 78.3%)과 오픈소스 모델(Qwen 46.8%) 간 큰 격차</li>
+            <li><strong>오디오의 어려움:</strong> 추론 경로에서 오디오가 뒤에 등장할수록 성능이 크게 저하</li>
+            <li><strong>교차 도메인 격차:</strong> 경제학과 영양학 도메인 간 최대 21.8%의 성능 차이</li>
+            <li><strong>경로 균형 점수:</strong> 대부분의 모델이 낮은 PBS를 보여 추론 경로 변화에 대한 강건성이 부족</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>왜 중요한가?</h2>
+        <p>진정한 "옴니모달" AI를 구축하려면 각 모달리티를 독립적으로 처리하는 것 이상이 필요합니다. OMHBench는 기존 벤치마크의 <strong>모달리티 지름길</strong>과 <strong>경로 불균형</strong> 문제를 해결하여 진정한 교차 모달 추론 능력을 평가합니다. 오디오 모달리티의 약점을 정확히 파악함으로써 차세대 멀티모달 AI 개발 방향을 제시합니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>링크</h2>
+        <div class="links-section">
+            <a href="https://arxiv.org/abs/2508.16198" target="_blank" class="paper-link">arXiv Paper</a>
+        </div>
+    </div>
+
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-multimodal">Multimodal</span>
+        <span class="tag tag-benchmark">Benchmark</span>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="../index.html">&#8592; 전체 논문 목록으로 돌아가기</a></p>
+    <p style="margin-top:8px;">한양대학교 자연어처리 연구실 | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

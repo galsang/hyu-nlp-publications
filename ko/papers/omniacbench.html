@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniACBench - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="../../papers/omniacbench.html">EN</a>
+        <a href="omniacbench.html" class="active">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; 전체 논문 목록</a>
+        <h1>OmniACBench: A Benchmark for Evaluating Context-Grounded Acoustic Control in Omni-Modal Models</h1>
+        <div class="meta">
+            <span class="venue-badge">arXiv 2026</span>
+        </div>
+        <div class="authors">Seunghee Kim, Bumkyu Park, Kyudan Jung, Joosung Lee, Soyoon Kim, Jeonghoon Kim, Taeuk Kim, Hwiyeol Jo</div>
+    </div>
+</div>
+
+<div class="detail-content">
+    <div class="section">
+        <h2>한줄 요약</h2>
+        <p>음성 지시, 텍스트 대본, 이미지가 주어졌을 때 옴니모달 모델이 맥락에 적합한 톤과 발화를 생성하는 능력을 6가지 음향 차원에서 평가하는 벤치마크입니다.</p>
+    </div>
+
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2603.23938v1/x1.png" alt="옴니모달 벤치마크 비교">
+        <figcaption><strong>Figure 1.</strong> 기존 옴니모달 벤치마크와의 비교: OmniACBench는 멀티모달 맥락에 기반한 음향 제어 능력을 평가하는 최초의 벤치마크입니다.</figcaption>
+    </figure>
+
+    <div class="section">
+        <h2>배경 및 동기</h2>
+        <p>최신 AI 모델이 음성으로 응답할 수 있지만, 단순히 텍스트를 소리 내어 읽는 것과 <strong>상황에 맞는 톤으로 말하는 것</strong>에는 큰 차이가 있습니다. 슬픈 소식을 전할 때와 축하할 때 톤이 달라야 하는 것처럼, AI도 맥락에 맞는 발화를 생성해야 합니다.</p>
+        <div class="highlight-box">
+            <p><strong>핵심 질문:</strong> 텍스트를 잘 이해하고 이미지를 인식하는 모델이 "적절한 톤으로 읽어달라"는 요청에도 적절하게 응답할 수 있을까요?</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>벤치마크 설계</h2>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2603.23938v1/x2.png" alt="구축 파이프라인">
+            <figcaption><strong>Figure 2.</strong> OmniACBench 구축 파이프라인: 대표적인 예시와 함께 3단계 과정을 보여줍니다.</figcaption>
+        </figure>
+
+        <p>6가지 평가 차원:</p>
+        <ul class="key-points">
+            <li><strong>발화 속도:</strong> 말하기 속도 조절 능력 (빠르게/느리게)</li>
+            <li><strong>발성:</strong> 속삭임, 외침 등의 발성 유형</li>
+            <li><strong>발음:</strong> 강조, 억양 등의 발음 특성</li>
+            <li><strong>감정:</strong> 기쁨, 슬픔, 분노 등의 감정 표현</li>
+            <li><strong>글로벌 억양:</strong> 영국식 영어, 미국식 영어 등의 억양</li>
+            <li><strong>음색:</strong> 어린이 목소리, 노인 목소리 등의 음성 품질 특성</li>
+        </ul>
+
+        <p style="margin-top: 16px;">벤치마크 규모: 3,559개 인스턴스 (초기 3,640개에서 2단계 품질 검증 후 97.78% 유지)</p>
+    </div>
+
+    <div class="section">
+        <h2>실험 결과</h2>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2603.23938v1/x3.png" alt="성능 결과">
+            <figcaption><strong>Figure 3.</strong> 전체 평가 지표에 대한 결과: 대부분의 모델이 기준선 성능에 크게 못 미치며, 특히 추상적 음향 속성(감정, 억양)에서 저조합니다.</figcaption>
+        </figure>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>지표</th><th>MiniCPM-o 4.5 (최고)</th><th>랜덤 기준선</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>WER (↓)</td><td class="highlight-cell">1.04</td><td>-</td></tr>
+                <tr><td>감정 정확도</td><td>21.44%</td><td>16.7%</td></tr>
+                <tr><td>글로벌 억양</td><td>39.34%</td><td>25.0%</td></tr>
+            </tbody>
+        </table>
+
+        <div class="highlight-box">
+            <p><strong>3가지 실패 패턴:</strong></p>
+        </div>
+        <ul class="key-points">
+            <li><strong>직접 제어 실패:</strong> 음색 등 일부 속성은 명시적 지시로도 제어 불가</li>
+            <li><strong>암묵적 추론 실패:</strong> 맥락에서 적절한 음향 속성을 추론하지 못함</li>
+            <li><strong>멀티모달 그라운딩 실패:</strong> 텍스트만으로는 성공하지만 멀티모달 맥락에서 실패 — 핵심 병목</li>
+        </ul>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2603.23938v1/x4.png" alt="Linear probing 시각화">
+            <figcaption><strong>Figure 4.</strong> Linear probing 분석: 모델 내부 레이어에서 맥락 관련 정보가 처리되는 방식을 시각화합니다.</figcaption>
+        </figure>
+
+        <p>진단 결과: 개별적으로 텍스트 생성은 완벽하고(WER 0.09-0.14), 시각 단서 추론은 92-97.5%의 정확도를 보이지만, <strong>이를 음성 출력으로 통합하는 과정</strong>에서 실패가 발생합니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>왜 중요한가?</h2>
+        <p>음성 AI 비서가 보편화됨에 따라, "무엇을 말하느냐"뿐만 아니라 <strong>"어떻게 말하느냐"</strong>도 중요해집니다. 이 벤치마크는 맥락에 맞는 자연스러운 발화 생성에 대한 체계적 평가 기준을 최초로 제공하며, 현재 모델의 "멀티모달 그라운딩" 능력의 근본적 한계를 밝힙니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>링크</h2>
+        <div class="links-section">
+            <a href="https://arxiv.org/abs/2603.23938" target="_blank" class="paper-link">arXiv Paper</a>
+        </div>
+    </div>
+
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-multimodal">Multimodal</span>
+        <span class="tag tag-benchmark">Benchmark</span>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="../index.html">&#8592; 전체 논문 목록으로 돌아가기</a></p>
+    <p style="margin-top:8px;">한양대학교 자연어처리 연구실 | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

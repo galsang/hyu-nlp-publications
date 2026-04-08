@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAILOpt - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="../../papers/failopt.html">EN</a>
+        <a href="failopt.html" class="active">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; 전체 논문 목록</a>
+        <h1>Investigating the Influence of Prompt-Specific Shortcuts in AI Generated Text Detection</h1>
+        <div class="meta">
+            <span class="venue-badge">arXiv 2024</span>
+        </div>
+        <div class="authors">Choonghyun Park, Hyuhng Joon Kim, Junyeob Kim, Youna Kim, Taeuk Kim, Hyunsoo Cho, Hwiyeol Jo, Sang-goo Lee, Kang Min Yoo</div>
+    </div>
+</div>
+
+<div class="detail-content">
+    <div class="section">
+        <h2>한줄 요약</h2>
+        <p>AI 생성 텍스트 탐지기가 훈련 데이터의 제한된 프롬프트 다양성으로 인한 "프롬프트 특정 지름길"에 취약하다는 것을 밝히고, 이 취약점을 악용하는 FAILOpt 공격과 이를 활용한 방어 방법을 동시에 제안합니다.</p>
+    </div>
+
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2406.16275v1/x1.png" alt="프롬프트 특정 지름길로 인한 탐지 실패">
+        <figcaption><strong>Figure 1.</strong> 프롬프트 특정 지름길로 인한 탐지 실패: 탐지기가 텍스트 내용이 아닌 특정 프롬프트 패턴에 의존하여 판단을 내리며, 심각한 취약점이 드러납니다.</figcaption>
+    </figure>
+
+    <div class="section">
+        <h2>배경 및 동기</h2>
+        <p>ChatGPT 등의 등장으로 AI가 작성한 텍스트를 탐지하는 것이 학계와 교육 분야의 중요한 과제가 되었습니다. 그러나 탐지기의 훈련 데이터에 <strong>프롬프트 다양성이 부족</strong>하면, 탐지기가 텍스트 내용이 아닌 프롬프트 특성에 의존하는 "지름길"이 형성될 수 있습니다.</p>
+        <div class="highlight-box">
+            <p><strong>핵심 통찰:</strong> 탐지기는 실제로 "이 텍스트가 AI가 작성한 것인지"를 판단하는 것이 아니라 "이 텍스트가 특정 프롬프트로 생성되었는지"에 반응하고 있었습니다.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>제안 방법: FAILOpt</h2>
+        <p>FAILOpt는 탐지기를 속이는 프롬프트를 반복적으로 탐색하는 2단계 기법입니다:</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">후보 생성</div>
+                <div class="step-desc">LLM 출력과 인간 출력의 차이를 분석하여 AI 텍스트를 더 인간적으로 만드는 지시문 생성</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">지시문 선택</div>
+                <div class="step-desc">생성된 후보 중 탐지기를 가장 효과적으로 속이는 지시문 선택 (6회 반복, 반복당 상위 2개 선택)</div>
+            </div>
+        </div>
+
+        <p style="margin-top:16px;">발견된 효과적인 지시문 예시:</p>
+        <ul class="key-points">
+            <li>"재치 있는 발언과 아이러니를 포함하라"</li>
+            <li>"구조적이고 체계적인 답변을 제공하라"</li>
+            <li>"구체적인 예시와 전문 용어를 사용하라"</li>
+        </ul>
+        <p style="margin-top:8px;">이러한 지시문은 탐지기가 의존하던 AI 텍스트의 특징적 마커를 제거하는 역할을 합니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>실험 결과</h2>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2406.16275v1/x2.png" alt="FAILOpt 첫 번째 반복">
+            <figcaption><strong>Figure 2.</strong> FAILOpt 첫 번째 반복의 ELI5 데이터셋 결과: 탐지기 성능의 급격한 하락을 보여줍니다.</figcaption>
+        </figure>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>모델</th><th>데이터셋</th><th>공격 성공률 (ASR)</th><th>AUROC 변화</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>gpt-3.5-turbo-0301</td><td>ELI5</td><td>46.55%</td><td>93.33% → 78.17%</td></tr>
+                <tr><td>gpt-3.5-turbo-0613</td><td>ELI5</td><td class="highlight-cell">95.72%</td><td class="highlight-cell">98.23% → 62.49%</td></tr>
+            </tbody>
+        </table>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2406.16275v1/x3.png" alt="증강을 통한 방어">
+            <figcaption><strong>Figure 3.</strong> 방어 효과: FAILOpt로 생성된 텍스트로 훈련 데이터를 증강하면 탐지기의 강건성이 일관되게 향상됩니다.</figcaption>
+        </figure>
+
+        <ul class="key-points">
+            <li><strong>공격 성공:</strong> gpt-3.5-turbo-0613에서 95.72% ASR, AUROC가 98.23%에서 62.49%로 하락하여 탐지기를 사실상 무력화</li>
+            <li><strong>지도 학습 탐지기의 취약성:</strong> 퍼플렉시티 기반 및 DetectGPT 같은 비학습 방법은 덜 취약 — 학습 기반 탐지기가 지름길에 더 의존</li>
+            <li><strong>방어 효과:</strong> FAILOpt 데이터로 증강하면 모든 데이터셋과 공격 유형에서 성능 향상</li>
+            <li><strong>일반화:</strong> 다양한 생성 모델, 태스크, 공격 유형에서 효과 확인</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>왜 중요한가?</h2>
+        <p>AI 텍스트 탐지는 학문적 진실성과 정보 신뢰성의 핵심입니다. 본 연구는 현재 탐지기의 <strong>근본적 취약점</strong>을 밝히는 동시에, 같은 공격 기법을 방어에 활용하는 <strong>이중 목적 솔루션</strong>을 제시합니다. "적을 알아야 막을 수 있다"는 보안 원칙을 AI 탐지에 적용한 것입니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>링크</h2>
+        <div class="links-section">
+            <a href="https://arxiv.org/abs/2406.16275" target="_blank" class="paper-link">arXiv Paper</a>
+        </div>
+    </div>
+
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-detection">Detection</span>
+        <span class="tag tag-safety">Safety</span>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="../index.html">&#8592; 전체 논문 목록으로 돌아가기</a></p>
+    <p style="margin-top:8px;">한양대학교 자연어처리 연구실 | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

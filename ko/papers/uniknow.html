@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniKnow - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="../../papers/uniknow.html">EN</a>
+        <a href="uniknow.html" class="active">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; 전체 논문 목록</a>
+        <h1>UniKnow: A Unified Framework for Reliable Language Model Behavior across Parametric and External Knowledge</h1>
+        <div class="meta">
+            <span class="venue-badge">arXiv 2025</span>
+        </div>
+        <div class="authors">Youna Kim, Hyuhng Joon Kim, Minjoon Choi, Sungmin Cho, Hyunsoo Cho, Sang-goo Lee, Taeuk Kim</div>
+    </div>
+</div>
+
+<div class="detail-content">
+    <div class="section">
+        <h2>한줄 요약</h2>
+        <p>LLM이 파라메트릭(내부) 지식과 외부 지식을 통합할 때 발생하는 충돌, 방해, 부재 등 4가지 시나리오를 포괄적으로 평가하고 해결하는 프레임워크입니다.</p>
+    </div>
+
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2502.13648v1/x1.png" alt="네 가지 지식 시나리오">
+        <figcaption><strong>Figure 1.</strong> UniKnow의 4가지 지식 시나리오: 파라메트릭 지식(PK)과 외부 지식(EK)의 존재 여부에 따라 Conflict, External-Only, Parametric-Only, Unknown으로 분류됩니다.</figcaption>
+    </figure>
+
+    <div class="section">
+        <h2>배경 및 동기</h2>
+        <p>LLM은 내부적으로 학습한 지식(파라메트릭 지식)과 RAG 등을 통해 외부에서 검색한 지식(외부 지식)을 함께 활용합니다. 그러나 이 두 지식 소스의 관계에 따라 다양한 상황이 발생합니다:</p>
+        <ul class="key-points">
+            <li><strong>Conflict:</strong> 내부 지식과 외부 지식이 서로 모순</li>
+            <li><strong>External-Only:</strong> 파라메트릭 메모리에는 없고 외부 소스에만 관련 지식이 존재</li>
+            <li><strong>Parametric-Only:</strong> 외부 지식이 방해 노이즈이고 내부 지식만 정확</li>
+            <li><strong>Unknown:</strong> 어떤 지식 소스에도 답이 없음</li>
+        </ul>
+        <div class="highlight-box">
+            <p><strong>핵심 문제:</strong> 기존 방법들은 특정 시나리오(예: 충돌만)에 집중하여, 다른 시나리오에서는 성능이 저하되는 편향을 보입니다.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>제안 방법</h2>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2502.13648v1/x2.png" alt="UniKnow 개요">
+            <figcaption><strong>Figure 2.</strong> UniKnow 프레임워크의 전체 구조: 7개 QA 데이터셋에 걸쳐 4가지 시나리오를 체계적으로 평가합니다.</figcaption>
+        </figure>
+
+        <p><strong>파라메트릭 지식 추정:</strong> 각 질문에 대해 10개 샘플을 추출하고, 70% 이상이 정답이면 관련 PK가 존재하는 것으로 판단</p>
+        <p style="margin-top:8px;"><strong>맥락 구성:</strong> 원본, 충돌 생성, 무관한 랜덤, 부정확 검색의 4가지 유형으로 시나리오별 평가 가능</p>
+        <p style="margin-top:8px;"><strong>평가 범위:</strong> 총 7개 데이터셋: NQ, TriviaQA, HotpotQA, SQuAD, BioASQ, TextbookQA, RelationExtraction</p>
+    </div>
+
+    <div class="section">
+        <h2>실험 결과</h2>
+
+        <div class="figures-row">
+            <figure class="paper-figure">
+                <img src="https://arxiv.org/html/2502.13648v1/x4.png" alt="시나리오별 EM 점수">
+                <figcaption><strong>Figure 4.</strong> 시나리오별 EM 점수: 각 방법이 특정 시나리오에 편향되어 있음을 확인합니다.</figcaption>
+            </figure>
+            <figure class="paper-figure">
+                <img src="https://arxiv.org/html/2502.13648v1/x6.png" alt="오류 유형 분포">
+                <figcaption><strong>Figure 6.</strong> 오류 유형 분포: Conflict 시나리오에서 파라메트릭 오류가 가장 높고, Unknown 시나리오에서 환각이 가장 빈번합니다.</figcaption>
+            </figure>
+        </div>
+
+        <ul class="key-points">
+            <li><strong>LM_UniKnow 최고 성능 달성:</strong> 모든 시나리오를 포괄하는 훈련이 최고 종합 성능을 달성 — "더 넓은 시나리오 커버리지가 더 좋은 결과를 이끔"</li>
+            <li><strong>충돌 해결의 어려움:</strong> 기존 PK와 충돌하는 외부 지식 처리가 새로운 정보 통합보다 훨씬 어려움</li>
+            <li><strong>응답 가능성 vs 신뢰성 트레이드오프:</strong> 응답 가능성 중심 방법은 P-Only에서 뛰어나지만 Unknown에서 환각, 응답 보류 중심 방법은 반대 패턴</li>
+            <li><strong>스케일 효과:</strong> 모델 크기가 증가할수록 응답 보류 능력은 지속적으로 향상되지만, E-Only에서의 개선은 미미</li>
+        </ul>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2502.13648v1/x7.png" alt="정확도 및 신뢰성 점수">
+            <figcaption><strong>Figure 7.</strong> 정확도(Acc)와 신뢰성(Rely) 점수: LM_UniKnow가 정확도를 유지하면서 최고 신뢰성을 달성합니다.</figcaption>
+        </figure>
+    </div>
+
+    <div class="section">
+        <h2>왜 중요한가?</h2>
+        <p>현실에서는 지식 충돌, 방해, 부재가 동시에 발생할 수 있습니다. 하나의 상황만 잘 처리하는 것이 아니라, <strong>모든 지식 상태에서 신뢰할 수 있는 AI</strong>를 구축하기 위한 포괄적 접근이 필요합니다. UniKnow는 이를 위한 체계적 평가 프레임워크와 훈련 방법론을 제공합니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>링크</h2>
+        <div class="links-section">
+            <a href="https://arxiv.org/abs/2502.13648" target="_blank" class="paper-link">arXiv Paper</a>
+        </div>
+    </div>
+
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-rag">RAG / Knowledge</span>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="../index.html">&#8592; 전체 논문 목록으로 돌아가기</a></p>
+    <p style="margin-top:8px;">한양대학교 자연어처리 연구실 | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

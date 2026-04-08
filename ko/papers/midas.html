@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIDAS - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="../../papers/midas.html">EN</a>
+        <a href="midas.html" class="active">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; 전체 논문 목록</a>
+        <h1>Memorization or Reasoning? Exploring the Idiom Understanding of LLMs</h1>
+        <div class="meta">
+            <span class="venue-badge">EMNLP 2025</span>
+        </div>
+        <div class="authors">Jisu Kim, Youngwoo Shin, Uiji Hwang, Jihun Choi, Richeng Xuan, Taeuk Kim</div>
+    </div>
+</div>
+
+<div class="detail-content">
+    <div class="section">
+        <h2>한줄 요약</h2>
+        <p>LLM이 관용어를 단순히 암기하는 것인지 아니면 추론을 통해 진정으로 이해하는 것인지를 6개 언어 64,660개 관용어에 걸쳐 체계적으로 분석한 연구입니다.</p>
+    </div>
+
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2505.16216v1/x1.png" alt="MIDAS 프레임워크: 네 가지 요인 분석">
+        <figcaption><strong>Figure 1.</strong> MIDAS 프레임워크: 관용어 이해에 관여하는 4가지 요인(암기, 합성성, 맥락 단서, 추론)을 체계적으로 분석합니다.</figcaption>
+    </figure>
+
+    <div class="section">
+        <h2>배경 및 동기</h2>
+        <p>"비가 억수같이 쏟아진다(It's raining cats and dogs)"와 같은 관용어는 문자 그대로의 의미와 다른 뜻을 가집니다. LLM이 이러한 관용어를 처리할 때, 훈련 데이터에서 <strong>단순히 암기</strong>하는 것일까요, 아니면 맥락에서 <strong>추론</strong>하는 것일까요? 이 근본적인 질문에 답하기 위해 6개 언어에 걸친 대규모 실험을 수행합니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>MIDAS 데이터셋</h2>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2505.16216v1/x2.png" alt="영어 관용어 항목 예시">
+            <figcaption><strong>Figure 2.</strong> MIDAS 데이터 예시: 각 관용어에는 표현, 비유적 의미, 예문이 포함됩니다.</figcaption>
+        </figure>
+
+        <ul class="key-points">
+            <li><strong>규모:</strong> 6개 언어(영어, 독일어, 중국어, 한국어, 아랍어, 터키어)의 64,660개 관용어, 총 70,909개 인스턴스</li>
+            <li><strong>구성:</strong> 각 관용어에 비유적 의미와 예문 포함</li>
+            <li><strong>평가:</strong> 유사도 기반 오답 선택지를 포함한 5지선다 MCQ + 연속 생성 태스크</li>
+            <li><strong>합성성 평가:</strong> LLM 프롬프팅을 통해 1-5 척도의 합성성 점수 부여</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>실험 결과</h2>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>언어</th><th>MCQ 최고 정확도</th><th>암기율 범위</th><th>맥락 효과</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>영어</td><td>91.13% (GPT-4o)</td><td>67-81%</td><td>소폭 향상</td></tr>
+                <tr><td>중국어</td><td>95.65% (DeepSeek-V3)</td><td>높음</td><td>소폭 향상</td></tr>
+                <tr><td>한국어</td><td>72.72% (GPT-4o)</td><td>26-37%</td><td class="highlight-cell">~30%p 향상</td></tr>
+                <tr><td>터키어</td><td>71.82% (GPT-4o)</td><td>낮음</td><td class="highlight-cell">~25%p 향상</td></tr>
+            </tbody>
+        </table>
+
+        <div class="figures-row">
+            <figure class="paper-figure">
+                <img src="https://arxiv.org/html/2505.16216v1/x3.png" alt="맥락이 정확도에 미치는 영향">
+                <figcaption><strong>Figure 3.</strong> 맥락 제공 시 정확도 변화: 저자원 언어(한국어, 터키어)에서 맥락의 효과가 극적으로 큽니다.</figcaption>
+            </figure>
+            <figure class="paper-figure">
+                <img src="https://arxiv.org/html/2505.16216v1/x4.png" alt="추론 방법 비교">
+                <figcaption><strong>Figure 4.</strong> 추론 모델(QwQ) vs 기본 모델(Qwen2.5) 비교: 추론 능력이 관용어 이해를 향상시킵니다.</figcaption>
+            </figure>
+        </div>
+
+        <div class="section" style="margin-top:20px;">
+            <h2>핵심 발견</h2>
+            <ul class="key-points">
+                <li><strong>하이브리드 처리:</strong> LLM은 순수한 암기나 순수한 추론이 아닌, 맥락 단서와 추론을 결합한 <strong>하이브리드 방식</strong>으로 관용어를 처리</li>
+                <li><strong>암기의 영향:</strong> 암기된 관용어에서 3.82-15.83% 높은 정확도 — 한국어/터키어에서는 격차가 10%p 이상</li>
+                <li><strong>합성성과 성능:</strong> 정답을 맞힌 관용어의 합성성 점수가 14-44% 더 높아, 구성 요소의 의미가 추론에 활용됨을 시사</li>
+                <li><strong>추론 모델의 우수성:</strong> 추론 특화 모델(QwQ)이 기본 모델(Qwen2.5)을 일관되게 능가</li>
+                <li><strong>Chain-of-Thought의 양면성:</strong> CoT가 고성능 언어에서는 오히려 해로울 수 있어, 추론 모델 훈련의 트레이드오프를 시사</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>왜 중요한가?</h2>
+        <p>관용어 이해는 깊은 언어 이해력의 리트머스 테스트입니다. <strong>LLM이 단순 암기가 아닌 추론을 활용한다</strong>는 발견은 이러한 모델이 언어 의미를 어느 정도 "이해"한다는 증거를 제공합니다. 동시에 저자원 언어에서의 큰 성능 격차는 다국어 AI 발전 방향을 제시합니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>링크</h2>
+        <div class="links-section">
+            <a href="https://arxiv.org/abs/2505.16216" target="_blank" class="paper-link">arXiv Paper</a>
+        </div>
+    </div>
+
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-nlp">NLP Fundamentals</span>
+        <span class="tag tag-benchmark">Benchmark</span>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="../index.html">&#8592; 전체 논문 목록으로 돌아가기</a></p>
+    <p style="margin-top:8px;">한양대학교 자연어처리 연구실 | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

@@ -166,6 +166,33 @@ a:hover { text-decoration: underline; }
 }
 .nav-papers a:hover { border-color: var(--accent); text-decoration: none; }
 
+/* Language toggle */
+.lang-toggle {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 4px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 6px;
+    padding: 3px;
+}
+.lang-toggle a {
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.7);
+    text-decoration: none;
+    transition: all 0.2s;
+}
+.lang-toggle a.active {
+    background: rgba(255,255,255,0.25);
+    color: white;
+}
+.lang-toggle a:hover { color: white; text-decoration: none; }
+.hero, .detail-hero { position: relative; }
+
 /* Figures */
 .paper-figure {
     margin: 24px 0;

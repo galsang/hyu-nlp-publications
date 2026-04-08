@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Localization & Unlearning - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="../../papers/unlearning.html">EN</a>
+        <a href="unlearning.html" class="active">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; 전체 논문 목록</a>
+        <h1>Does Localization Inform Unlearning? A Rigorous Examination of Local Parameter Attribution for Knowledge Unlearning in Language Models</h1>
+        <div class="meta">
+            <span class="venue-badge">EMNLP 2025</span>
+        </div>
+        <div class="authors">Hwiyeong Lee, Uiji Hwang, Hyelim Lim, Taeuk Kim</div>
+    </div>
+</div>
+
+<div class="detail-content">
+    <div class="section">
+        <h2>한줄 요약</h2>
+        <p>"특정 파라미터를 찾아 수정하면 원치 않는 지식을 효과적으로 제거할 수 있다"는 통념을 통제된 실험을 통해 엄밀하게 검증하고, 이 가정이 성립하지 않음을 보여줍니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>배경 및 동기</h2>
+        <p>LLM에서 특정 지식을 "언러닝"하는 것은 프라이버시 보호(GDPR "잊힐 권리"), 유해 콘텐츠 제거, 저작권 준수 등을 위해 점점 더 중요해지고 있습니다.</p>
+
+        <p style="margin-top: 12px;">기존 접근법의 핵심 가정:</p>
+        <div class="highlight-box">
+            <p><strong>가정:</strong> 특정 지식이 모델의 특정 파라미터에 "국소적으로" 저장되어 있으므로, 해당 파라미터를 찾아 수정하면 지식을 제거할 수 있다.</p>
+        </div>
+
+        <p style="margin-top: 12px;">본 연구는 이 가정의 타당성을 근본적으로 재검토합니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>실험 설계</h2>
+        <p>기존 연구에서 간과했던 교란 요인을 제거한 통제된 실험을 설계합니다:</p>
+
+        <ul class="key-points">
+            <li><strong>파라미터 국소성 검증:</strong> "지식을 저장"하는 것으로 추정되는 파라미터 수정과 다른 파라미터 수정을 비교</li>
+            <li><strong>다양한 국소화 방법:</strong> 여러 파라미터 귀인 방법을 사용하여 결과의 일관성 검증</li>
+            <li><strong>일반 능력 보존:</strong> 지식 제거 후 전반적인 언어 능력이 유지되는지 평가</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>핵심 발견</h2>
+        <ul class="key-points">
+            <li><strong>"파라미터 국소성 ≠ 효과적 제거":</strong> 지식을 저장하는 것으로 추정되는 파라미터를 수정해도 효과적인 지식 제거가 보장되지 않음</li>
+            <li><strong>비국소적 수정의 효과:</strong> "무관한" 파라미터를 수정해도 동등하거나 오히려 더 나은 언러닝 결과를 달성할 수 있어 — 국소성 가정 자체에 의문을 제기</li>
+            <li><strong>일반 능력과의 트레이드오프:</strong> 국소화 기반 접근법은 지식 제거와 일반 능력 보존 사이의 균형을 맞추기 어려움</li>
+            <li><strong>방법론적 시사점:</strong> 효과적인 언러닝을 위해서는 파라미터 국소성을 넘어서는 새로운 접근법이 필요</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>왜 중요한가?</h2>
+        <p>EU의 GDPR "잊힐 권리" 등 규제가 강화됨에 따라, AI에서 특정 정보를 제거하는 것은 기술적으로나 법적으로나 중요한 과제입니다. 본 연구는 널리 사용되는 국소화 기반 언러닝 방법의 <strong>근본적 한계</strong>를 엄밀하게 입증하여, 연구 커뮤니티가 보다 효과적인 접근법을 탐색하는 기반을 제공합니다. "어디를 수정해야 하는지 안다"고 해서 "효과적으로 잊게 할 수 있는 것은 아니다"라는 중요한 교훈을 전달합니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>링크</h2>
+        <div class="links-section">
+            <a href="https://arxiv.org/abs/2505.16252" target="_blank" class="paper-link">arXiv Paper</a>
+        </div>
+    </div>
+
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-safety">Safety / Unlearning</span>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="../index.html">&#8592; 전체 논문 목록으로 돌아가기</a></p>
+    <p style="margin-top:8px;">한양대학교 자연어처리 연구실 | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

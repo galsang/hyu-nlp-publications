@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HYU NLP Lab - Publications Guide</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="hero">
+    <div class="lang-toggle">
+        <a href="../index.html">EN</a>
+        <a href="index.html" class="active">KO</a>
+    </div>
+    <h1>HYU NLP Lab Publications</h1>
+    <p>한양대학교 자연어처리 연구실의 논문들을 보기 쉽게 정리한 페이지입니다. 각 카드를 클릭하면 상세 설명을 볼 수 있습니다.</p>
+    <p style="margin-top: 8px; font-size: 0.9rem;">원본: <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+
+<div class="container">
+
+    <div class="stats-bar">
+        <div class="stat-item"><div class="stat-num">50+</div><div class="stat-label">총 논문 수</div></div>
+        <div class="stat-item"><div class="stat-num">8</div><div class="stat-label">연구 분야</div></div>
+        <div class="stat-item"><div class="stat-num">2018-2026</div><div class="stat-label">기간</div></div>
+        <div class="stat-item"><div class="stat-num">ACL, EMNLP, AAAI, ICLR</div><div class="stat-label">주요 학회</div></div>
+    </div>
+
+    <div class="filter-bar">
+        <label>필터:</label>
+        <button class="filter-btn active" data-filter="all">전체</button>
+        <button class="filter-btn" data-filter="multimodal">Multimodal</button>
+        <button class="filter-btn" data-filter="rag">RAG / Knowledge</button>
+        <button class="filter-btn" data-filter="dialogue">Dialogue</button>
+        <button class="filter-btn" data-filter="benchmark">Benchmark</button>
+        <button class="filter-btn" data-filter="safety">Safety / Unlearning</button>
+        <button class="filter-btn" data-filter="nlp">NLP Fundamentals</button>
+        <button class="filter-btn" data-filter="ir">Information Retrieval</button>
+        <button class="filter-btn" data-filter="detection">Detection</button>
+    </div>
+
+    <!-- ===== Preprints ===== -->
+    <div class="year-section">
+        <div class="year-heading">Preprints</div>
+
+        <div class="paper-card" data-tags="multimodal benchmark">
+            <a href="papers/omniacbench.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">OmniACBench: A Benchmark for Evaluating Context-Grounded Acoustic Control in Omni-Modal Models</div>
+                        <div class="paper-authors">Seunghee Kim, Bumkyu Park, Kyudan Jung, Joosung Lee, Soyoon Kim, Jeonghoon Kim, Taeuk Kim, Hwiyeol Jo</div>
+                    </div>
+                    <span class="paper-venue preprint">arXiv 2026</span>
+                </div>
+                <div class="paper-oneliner">옴니모달 모델의 상황 맞춤 음성 생성 능력을 6가지 차원으로 평가하는 벤치마크</div>
+                <div class="paper-tags">
+                    <span class="tag tag-multimodal">Multimodal</span>
+                    <span class="tag tag-benchmark">Benchmark</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="rag">
+            <a href="papers/uniknow.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">UniKnow: A Unified Framework for Reliable Language Model Behavior across Parametric and External Knowledge</div>
+                        <div class="paper-authors">Youna Kim, Hyuhng Joon Kim, Minjoon Choi, Sungmin Cho, Hyunsoo Cho, Sang-goo Lee, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue preprint">arXiv 2025</span>
+                </div>
+                <div class="paper-oneliner">내부 지식과 외부 지식 통합 시 발생하는 다양한 시나리오를 체계적으로 평가하는 프레임워크</div>
+                <div class="paper-tags">
+                    <span class="tag tag-rag">RAG / Knowledge</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="detection safety">
+            <a href="papers/failopt.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Investigating the Influence of Prompt-Specific Shortcuts in AI Generated Text Detection</div>
+                        <div class="paper-authors">Choonghyun Park, Hyuhng Joon Kim, Junyeob Kim, Youna Kim, Taeuk Kim, Hyunsoo Cho, Hwiyeol Jo, Sang-goo Lee, Kang Min Yoo</div>
+                    </div>
+                    <span class="paper-venue preprint">arXiv 2024</span>
+                </div>
+                <div class="paper-oneliner">AI 텍스트 탐지기의 프롬프트 단축키 취약점 분석 및 공격/방어 방법 제안</div>
+                <div class="paper-tags">
+                    <span class="tag tag-detection">Detection</span>
+                    <span class="tag tag-safety">Safety</span>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- ===== 2026 ===== -->
+    <div class="year-section">
+        <div class="year-heading">2026</div>
+
+        <div class="paper-card" data-tags="nlp">
+            <a href="papers/advice.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">ADVICE: Answer-Dependent Verbalized Confidence Estimation</div>
+                        <div class="paper-authors">Ki Jung Seo, Sehun Lim, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">ACL 2026</span>
+                </div>
+                <div class="paper-oneliner">LLM의 답변 독립적 과신 문제를 분석하고, 답변 기반 신뢰도 추정 방법 제안</div>
+                <div class="paper-tags">
+                    <span class="tag tag-confidence">Confidence</span>
+                    <span class="tag tag-nlp">NLP Fundamentals</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="multimodal benchmark">
+            <a href="papers/omhbench.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">OMHBench: Benchmarking Balanced and Grounded Omni-Modal Multi-Hop Reasoning</div>
+                        <div class="paper-authors">Seunghee Kim, Ingyu Bang, Seokgyu Jang, Changhyeon Kim, Sanghwan Bae, Jihun Choi, Richeng Xuan, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue findings">ACL 2026 Findings</span>
+                </div>
+                <div class="paper-oneliner">텍스트/비전/음성을 아우르는 6,144개 질문의 옴니모달 멀티홉 추론 벤치마크</div>
+                <div class="paper-tags">
+                    <span class="tag tag-multimodal">Multimodal</span>
+                    <span class="tag tag-benchmark">Benchmark</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="nlp safety">
+            <a href="papers/superficial-success.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Superficial Success vs. Internal Breakdown: An Empirical Study of Generalization in Adaptive Multi-Agent Systems</div>
+                        <div class="paper-authors">Namyeong So, Seokgyu Jang, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue findings">ACL 2026 Findings</span>
+                </div>
+                <div class="paper-oneliner">적응형 멀티에이전트 시스템에서의 일반화 실패를 실증적으로 분석</div>
+                <div class="paper-tags">
+                    <span class="tag tag-nlp">NLP Fundamentals</span>
+                    <span class="tag tag-safety">Safety</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="ir multimodal">
+            <a href="papers/hybrid-vector.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Hybrid-Vector Retrieval for Visually Rich Documents: Combining Single-Vector Efficiency and Multi-Vector Accuracy</div>
+                        <div class="paper-authors">Juyeon Kim, Geon Lee, Dongwon Choi, Taeuk Kim, Kijung Shin</div>
+                    </div>
+                    <span class="paper-venue findings">ACL 2026 Findings</span>
+                </div>
+                <div class="paper-oneliner">시각적으로 풍부한 문서에 대한 하이브리드 벡터 검색 방법</div>
+                <div class="paper-tags">
+                    <span class="tag tag-ir">Information Retrieval</span>
+                    <span class="tag tag-multimodal">Multimodal</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="nlp">
+            <a href="papers/think-just-enough.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Think Just Enough: Leveraging Self-Assessed Confidence for Adaptive Reasoning in Language Models</div>
+                        <div class="paper-authors">Junyeob Kim, Sang-goo Lee, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue findings">EACL 2026 Findings</span>
+                </div>
+                <div class="paper-oneliner">자기 평가 신뢰도를 활용하여 필요한 만큼만 사고하는 효율적 추론</div>
+                <div class="paper-tags">
+                    <span class="tag tag-confidence">Confidence</span>
+                    <span class="tag tag-nlp">NLP Fundamentals</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="nlp">
+            <a href="papers/science-discourse.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Science Classroom Discourse Analysis Development</div>
+                        <div class="paper-authors">Young Hyun Yoo et al.</div>
+                    </div>
+                    <span class="paper-venue">LAK 2026</span>
+                </div>
+                <div class="paper-oneliner">과학 교실 대화를 NLP 기반으로 분석하는 도구 개발</div>
+                <div class="paper-tags">
+                    <span class="tag tag-nlp">NLP Fundamentals</span>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- ===== 2025 ===== -->
+    <div class="year-section">
+        <div class="year-heading">2025</div>
+
+        <div class="paper-card" data-tags="dialogue">
+            <a href="papers/tact.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Beyond Task-Oriented and Chitchat Dialogues: Proactive and Transition-Aware Conversational Agents</div>
+                        <div class="paper-authors">Yejin Yoon, Yuri Son, Namyoung So, Minseo Kim, Minsoo Cho, Chanhee Park, Seungshin Lee, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">EMNLP 2025</span>
+                </div>
+                <div class="paper-oneliner">목적 지향 대화와 일상 대화 간 자연스러운 전환을 처리하는 TACT 데이터셋 제안</div>
+                <div class="paper-tags">
+                    <span class="tag tag-dialogue">Dialogue</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="rag benchmark">
+            <a href="papers/magic.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">MAGIC: A Multi-Hop and Graph-Based Benchmark for Inter-Context Conflicts in RAG</div>
+                        <div class="paper-authors">Jungyeon Lee, Kangmin Lee, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue findings">EMNLP 2025 Findings</span>
+                </div>
+                <div class="paper-oneliner">RAG 시스템의 문서 간 지식 충돌을 지식그래프 기반으로 평가하는 벤치마크</div>
+                <div class="paper-tags">
+                    <span class="tag tag-rag">RAG / Knowledge</span>
+                    <span class="tag tag-benchmark">Benchmark</span>
+                    <span class="tag tag-kg">Knowledge Graph</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="nlp benchmark">
+            <a href="papers/midas.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Memorization or Reasoning? Exploring the Idiom Understanding of LLMs</div>
+                        <div class="paper-authors">Jisu Kim, Youngwoo Shin, Uiji Hwang, Jihun Choi, Richeng Xuan, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">EMNLP 2025</span>
+                </div>
+                <div class="paper-oneliner">LLM의 관용구 이해 방식을 6개 언어에 걸쳐 암기 vs 추론 관점에서 분석</div>
+                <div class="paper-tags">
+                    <span class="tag tag-nlp">NLP Fundamentals</span>
+                    <span class="tag tag-benchmark">Benchmark</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="safety">
+            <a href="papers/unlearning.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Does Localization Inform Unlearning? A Rigorous Examination of Local Parameter Attribution for Knowledge Unlearning in Language Models</div>
+                        <div class="paper-authors">Hwiyeong Lee, Uiji Hwang, Hyelim Lim, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">EMNLP 2025</span>
+                </div>
+                <div class="paper-oneliner">특정 파라미터 수정으로 지식을 제거할 수 있다는 기존 가정에 도전</div>
+                <div class="paper-tags">
+                    <span class="tag tag-safety">Safety / Unlearning</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="multimodal benchmark">
+            <a href="papers/fcmr.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">FCMR: Robust Evaluation of Financial Cross-Modal Multi-Hop Reasoning</div>
+                        <div class="paper-authors">Seunghee Kim, Changhyeon Kim, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">ACL 2025</span>
+                </div>
+                <div class="paper-oneliner">금융 도메인에서 텍스트/표/차트를 넘나드는 멀티모달 다단계 추론 벤치마크</div>
+                <div class="paper-tags">
+                    <span class="tag tag-multimodal">Multimodal</span>
+                    <span class="tag tag-benchmark">Benchmark</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="rag nlp">
+            <a href="papers/when-to-speak.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">When to Speak, When to Abstain: Contrastive Decoding with Abstention</div>
+                        <div class="paper-authors">Hyuhng Joon Kim, Youna Kim, Sang-goo Lee, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">ACL 2025</span>
+                </div>
+                <div class="paper-oneliner">LLM이 답변하기 어려운 상황에서 언제 답하고 언제 보류해야 하는지 연구</div>
+                <div class="paper-tags">
+                    <span class="tag tag-rag">RAG / Knowledge</span>
+                    <span class="tag tag-nlp">NLP Fundamentals</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="nlp">
+            <a href="papers/enginius.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">ENGinius: A Bilingual LLM Optimized for Plant Construction Engineering</div>
+                        <div class="paper-authors">Wooseong Lee, Minseo Kim, Taeil Hur, Gyeong Hwan Jang, Woncheol Lee, Maro Na, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">ACL 2025 Industry</span>
+                </div>
+                <div class="paper-oneliner">플랜트 건설 엔지니어링 분야 특화 이중 언어 LLM</div>
+                <div class="paper-tags">
+                    <span class="tag tag-nlp">NLP Fundamentals</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="ir multimodal">
+            <a href="papers/kgmel.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">KGMEL: Knowledge Graph-Enhanced Multimodal Entity Linking</div>
+                        <div class="paper-authors">Juyeon Kim, Geon Lee, Taeuk Kim, Kijung Shin</div>
+                    </div>
+                    <span class="paper-venue">SIGIR 2025</span>
+                </div>
+                <div class="paper-oneliner">지식그래프를 활용한 멀티모달 엔티티 링킹 성능 향상</div>
+                <div class="paper-tags">
+                    <span class="tag tag-kg">Knowledge Graph</span>
+                    <span class="tag tag-multimodal">Multimodal</span>
+                    <span class="tag tag-ir">Information Retrieval</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="nlp">
+            <a href="papers/subgraph-aware.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Subgraph-Aware Training of Language Models for Knowledge Graph Completion Using Structure-Aware Contrastive Learning</div>
+                        <div class="paper-authors">Youmin Ko, Hyemin Yang, Taeuk Kim, Hyunjoon Kim</div>
+                    </div>
+                    <span class="paper-venue">WWW 2025</span>
+                </div>
+                <div class="paper-oneliner">서브그래프 구조를 인식하여 언어 모델을 훈련하는 접근법</div>
+                <div class="paper-tags">
+                    <span class="tag tag-nlp">NLP Fundamentals</span>
+                    <span class="tag tag-kg">Knowledge Graph</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="ir dialogue">
+            <a href="papers/espresso.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">ESPRESSO: An Effective Approach to Passage Retrieval for High-Quality Conversational Recommender Systems</div>
+                        <div class="paper-authors">Taeho Kim, Hyeongjun Jang, Juwon Yu, Taeuk Kim, Hyunyoung Lee, Jihui Im, Sang-Wook Kim</div>
+                    </div>
+                    <span class="paper-venue">AAAI 2025</span>
+                </div>
+                <div class="paper-oneliner">대화형 추천 시스템을 위한 패시지 검색 기법</div>
+                <div class="paper-tags">
+                    <span class="tag tag-ir">Information Retrieval</span>
+                    <span class="tag tag-dialogue">Dialogue</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="nlp">
+            <a href="papers/raise.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">RAISE: Enhancing Scientific Reasoning in LLMs via Step-by-Step Retrieval</div>
+                        <div class="paper-authors">Oh et al.</div>
+                    </div>
+                    <span class="paper-venue workshop">MATH-AI @ NeurIPS 2025</span>
+                </div>
+                <div class="paper-oneliner">과학적 추론 능력 향상을 위한 단계별 검색 방법 제안</div>
+                <div class="paper-tags">
+                    <span class="tag tag-nlp">NLP Fundamentals</span>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- ===== 2024 ===== -->
+    <div class="year-section">
+        <div class="year-heading">2024</div>
+
+        <div class="paper-card" data-tags="rag">
+            <a href="papers/adaptive-contrastive.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Adaptive Contrastive Decoding in Retrieval-Augmented Generation for Handling Noisy Contexts</div>
+                        <div class="paper-authors">Youna Kim, Hyuhng Joon Kim, Cheonbok Park, Choonghyun Park, Hyunsoo Cho, Junyeob Kim, Kang Min Yoo, Sang-goo Lee, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue findings">EMNLP 2024 Findings</span>
+                </div>
+                <div class="paper-oneliner">RAG에서 검색 문서 품질에 따라 디코딩 전략을 적응적으로 조절</div>
+                <div class="paper-tags">
+                    <span class="tag tag-rag">RAG / Knowledge</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="nlp">
+            <a href="papers/modularity.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Revisiting the Impact of Pursuing Modularity for Code Generation</div>
+                        <div class="paper-authors">Deokyeong Kang, Ki Jung Seo, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue findings">EMNLP 2024 Findings</span>
+                </div>
+                <div class="paper-oneliner">모듈화 추구가 코드 생성 성능에 미치는 영향을 재검토</div>
+                <div class="paper-tags">
+                    <span class="tag tag-nlp">NLP Fundamentals</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="nlp">
+            <a href="papers/ambiguity.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Aligning Language Models to Explicitly Handle Ambiguity</div>
+                        <div class="paper-authors">Hyuhng Joon Kim, Youna Kim, Cheonbok Park, Junyeob Kim, Choonghyun Park, Kang Min Yoo, Sang-goo Lee, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">EMNLP 2024</span>
+                </div>
+                <div class="paper-oneliner">모호한 질문에 대해 언어 모델이 명시적으로 모호성을 처리하도록 정렬</div>
+                <div class="paper-tags">
+                    <span class="tag tag-nlp">NLP Fundamentals</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="nlp">
+            <a href="papers/hyper-cl.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Hyper-CL: Conditioning Sentence Representations with Hypernetworks</div>
+                        <div class="paper-authors">Young Hyun Yoo, Jii Cha, Changhyeon Kim, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">ACL 2024</span>
+                </div>
+                <div class="paper-oneliner">하이퍼네트워크 기반 대조 학습으로 문장 표현 조건부 생성</div>
+                <div class="paper-tags">
+                    <span class="tag tag-nlp">NLP Fundamentals</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="nlp">
+            <a href="papers/multi-source.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Analysis of Multi-Source Language Training in Cross-Lingual Transfer</div>
+                        <div class="paper-authors">Seong Hoon Lim, Taejun Yun, Jinhyeon Kim, Jihun Choi, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">ACL 2024</span>
+                </div>
+                <div class="paper-oneliner">다중 소스 언어 데이터 활용 훈련 전략 분석</div>
+                <div class="paper-tags">
+                    <span class="tag tag-nlp">NLP Fundamentals</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="dialogue nlp">
+            <a href="papers/blendx.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">BlendX: Complex Multi-Intent Detection with Blended Patterns</div>
+                        <div class="paper-authors">Yejin Yoon, Jungyeon Lee, Kangsan Kim, Chanhee Park, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">LREC-COLING 2024</span>
+                </div>
+                <div class="paper-oneliner">하나의 발화에서 여러 의도를 복합적으로 감지하는 방법</div>
+                <div class="paper-tags">
+                    <span class="tag tag-dialogue">Dialogue</span>
+                    <span class="tag tag-nlp">NLP Fundamentals</span>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- ===== 2023 ===== -->
+    <div class="year-section">
+        <div class="year-heading">2023</div>
+
+        <div class="paper-card" data-tags="nlp">
+            <a href="papers/x-sns.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">X-SNS: Cross-Lingual Transfer Prediction through Sub-Network Similarity</div>
+                        <div class="paper-authors">Taejun Yun, Jinhyeon Kim, Deokyeong Kang, Seong Hoon Lim, Jihoon Kim, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue findings">EMNLP 2023 Findings</span>
+                </div>
+                <div class="paper-oneliner">교차 언어 전이 학습의 성능을 예측하는 방법</div>
+                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="nlp">
+            <a href="papers/universal-da.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Universal Domain Adaptation for Robust Handling of Distributional Shifts in NLP</div>
+                        <div class="paper-authors">Hyuhng Joon Kim, Hyunsoo Cho, Sang-Woo Lee, Junyeob Kim, Choonghyun Park, Sang-goo Lee, Kang Min Yoo, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue findings">EMNLP 2023 Findings</span>
+                </div>
+                <div class="paper-oneliner">범용적인 도메인 적응 기법 제안</div>
+                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="nlp">
+            <a href="papers/prompt-probing.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Prompt-Augmented Linear Probing: Scaling Beyond The Limit of Few-shot In-Context Learners</div>
+                        <div class="paper-authors">Hyunsoo Cho, Hyuhng Joon Kim, Junyeob Kim, Sang-Woo Lee, Sang-goo Lee, Kang Min Yoo, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">AAAI 2023</span>
+                </div>
+                <div class="paper-oneliner">프롬프트를 활용한 선형 프로빙 성능 향상</div>
+                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+            </a>
+        </div>
+    </div>
+
+    <!-- ===== 2022 ===== -->
+    <div class="year-section">
+        <div class="year-heading">2022</div>
+
+        <div class="paper-card" data-tags="nlp">
+            <a href="papers/ground-truth.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Ground-Truth Labels Matter: A Deeper Look into Input-Label Demonstrations</div>
+                        <div class="paper-authors">Kang Min Yoo, Junyeob Kim, Hyuhng Joon Kim, Hyunsoo Cho, Hwiyeol Jo, Sang-Woo Lee, Sang-goo Lee, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">EMNLP 2022</span>
+                </div>
+                <div class="paper-oneliner">In-context learning에서 정확한 레이블의 중요성 심층 분석</div>
+                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="detection nlp">
+            <a href="papers/ood-detection.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Enhancing Out-of-Distribution Detection in Natural Language Understanding via Implicit Layer Ensemble</div>
+                        <div class="paper-authors">Hyunsoo Cho, Choonghyun Park, Jaewook Kang, Kang Min Yoo, Taeuk Kim, Sang-goo Lee</div>
+                    </div>
+                    <span class="paper-venue findings">EMNLP 2022 Findings</span>
+                </div>
+                <div class="paper-oneliner">분포 외 데이터를 더 잘 감지하는 방법 제안</div>
+                <div class="paper-tags">
+                    <span class="tag tag-detection">Detection</span>
+                    <span class="tag tag-nlp">NLP Fundamentals</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="nlp">
+            <a href="papers/constituency-parse.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Revisiting the Practical Effectiveness of Constituency Parse Extraction from Pre-trained Language Models</div>
+                        <div class="paper-authors">Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">COLING 2022</span>
+                </div>
+                <div class="paper-oneliner">구문 분석 추출의 실용적 효과 재검토</div>
+                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+            </a>
+        </div>
+    </div>
+
+    <!-- ===== 2021 and Earlier ===== -->
+    <div class="year-section">
+        <div class="year-heading">2021 and Earlier</div>
+
+        <div class="paper-card" data-tags="nlp">
+            <a href="papers/multilingual-parse.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Multilingual Chart-based Constituency Parse Extraction from Pre-trained Language Models</div>
+                        <div class="paper-authors">Taeuk Kim, Bowen Li, Sang-goo Lee</div>
+                    </div>
+                    <span class="paper-venue findings">EMNLP 2021 Findings</span>
+                </div>
+                <div class="paper-oneliner">사전학습 모델에서 다국어 구문 구조를 차트 기반으로 추출</div>
+                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="nlp">
+            <a href="papers/self-guided-cl.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Self-Guided Contrastive Learning for BERT Sentence Representations</div>
+                        <div class="paper-authors">Taeuk Kim, Kang Min Yoo, Sang-goo Lee</div>
+                    </div>
+                    <span class="paper-venue">ACL-IJCNLP 2021</span>
+                </div>
+                <div class="paper-oneliner">BERT 문장 표현을 자기 안내 대조 학습으로 개선</div>
+                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="nlp">
+            <a href="papers/heads-up.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Heads-up! Unsupervised Constituency Parsing via Self-Attention Heads</div>
+                        <div class="paper-authors">Bowen Li, Taeuk Kim, Reinald Kim Amplayo, Frank Keller</div>
+                    </div>
+                    <span class="paper-venue">AACL-IJCNLP 2020</span>
+                </div>
+                <div class="paper-oneliner">셀프 어텐션 헤드를 활용한 비지도 구문 분석</div>
+                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="nlp">
+            <a href="papers/grammar-induction.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Are Pre-trained Language Models Aware of Phrases? Simple but Strong Baselines for Grammar Induction</div>
+                        <div class="paper-authors">Taeuk Kim, Jihun Choi, Daniel Edmiston, Sang-goo Lee</div>
+                    </div>
+                    <span class="paper-venue">ICLR 2020</span>
+                </div>
+                <div class="paper-oneliner">사전학습 언어 모델 기반 문법 유도 연구 (연구실 초기 대표 논문)</div>
+                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="nlp">
+            <a href="papers/cell-aware-lstm.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Cell-aware Stacked LSTMs for Modeling Sentences</div>
+                        <div class="paper-authors">Jihun Choi, Taeuk Kim, Sang-goo Lee</div>
+                    </div>
+                    <span class="paper-venue">ACML 2019</span>
+                </div>
+                <div class="paper-oneliner">셀 상태 인식 적층 LSTM으로 문장 모델링 개선</div>
+                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="nlp">
+            <a href="papers/korean-hanja.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Don't Just Scratch the Surface: Enhancing Word Representations for Korean with Hanja</div>
+                        <div class="paper-authors">Taeuk Kim, Kang Min Yoo, Sang-goo Lee</div>
+                    </div>
+                    <span class="paper-venue">EMNLP-IJCNLP 2019</span>
+                </div>
+                <div class="paper-oneliner">한자 정보를 활용한 한국어 단어 표현 풍부화</div>
+                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="nlp">
+            <a href="papers/cross-sentence.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">A Cross-Sentence Latent Variable Model for Semi-Supervised Text Sequence Matching</div>
+                        <div class="paper-authors">Jihun Choi, Taeuk Kim, Sang-goo Lee</div>
+                    </div>
+                    <span class="paper-venue">ACL 2019</span>
+                </div>
+                <div class="paper-oneliner">문장 간 잠재 변수 모델을 활용한 준지도 텍스트 시퀀스 매칭</div>
+                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="nlp">
+            <a href="papers/dynamic-compositionality.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Dynamic Compositionality in Recursive Neural Networks with Structure-aware Tag Representations</div>
+                        <div class="paper-authors">Taeuk Kim, Jihun Choi, Daniel Edmiston, Sanghwan Bae, Sang-goo Lee</div>
+                    </div>
+                    <span class="paper-venue">AAAI 2019</span>
+                </div>
+                <div class="paper-oneliner">구조 인식 태그 표현으로 재귀 신경망의 동적 합성성 연구</div>
+                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="nlp">
+            <a href="papers/bilinear-matching.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Element-wise Bilinear Interaction for Sentence Matching</div>
+                        <div class="paper-authors">Jihun Choi, Taeuk Kim, Sang-goo Lee</div>
+                    </div>
+                    <span class="paper-venue">*SEM 2018</span>
+                </div>
+                <div class="paper-oneliner">요소별 쌍선형 상호작용을 통한 문장 매칭</div>
+                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+            </a>
+        </div>
+    </div>
+
+</div>
+
+<div class="footer">
+    <p>한양대학교 자연어처리 연구실 | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+    <p style="margin-top: 8px;">이 페이지는 연구실 공식 페이지의 정보를 기반으로 제작되었습니다.</p>
+</div>
+
+<script>
+document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        const filter = this.dataset.filter;
+        document.querySelectorAll('.paper-card').forEach(card => {
+            if (filter === 'all') {
+                card.style.display = '';
+            } else {
+                const tags = card.dataset.tags || '';
+                card.style.display = tags.includes(filter) ? '' : 'none';
+            }
+        });
+        document.querySelectorAll('.year-section').forEach(section => {
+            const visibleCards = section.querySelectorAll('.paper-card:not([style*="display: none"])');
+            section.style.display = visibleCards.length > 0 ? '' : 'none';
+        });
+    });
+});
+</script>
+
+</body>
+</html>

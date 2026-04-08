@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TACT - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="../../papers/tact.html">EN</a>
+        <a href="tact.html" class="active">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; 전체 논문 목록</a>
+        <h1>Beyond Task-Oriented and Chitchat Dialogues: Proactive and Transition-Aware Conversational Agents</h1>
+        <div class="meta">
+            <span class="venue-badge">EMNLP 2025</span>
+        </div>
+        <div class="authors">Yejin Yoon, Yuri Son, Namyoung So, Minseo Kim, Minsoo Cho, Chanhee Park, Seungshin Lee, Taeuk Kim</div>
+    </div>
+</div>
+
+<div class="detail-content">
+    <div class="section">
+        <h2>한줄 요약</h2>
+        <p>목적 지향 대화(TOD)와 일상 대화(chitchat) 간의 자연스러운 전환을 모델링하는 TACT 데이터셋과 새로운 평가 지표(Switch, Recovery)를 제안하여, 보다 유연하고 능동적인 대화형 AI를 가능하게 합니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>배경 및 동기</h2>
+        <p>인간의 대화에서는 "항공편 예약해 주세요"(목적 지향)에서 "요즘 날씨가 좋네요"(일상 대화)로 자연스럽게 전환이 일어납니다. 그러나 기존 대화 AI 시스템은 <strong>둘 중 하나만</strong> 처리하도록 설계되어 있었습니다.</p>
+        <div class="highlight-box">
+            <p><strong>한계:</strong> 기존 시스템은 목적 지향 대화(TOD) 또는 일상 대화에 특화되어 있어, 실제 대화에서 자연스럽게 발생하는 모드 전환을 처리할 수 없습니다.</p>
+        </div>
+        <div class="highlight-box">
+            <p><strong>혁신:</strong> TACT는 사용자뿐만 아니라 <strong>에이전트도 능동적으로</strong> 대화 모드를 전환할 수 있어야 한다는 점을 인식합니다.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>TACT 데이터셋</h2>
+        <ul class="key-points">
+            <li><strong>사용자 주도 전환:</strong> 사용자가 갑자기 일상 대화로 전환하거나 목적 지향 대화로 복귀하는 패턴</li>
+            <li><strong>에이전트 주도 전환:</strong> 에이전트가 능동적으로 대화 모드를 전환하는 패턴 — 기존 데이터셋에서 다루지 않은 시나리오</li>
+            <li><strong>구조적 다양성:</strong> 복잡한 대화 역학 모델링을 지원하는 다양한 전환 흐름 포함</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>새로운 평가 지표</h2>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">S</div>
+                <div class="step-title">Switch</div>
+                <div class="step-desc">모드 전환 시점을 정확히 감지하고 적절하게 응답하는 능력</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">R</div>
+                <div class="step-title">Recovery</div>
+                <div class="step-desc">전환 후 원래 모드로 자연스럽게 복귀하는 능력</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>실험 결과</h2>
+        <table class="results-table">
+            <thead>
+                <tr><th>지표</th><th>성능</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Joint Mode-Intent Accuracy</td><td class="highlight-cell">75.74%</td></tr>
+                <tr><td>인간 평가 GPT-4o 대비 승률</td><td class="highlight-cell">70.1%</td></tr>
+            </tbody>
+        </table>
+
+        <ul class="key-points">
+            <li><strong>DPO의 효과:</strong> TACT 데이터로 학습한 모델에 Direct Preference Optimization을 적용하면 성능이 추가로 향상</li>
+            <li><strong>의도 탐지:</strong> 의도 탐지와 모드 전환 처리 모두에서 기존 기준선을 능가</li>
+            <li><strong>인간 평가:</strong> GPT-4o 대비 70.1% 승률로, 응답 품질과 전환 제어 모두에서 높은 평가</li>
+            <li><strong>구조적 다양성 + DPO의 시너지:</strong> 데이터 다양성과 DPO 학습의 조합이 핵심 — 둘 중 하나만으로는 불충분</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>왜 중요한가?</h2>
+        <p>진정으로 자연스러운 대화 AI를 만들기 위해서는 목적 지향 대화와 일상 대화를 별개의 영역으로 보는 것을 넘어서야 합니다. TACT는 <strong>대화의 유동성</strong>을 모델링하는 최초의 데이터셋으로, AI 어시스턴트가 인간처럼 유연하게 대화 모드를 전환하면서도 원래 과제를 놓치지 않도록 학습할 수 있게 합니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>링크</h2>
+        <div class="links-section">
+            <a href="https://aclanthology.org/2025.emnlp-main.672/" target="_blank" class="paper-link">ACL Anthology</a>
+            <a href="https://arxiv.org/abs/2511.08835" target="_blank" class="paper-link">arXiv Paper</a>
+        </div>
+    </div>
+
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-dialogue">Dialogue</span>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="../index.html">&#8592; 전체 논문 목록으로 돌아가기</a></p>
+    <p style="margin-top:8px;">한양대학교 자연어처리 연구실 | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>
