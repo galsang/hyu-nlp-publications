@@ -24,6 +24,14 @@
         <h2>One-Line Summary</h2>
         <p>A method for aligning language models to explicitly handle ambiguity in questions</p>
     </div>
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2404.11972v1/x1.png" alt="Example of an ambiguous query showing how the degree of perceived ambiguity varies depending on the model's knowledge">
+        <figcaption><strong>Figure 1.</strong> An example of an ambiguous query from AmbigQA. The phrase "national championship" poses diverse denotations, causing ambiguity. A model with various related knowledge may perceive it as ambiguous (left), while a model without sufficient knowledge may not (right).</figcaption>
+    </figure>
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2404.11972v1/x2.png" alt="Overview of the four-stage alignment pipeline for handling ambiguity">
+        <figcaption><strong>Figure 2.</strong> The overall process of the four-stage alignment pipeline. Samples that the model cannot explicitly handle are filtered (Stage 1), self-disambiguated to measure information gain (Stage 2), and those with high information gain are used for supervised fine-tuning (Stages 3 &amp; 4).</figcaption>
+    </figure>
     <div class="section">
         <h2>Key Points</h2>
         <ul class="key-points">

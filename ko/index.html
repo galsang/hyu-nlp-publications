@@ -21,8 +21,8 @@
 <div class="container">
 
     <div class="stats-bar">
-        <div class="stat-item"><div class="stat-num">50+</div><div class="stat-label">총 논문 수</div></div>
-        <div class="stat-item"><div class="stat-num">8</div><div class="stat-label">연구 분야</div></div>
+        <div class="stat-item"><div class="stat-num">40+</div><div class="stat-label">국제 학회 논문</div></div>
+        <div class="stat-item"><div class="stat-num">10+</div><div class="stat-label">연구 분야</div></div>
         <div class="stat-item"><div class="stat-num">2018-2026</div><div class="stat-label">기간</div></div>
         <div class="stat-item"><div class="stat-num">ACL, EMNLP, AAAI, ICLR</div><div class="stat-label">주요 학회</div></div>
     </div>
@@ -35,7 +35,12 @@
         <button class="filter-btn" data-filter="dialogue">Dialogue</button>
         <button class="filter-btn" data-filter="benchmark">Benchmark</button>
         <button class="filter-btn" data-filter="safety">Safety / Unlearning</button>
-        <button class="filter-btn" data-filter="nlp">NLP Fundamentals</button>
+        <button class="filter-btn" data-filter="repr">Representation Learning</button>
+        <button class="filter-btn" data-filter="parsing">Parsing & Syntax</button>
+        <button class="filter-btn" data-filter="reasoning">Reasoning</button>
+        <button class="filter-btn" data-filter="domain">Domain LLM</button>
+        <button class="filter-btn" data-filter="icl">In-Context Learning</button>
+        <button class="filter-btn" data-filter="efficiency">Efficiency</button>
         <button class="filter-btn" data-filter="ir">Information Retrieval</button>
         <button class="filter-btn" data-filter="detection">Detection</button>
     </div>
@@ -99,7 +104,7 @@
     <div class="year-section">
         <div class="year-heading">2026</div>
 
-        <div class="paper-card" data-tags="nlp">
+        <div class="paper-card" data-tags="confidence reasoning">
             <a href="papers/advice.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -111,7 +116,7 @@
                 <div class="paper-oneliner">LLM의 답변 독립적 과신 문제를 분석하고, 답변 기반 신뢰도 추정 방법 제안</div>
                 <div class="paper-tags">
                     <span class="tag tag-confidence">Confidence</span>
-                    <span class="tag tag-nlp">NLP Fundamentals</span>
+                    <span class="tag tag-reasoning">Reasoning</span>
                 </div>
             </a>
         </div>
@@ -133,7 +138,7 @@
             </a>
         </div>
 
-        <div class="paper-card" data-tags="nlp safety">
+        <div class="paper-card" data-tags="safety reasoning">
             <a href="papers/superficial-success.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -144,8 +149,8 @@
                 </div>
                 <div class="paper-oneliner">적응형 멀티에이전트 시스템에서의 일반화 실패를 실증적으로 분석</div>
                 <div class="paper-tags">
-                    <span class="tag tag-nlp">NLP Fundamentals</span>
                     <span class="tag tag-safety">Safety</span>
+                    <span class="tag tag-reasoning">Reasoning</span>
                 </div>
             </a>
         </div>
@@ -167,7 +172,7 @@
             </a>
         </div>
 
-        <div class="paper-card" data-tags="nlp">
+        <div class="paper-card" data-tags="efficiency confidence">
             <a href="papers/think-just-enough.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -178,13 +183,13 @@
                 </div>
                 <div class="paper-oneliner">자기 평가 신뢰도를 활용하여 필요한 만큼만 사고하는 효율적 추론</div>
                 <div class="paper-tags">
+                    <span class="tag tag-efficiency">Efficiency</span>
                     <span class="tag tag-confidence">Confidence</span>
-                    <span class="tag tag-nlp">NLP Fundamentals</span>
                 </div>
             </a>
         </div>
 
-        <div class="paper-card" data-tags="nlp">
+        <div class="paper-card" data-tags="domain">
             <a href="papers/science-discourse.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -195,7 +200,7 @@
                 </div>
                 <div class="paper-oneliner">과학 교실 대화를 NLP 기반으로 분석하는 도구 개발</div>
                 <div class="paper-tags">
-                    <span class="tag tag-nlp">NLP Fundamentals</span>
+                    <span class="tag tag-domain">Domain LLM</span>
                 </div>
             </a>
         </div>
@@ -289,7 +294,7 @@
             </a>
         </div>
 
-        <div class="paper-card" data-tags="rag nlp">
+        <div class="paper-card" data-tags="rag reasoning">
             <a href="papers/when-to-speak.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -301,12 +306,12 @@
                 <div class="paper-oneliner">LLM이 답변하기 어려운 상황에서 언제 답하고 언제 보류해야 하는지 연구</div>
                 <div class="paper-tags">
                     <span class="tag tag-rag">RAG / Knowledge</span>
-                    <span class="tag tag-nlp">NLP Fundamentals</span>
+                    <span class="tag tag-reasoning">Reasoning</span>
                 </div>
             </a>
         </div>
 
-        <div class="paper-card" data-tags="nlp">
+        <div class="paper-card" data-tags="domain">
             <a href="papers/enginius.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -317,7 +322,7 @@
                 </div>
                 <div class="paper-oneliner">플랜트 건설 엔지니어링 분야 특화 이중 언어 LLM</div>
                 <div class="paper-tags">
-                    <span class="tag tag-nlp">NLP Fundamentals</span>
+                    <span class="tag tag-domain">Domain LLM</span>
                 </div>
             </a>
         </div>
@@ -340,7 +345,7 @@
             </a>
         </div>
 
-        <div class="paper-card" data-tags="nlp">
+        <div class="paper-card" data-tags="kg repr">
             <a href="papers/subgraph-aware.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -351,8 +356,8 @@
                 </div>
                 <div class="paper-oneliner">서브그래프 구조를 인식하여 언어 모델을 훈련하는 접근법</div>
                 <div class="paper-tags">
-                    <span class="tag tag-nlp">NLP Fundamentals</span>
                     <span class="tag tag-kg">Knowledge Graph</span>
+                    <span class="tag tag-repr">Representation Learning</span>
                 </div>
             </a>
         </div>
@@ -374,7 +379,7 @@
             </a>
         </div>
 
-        <div class="paper-card" data-tags="nlp">
+        <div class="paper-card" data-tags="reasoning">
             <a href="papers/raise.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -385,7 +390,7 @@
                 </div>
                 <div class="paper-oneliner">과학적 추론 능력 향상을 위한 단계별 검색 방법 제안</div>
                 <div class="paper-tags">
-                    <span class="tag tag-nlp">NLP Fundamentals</span>
+                    <span class="tag tag-reasoning">Reasoning</span>
                 </div>
             </a>
         </div>
@@ -411,7 +416,7 @@
             </a>
         </div>
 
-        <div class="paper-card" data-tags="nlp">
+        <div class="paper-card" data-tags="reasoning">
             <a href="papers/modularity.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -422,12 +427,12 @@
                 </div>
                 <div class="paper-oneliner">모듈화 추구가 코드 생성 성능에 미치는 영향을 재검토</div>
                 <div class="paper-tags">
-                    <span class="tag tag-nlp">NLP Fundamentals</span>
+                    <span class="tag tag-reasoning">Reasoning</span>
                 </div>
             </a>
         </div>
 
-        <div class="paper-card" data-tags="nlp">
+        <div class="paper-card" data-tags="rag reasoning">
             <a href="papers/ambiguity.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -438,12 +443,13 @@
                 </div>
                 <div class="paper-oneliner">모호한 질문에 대해 언어 모델이 명시적으로 모호성을 처리하도록 정렬</div>
                 <div class="paper-tags">
-                    <span class="tag tag-nlp">NLP Fundamentals</span>
+                    <span class="tag tag-rag">RAG / Knowledge</span>
+                    <span class="tag tag-reasoning">Reasoning</span>
                 </div>
             </a>
         </div>
 
-        <div class="paper-card" data-tags="nlp">
+        <div class="paper-card" data-tags="repr">
             <a href="papers/hyper-cl.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -454,12 +460,12 @@
                 </div>
                 <div class="paper-oneliner">하이퍼네트워크 기반 대조 학습으로 문장 표현 조건부 생성</div>
                 <div class="paper-tags">
-                    <span class="tag tag-nlp">NLP Fundamentals</span>
+                    <span class="tag tag-repr">Representation Learning</span>
                 </div>
             </a>
         </div>
 
-        <div class="paper-card" data-tags="nlp">
+        <div class="paper-card" data-tags="repr">
             <a href="papers/multi-source.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -470,12 +476,12 @@
                 </div>
                 <div class="paper-oneliner">다중 소스 언어 데이터 활용 훈련 전략 분석</div>
                 <div class="paper-tags">
-                    <span class="tag tag-nlp">NLP Fundamentals</span>
+                    <span class="tag tag-repr">Representation Learning</span>
                 </div>
             </a>
         </div>
 
-        <div class="paper-card" data-tags="dialogue nlp">
+        <div class="paper-card" data-tags="dialogue">
             <a href="papers/blendx.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -487,7 +493,6 @@
                 <div class="paper-oneliner">하나의 발화에서 여러 의도를 복합적으로 감지하는 방법</div>
                 <div class="paper-tags">
                     <span class="tag tag-dialogue">Dialogue</span>
-                    <span class="tag tag-nlp">NLP Fundamentals</span>
                 </div>
             </a>
         </div>
@@ -497,7 +502,7 @@
     <div class="year-section">
         <div class="year-heading">2023</div>
 
-        <div class="paper-card" data-tags="nlp">
+        <div class="paper-card" data-tags="repr">
             <a href="papers/x-sns.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -507,11 +512,11 @@
                     <span class="paper-venue findings">EMNLP 2023 Findings</span>
                 </div>
                 <div class="paper-oneliner">교차 언어 전이 학습의 성능을 예측하는 방법</div>
-                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+                <div class="paper-tags"><span class="tag tag-repr">Representation Learning</span></div>
             </a>
         </div>
 
-        <div class="paper-card" data-tags="nlp">
+        <div class="paper-card" data-tags="repr">
             <a href="papers/universal-da.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -521,11 +526,11 @@
                     <span class="paper-venue findings">EMNLP 2023 Findings</span>
                 </div>
                 <div class="paper-oneliner">범용적인 도메인 적응 기법 제안</div>
-                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+                <div class="paper-tags"><span class="tag tag-repr">Representation Learning</span></div>
             </a>
         </div>
 
-        <div class="paper-card" data-tags="nlp">
+        <div class="paper-card" data-tags="icl">
             <a href="papers/prompt-probing.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -535,7 +540,7 @@
                     <span class="paper-venue">AAAI 2023</span>
                 </div>
                 <div class="paper-oneliner">프롬프트를 활용한 선형 프로빙 성능 향상</div>
-                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+                <div class="paper-tags"><span class="tag tag-icl">In-Context Learning</span></div>
             </a>
         </div>
     </div>
@@ -544,7 +549,7 @@
     <div class="year-section">
         <div class="year-heading">2022</div>
 
-        <div class="paper-card" data-tags="nlp">
+        <div class="paper-card" data-tags="icl">
             <a href="papers/ground-truth.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -554,11 +559,11 @@
                     <span class="paper-venue">EMNLP 2022</span>
                 </div>
                 <div class="paper-oneliner">In-context learning에서 정확한 레이블의 중요성 심층 분석</div>
-                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+                <div class="paper-tags"><span class="tag tag-icl">In-Context Learning</span></div>
             </a>
         </div>
 
-        <div class="paper-card" data-tags="detection nlp">
+        <div class="paper-card" data-tags="detection">
             <a href="papers/ood-detection.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -570,12 +575,11 @@
                 <div class="paper-oneliner">분포 외 데이터를 더 잘 감지하는 방법 제안</div>
                 <div class="paper-tags">
                     <span class="tag tag-detection">Detection</span>
-                    <span class="tag tag-nlp">NLP Fundamentals</span>
                 </div>
             </a>
         </div>
 
-        <div class="paper-card" data-tags="nlp">
+        <div class="paper-card" data-tags="parsing">
             <a href="papers/constituency-parse.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -585,7 +589,7 @@
                     <span class="paper-venue">COLING 2022</span>
                 </div>
                 <div class="paper-oneliner">구문 분석 추출의 실용적 효과 재검토</div>
-                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+                <div class="paper-tags"><span class="tag tag-parsing">Parsing & Syntax</span></div>
             </a>
         </div>
     </div>
@@ -594,7 +598,7 @@
     <div class="year-section">
         <div class="year-heading">2021 and Earlier</div>
 
-        <div class="paper-card" data-tags="nlp">
+        <div class="paper-card" data-tags="parsing">
             <a href="papers/multilingual-parse.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -604,11 +608,11 @@
                     <span class="paper-venue findings">EMNLP 2021 Findings</span>
                 </div>
                 <div class="paper-oneliner">사전학습 모델에서 다국어 구문 구조를 차트 기반으로 추출</div>
-                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+                <div class="paper-tags"><span class="tag tag-parsing">Parsing & Syntax</span></div>
             </a>
         </div>
 
-        <div class="paper-card" data-tags="nlp">
+        <div class="paper-card" data-tags="repr">
             <a href="papers/self-guided-cl.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -618,11 +622,11 @@
                     <span class="paper-venue">ACL-IJCNLP 2021</span>
                 </div>
                 <div class="paper-oneliner">BERT 문장 표현을 자기 안내 대조 학습으로 개선</div>
-                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+                <div class="paper-tags"><span class="tag tag-repr">Representation Learning</span></div>
             </a>
         </div>
 
-        <div class="paper-card" data-tags="nlp">
+        <div class="paper-card" data-tags="parsing">
             <a href="papers/heads-up.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -632,11 +636,11 @@
                     <span class="paper-venue">AACL-IJCNLP 2020</span>
                 </div>
                 <div class="paper-oneliner">셀프 어텐션 헤드를 활용한 비지도 구문 분석</div>
-                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+                <div class="paper-tags"><span class="tag tag-parsing">Parsing & Syntax</span></div>
             </a>
         </div>
 
-        <div class="paper-card" data-tags="nlp">
+        <div class="paper-card" data-tags="parsing">
             <a href="papers/grammar-induction.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -646,11 +650,11 @@
                     <span class="paper-venue">ICLR 2020</span>
                 </div>
                 <div class="paper-oneliner">사전학습 언어 모델 기반 문법 유도 연구 (연구실 초기 대표 논문)</div>
-                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+                <div class="paper-tags"><span class="tag tag-parsing">Parsing & Syntax</span></div>
             </a>
         </div>
 
-        <div class="paper-card" data-tags="nlp">
+        <div class="paper-card" data-tags="repr">
             <a href="papers/cell-aware-lstm.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -660,11 +664,11 @@
                     <span class="paper-venue">ACML 2019</span>
                 </div>
                 <div class="paper-oneliner">셀 상태 인식 적층 LSTM으로 문장 모델링 개선</div>
-                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+                <div class="paper-tags"><span class="tag tag-repr">Representation Learning</span></div>
             </a>
         </div>
 
-        <div class="paper-card" data-tags="nlp">
+        <div class="paper-card" data-tags="repr">
             <a href="papers/korean-hanja.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -674,11 +678,11 @@
                     <span class="paper-venue">EMNLP-IJCNLP 2019</span>
                 </div>
                 <div class="paper-oneliner">한자 정보를 활용한 한국어 단어 표현 풍부화</div>
-                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+                <div class="paper-tags"><span class="tag tag-repr">Representation Learning</span></div>
             </a>
         </div>
 
-        <div class="paper-card" data-tags="nlp">
+        <div class="paper-card" data-tags="repr">
             <a href="papers/cross-sentence.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -688,11 +692,11 @@
                     <span class="paper-venue">ACL 2019</span>
                 </div>
                 <div class="paper-oneliner">문장 간 잠재 변수 모델을 활용한 준지도 텍스트 시퀀스 매칭</div>
-                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+                <div class="paper-tags"><span class="tag tag-repr">Representation Learning</span></div>
             </a>
         </div>
 
-        <div class="paper-card" data-tags="nlp">
+        <div class="paper-card" data-tags="repr parsing">
             <a href="papers/dynamic-compositionality.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -702,11 +706,11 @@
                     <span class="paper-venue">AAAI 2019</span>
                 </div>
                 <div class="paper-oneliner">구조 인식 태그 표현으로 재귀 신경망의 동적 합성성 연구</div>
-                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+                <div class="paper-tags"><span class="tag tag-repr">Representation Learning</span><span class="tag tag-parsing">Parsing & Syntax</span></div>
             </a>
         </div>
 
-        <div class="paper-card" data-tags="nlp">
+        <div class="paper-card" data-tags="repr">
             <a href="papers/bilinear-matching.html" class="card-link">
                 <div class="paper-header">
                     <div>
@@ -716,7 +720,7 @@
                     <span class="paper-venue">*SEM 2018</span>
                 </div>
                 <div class="paper-oneliner">요소별 쌍선형 상호작용을 통한 문장 매칭</div>
-                <div class="paper-tags"><span class="tag tag-nlp">NLP Fundamentals</span></div>
+                <div class="paper-tags"><span class="tag tag-repr">Representation Learning</span></div>
             </a>
         </div>
     </div>

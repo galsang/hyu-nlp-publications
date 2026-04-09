@@ -24,6 +24,14 @@
         <h2>한줄 요약</h2>
         <p>모호한 질의를 명시적으로 처리하도록 언어 모델을 정렬하는 방법</p>
     </div>
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2404.11972v1/x1.png" alt="모호한 질의 예시: 모델의 지식에 따라 인식되는 모호성 정도가 달라짐">
+        <figcaption><strong>Figure 1.</strong> AmbigQA의 모호한 질의 예시. "national championship"이라는 표현이 다양한 의미를 가져 모호성을 유발함. 관련 지식이 풍부한 모델은 이를 모호하게 인식하지만(왼쪽), 지식이 부족한 모델은 그렇지 않을 수 있음(오른쪽).</figcaption>
+    </figure>
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2404.11972v1/x2.png" alt="모호성 처리를 위한 4단계 정렬 파이프라인 개요">
+        <figcaption><strong>Figure 2.</strong> 4단계 정렬 파이프라인의 전체 과정. 모델이 명시적으로 처리할 수 없는 샘플을 필터링(1단계)하고, 자기 모호성 해소를 통해 정보 이득을 측정(2단계)한 후, 높은 정보 이득을 가진 샘플을 지도 미세조정에 활용(3&amp;4단계).</figcaption>
+    </figure>
     <div class="section">
         <h2>핵심 내용</h2>
         <ul class="key-points">

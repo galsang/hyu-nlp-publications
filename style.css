@@ -103,6 +103,12 @@ a:hover { text-decoration: underline; }
 .tag-multimodal { background: var(--tag-multi); color: var(--tag-multi-text); }
 .tag-detection { background: var(--tag-detect); color: var(--tag-detect-text); }
 .tag-kg { background: var(--tag-kg); color: var(--tag-kg-text); }
+.tag-repr { background: #dbeafe; color: #1e40af; }
+.tag-parsing { background: #e0f2fe; color: #075985; }
+.tag-reasoning { background: #fef3c7; color: #92400e; }
+.tag-domain { background: #d1fae5; color: #065f46; }
+.tag-icl { background: #fce7f3; color: #9d174d; }
+.tag-efficiency { background: #f3e8ff; color: #6b21a8; }
 
 .paper-oneliner { font-size: 0.9rem; color: var(--text-light); margin-top: 10px; }
 
