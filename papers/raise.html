@@ -29,11 +29,24 @@
         <figcaption><strong>Figure 1.</strong> Overview of RAISE. The framework is divided into three steps: (1) Problem Decomposition into subquestions and search queries, (2) Logical Query Generation containing logic-enriched contexts, and (3) Logical Retrieval of relevant documents from in-the-wild corpus for each subquestion to assist step-by-step reasoning for scientific problems.</figcaption>
     </figure>
     <div class="section">
-        <h2>Key Points</h2>
+        <h2>Background &amp; Motivation</h2>
+        <p>Scientific reasoning requires not only long-chain logical reasoning but also knowledge of domain-specific terminology and adaptation to continually updated findings. Standard retrieval-augmented generation (RAG) approaches retrieve documents based on surface-level similarity, which often fails for science problems where the logically relevant knowledge may use different terminology than the query. RAISE addresses this by introducing a step-by-step retrieval framework that decomposes complex scientific problems and retrieves documents based on logical relevance rather than mere textual similarity.</p>
+    </div>
+    <div class="section">
+        <h2>Method: Three-Step Framework</h2>
         <ul class="key-points">
-            <li>Proposes a framework that systematically strengthens the reasoning capabilities needed for solving science problems</li>
-            <li>Improves model performance on complex science problems by combining mathematical reasoning with scientific knowledge</li>
+            <li><strong>Step 1 -- Problem Decomposition:</strong> The scientific question is broken down into manageable sub-questions, each paired with targeted search queries that capture the specific knowledge needed.</li>
+            <li><strong>Step 2 -- Logical Query Generation:</strong> For each sub-question, logic-enriched queries are generated that encode the reasoning structure of the problem, going beyond keyword-based retrieval.</li>
+            <li><strong>Step 3 -- Logical Retrieval:</strong> Relevant documents are retrieved from an unstructured corpus for each sub-question based on logical relevance, providing step-by-step evidence that supports the full reasoning chain.</li>
         </ul>
+    </div>
+    <div class="section">
+        <h2>Results</h2>
+        <p>RAISE consistently outperforms baseline methods on scientific reasoning benchmarks. A key distinction is its ability to retrieve documents that are not only similar in domain knowledge, but also logically more relevant to the reasoning steps required, leading to more accurate and well-grounded answers.</p>
+    </div>
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>Complex scientific problems demand reasoning chains that draw on multiple pieces of specialized knowledge. By decomposing problems and retrieving evidence step-by-step, RAISE demonstrates a principled way to augment LLMs for scientific domains -- with potential applications in education, research assistance, and automated scientific discovery.</p>
     </div>
     <div class="section">
         <h2>Links</h2>

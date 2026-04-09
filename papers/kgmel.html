@@ -33,11 +33,24 @@
         <figcaption><strong>Figure 3.</strong> Overview of KGMEL. The framework consists of three stages: (1) Generation: triples are generated for mentions using VLMs. (2) Retrieval: joint embeddings integrating textual, visual, and triple-based embeddings are used to retrieve K candidates. (3) Reranking: after filtering irrelevant KG triples, the best-matching entity is determined using LLMs.</figcaption>
     </figure>
     <div class="section">
-        <h2>Key Points</h2>
+        <h2>Background &amp; Motivation</h2>
+        <p>Multimodal Entity Linking (MEL) aims to link textual mentions, accompanied by visual context such as images, to corresponding entities in a knowledge base. While prior approaches rely primarily on textual and visual similarities, they largely overlook the rich structural information stored in knowledge graphs (KGs). This structural information -- relationships and attributes encoded as triples -- can be highly discriminative for distinguishing visually or textually similar entities. KGMEL addresses this gap by systematically integrating KG triples into every stage of the MEL pipeline.</p>
+    </div>
+    <div class="section">
+        <h2>Method: Three-Stage Framework</h2>
         <ul class="key-points">
-            <li>Integrates structural information from knowledge graphs into multimodal entity linking to improve entity identification accuracy</li>
-            <li>Proposes an effective framework for combining textual and visual information with knowledge graphs</li>
+            <li><strong>Stage 1 -- Generation:</strong> Vision-language models (VLMs) generate knowledge graph triples for each mention by analyzing both textual and visual context. These triples capture structured facts about the entity referenced in the mention.</li>
+            <li><strong>Stage 2 -- Retrieval:</strong> Joint mention-entity representations are built through contrastive learning that fuses textual, visual, and triple-based embeddings. These joint embeddings are used to retrieve K candidate entities from the knowledge base.</li>
+            <li><strong>Stage 3 -- Reranking:</strong> Irrelevant KG triples are filtered out, and large language models (LLMs) are applied to determine the best-matching entity among the retrieved candidates by comparing mention triples against candidate entity triples.</li>
         </ul>
+    </div>
+    <div class="section">
+        <h2>Results</h2>
+        <p>KGMEL demonstrates consistent improvements over existing MEL methods by effectively leveraging the structural information in knowledge graphs. The three-stage design allows each component to contribute complementary signals, with the KG triple integration proving especially beneficial when visual or textual cues alone are ambiguous.</p>
+    </div>
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>Entity linking is a foundational task for information retrieval, question answering, and knowledge-grounded dialogue systems. By showing that KG structure can substantially improve multimodal entity linking, KGMEL opens new directions for integrating structured knowledge into multimodal NLP pipelines.</p>
     </div>
     <div class="section">
         <h2>Links</h2>

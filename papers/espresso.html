@@ -29,11 +29,23 @@
         </figure>
     </div>
     <div class="section">
-        <h2>Key Points</h2>
+        <h2>Background &amp; Motivation</h2>
+        <p>Conversational Recommender Systems (CRS) not only suggest items but also generate natural-language explanations for their recommendations. However, these explanations are often factually incorrect or generic. Incorporating passage retrieval can ground responses in real information, but two critical challenges remain: (1) retrieved passages may not reflect actual user preferences, and (2) there is typically no training supervision available for the passage retrieval module in CRS settings.</p>
+    </div>
+    <div class="section">
+        <h2>Method: Two Core Components</h2>
         <ul class="key-points">
-            <li>Improves response quality in recommender systems through context-aware passage retrieval from conversations</li>
-            <li>Designs and validates a retrieval framework optimized for conversational recommendation scenarios</li>
+            <li><strong>Adaptive Item Selection:</strong> A mechanism that ensures retrieved passages align with actual user preferences by adaptively selecting which recommended items to retrieve passages for, preventing misalignment between recommendations and supporting evidence.</li>
+            <li><strong>Relevance-Based Groupwise Learning:</strong> A novel training strategy that addresses the supervision gap by enabling the passage retrieval module to learn effectively from implicit relevance signals, even without explicit passage-level labels.</li>
         </ul>
+    </div>
+    <div class="section">
+        <h2>Results</h2>
+        <p>ESPRESSO achieves up to 36% higher Hit@3 accuracy compared to the best of 8 competing methods. Integrating ESPRESSO-retrieved passages also meaningfully improves the overall quality and factual grounding of CRS responses.</p>
+    </div>
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>As conversational AI becomes more prevalent in e-commerce and content platforms, providing accurate and trustworthy explanations alongside recommendations is essential for user trust. ESPRESSO demonstrates that targeted passage retrieval can substantially improve explanation quality in CRS without requiring expensive manual annotation.</p>
     </div>
     <div class="section">
         <h2>Links</h2>
