@@ -22,54 +22,87 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A method for predicting cross-lingual transfer learning performance</p>
+        <p>A model-oriented method that predicts cross-lingual transfer performance by measuring how much two languages share internal sub-network structure within a multilingual model, achieving 4.6% average improvement in source language ranking without requiring any external linguistic resources.</p>
         <figure class="paper-figure">
             <img src="https://ar5iv.labs.arxiv.org/html/2310.17166/assets/x1.png" alt="Paper overview">
-            <figcaption><strong>Figure 1.</strong> X-SNS: Predicting cross-lingual transfer performance through sub-network similarity analysis between source and target language representations.</figcaption>
+            <figcaption><strong>Figure 1.</strong> X-SNS overview: For each language, a binary sub-network is extracted based on Fisher Information scores, and the Jaccard similarity between sub-networks serves as a proxy for cross-lingual transfer compatibility.</figcaption>
         </figure>
-    </div>
-    <div class="section">
-        <h2>Background</h2>
-        <p>Cross-lingual transfer (XLT) enables multilingual language models to perform well on tasks in unseen languages without target-language labeled data. While English is typically used as the default source language, recent evidence shows that <strong>selecting the most appropriate source language</strong> for a given target can significantly amplify transfer effectiveness. However, existing methods for predicting transfer compatibility rely on external linguistic resources or typological databases, limiting their practical applicability. A model-oriented approach that directly examines how a multilingual model internally represents different languages could offer a more principled and accessible solution.</p>
     </div>
 
     <div class="section">
-        <h2>Method</h2>
-        <p>X-SNS proposes using <strong>sub-network similarity</strong> between language pairs as a proxy for predicting cross-lingual transfer compatibility, grounded in the internal structure of the model itself.</p>
+        <h2>Background & Motivation</h2>
+        <p>Cross-lingual transfer (XLT) enables multilingual language models to perform well on tasks in unseen languages without target-language labeled data. While English is typically used as the default source language, recent evidence shows that <strong>selecting the most appropriate source language</strong> for a given target can significantly amplify transfer effectiveness -- in fact, X-SNS demonstrates that non-English sources outperform English in 11 out of 15 cases with an average improvement of 1.8 points.</p>
+        <div class="highlight-box">
+            <p><strong>Limitations of Existing Approaches:</strong> Prior methods for predicting transfer compatibility depend on external resources: <em>Lang2Vec</em> requires typological features from the WALS database, <em>lexical divergence</em> uses subword distribution statistics, and <em>embedding similarity</em> only captures surface-level representation overlap. None of these directly examine how the model internally processes different languages. X-SNS addresses this gap with a model-oriented approach that peers inside the network to measure structural language similarity.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method</h2>
+        <p>X-SNS proposes using <strong>sub-network similarity</strong> between language pairs as a proxy for predicting cross-lingual transfer compatibility. The core idea is that if two languages activate similar parameters within a multilingual model, knowledge learned from one should transfer well to the other.</p>
         <div class="method-steps">
             <div class="method-step">
                 <div class="step-num">1</div>
-                <div class="step-title">Sub-Network Extraction</div>
-                <div class="step-desc">For each language, identify task-relevant sub-networks within the multilingual model by analyzing which parameters are most activated when processing that language's text</div>
+                <div class="step-title">Fisher-Based Sub-Network Extraction</div>
+                <div class="step-desc">For each language, compute the approximated Fisher Information for every model parameter using raw text. The Fisher score quantifies how sensitive each parameter is to a given language's data. Parameters in the top <em>p</em>% (default: 15%, matching the masked language modeling ratio) are selected to form a binary sub-network vector where 1 indicates an important parameter and 0 otherwise.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">2</div>
-                <div class="step-title">Similarity Computation</div>
-                <div class="step-desc">Measure the structural overlap between sub-networks of source and target language pairs -- higher overlap indicates the model processes both languages through similar internal pathways</div>
+                <div class="step-title">Jaccard Similarity Computation</div>
+                <div class="step-desc">Measure the structural overlap between two languages' binary sub-networks using the Jaccard similarity coefficient: |s_source &cap; s_target| / |s_source &cup; s_target|. Higher Jaccard similarity indicates that the model processes both languages through largely the same internal pathways.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">3</div>
-                <div class="step-title">Transfer Prediction</div>
-                <div class="step-desc">Rank candidate source languages by sub-network similarity to the target language, predicting that higher similarity leads to better transfer performance</div>
+                <div class="step-title">Source Language Ranking</div>
+                <div class="step-desc">Given a target language, rank all candidate source languages by their sub-network similarity score. The top-ranked source is predicted to yield the best zero-shot transfer performance. This ranking can also be used in multi-source settings by selecting the top-k languages for disjoint multilingual training.</div>
             </div>
         </div>
         <div class="highlight-box">
-            <p><strong>Key advantage:</strong> The method requires only moderate amounts of raw text from candidate languages -- no labeled data, external linguistic databases, or typological annotations needed.</p>
+            <p><strong>Key advantage:</strong> The method requires only a moderate amount of raw text (as few as 256 examples suffice for near-optimal performance) from candidate languages -- no labeled data, external linguistic databases, or typological annotations needed. The sub-networks are extracted using masked language modeling, making the approach fully unsupervised.</p>
         </div>
     </div>
 
     <div class="section">
-        <h2>Results</h2>
+        <h2>Experimental Results</h2>
+        <p>X-SNS is evaluated on five tasks from the XTREME benchmark using XLM-RoBERTa Base, covering 7 to 20 languages per task. NDCG@3 measures how well each method ranks source languages for zero-shot transfer.</p>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>Task (Dataset)</th><th>Lang2Vec</th><th>Embedding</th><th>X-SNS</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>NER (WikiANN, 17 langs)</td><td>62.35</td><td>76.06</td><td class="highlight-cell"><strong>78.12</strong></td></tr>
+                <tr><td>POS (UD 2.8, 20 langs)</td><td>78.06</td><td>74.65</td><td class="highlight-cell"><strong>83.73</strong></td></tr>
+                <tr><td>NLI (XNLI, 15 langs)</td><td>59.77</td><td>63.15</td><td class="highlight-cell"><strong>68.73</strong></td></tr>
+                <tr><td>PI (PAWS-X, 7 langs)</td><td>86.81</td><td>83.51</td><td class="highlight-cell"><strong>89.82</strong></td></tr>
+                <tr><td>QA (TyDiQA, 8 langs)</td><td>84.52</td><td>86.00</td><td class="highlight-cell"><strong>87.95</strong></td></tr>
+            </tbody>
+        </table>
+
+        <p>In the regression framework, X-SNS as a single feature outperforms multiple linguistic features from typological databases:</p>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>Feature Set</th><th>NER (RMSE)</th><th>QA (RMSE)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>X-POS + MER (linguistic)</td><td>7.18</td><td>7.40</td></tr>
+                <tr><td class="highlight-cell">X-SNS + MER (ours)</td><td class="highlight-cell"><strong>5.12</strong></td><td class="highlight-cell"><strong>5.80</strong></td></tr>
+            </tbody>
+        </table>
+
         <ul class="key-points">
-            <li><strong>Ranking quality:</strong> Achieves an average improvement of 4.6% in NDCG@3 for zero-shot XLT source language ranking over baseline methods</li>
-            <li><strong>Task generalization:</strong> Demonstrates consistent superiority across diverse NLP tasks, confirming that sub-network similarity is a robust predictor of transfer compatibility</li>
-            <li><strong>Model-internal insight:</strong> Extensive analyses confirm that languages sharing more sub-network structure in the multilingual model indeed transfer knowledge more effectively</li>
+            <li><strong>Consistent superiority:</strong> X-SNS achieves the best NDCG@3 across all five tasks, outperforming both linguistic (Lang2Vec) and model-based (Embedding similarity) baselines by 4.6% on average</li>
+            <li><strong>Data efficiency:</strong> Performance converges with as few as 256-1024 raw text examples per language, making the method practical even for low-resource scenarios</li>
+            <li><strong>Cross-model robustness:</strong> Validated on mBERT (Pearson 86.83 vs. EMB 81.21) and XLM-R, though the advantage diminishes on encoder-decoder models like mT5</li>
+            <li><strong>Multi-source transfer:</strong> Top-3 languages selected by X-SNS outperform alternatives in disjoint multilingual training settings for POS tagging and achieve comparable results on NER</li>
+            <li><strong>Low-resource advantage:</strong> Non-English sources chosen by X-SNS outperform English in 11 out of 15 language-task pairs, with an average gain of 1.8 F1/accuracy points</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>X-SNS provides a <strong>practical, model-grounded mechanism</strong> for source language selection in cross-lingual transfer. Unlike methods that depend on external typological knowledge, X-SNS looks directly at how the model internally represents languages, making it applicable to any language with raw text data. This is particularly valuable for deploying multilingual systems efficiently, as choosing the right source language can make the difference between successful and failed cross-lingual transfer -- especially for low-resource languages where every design decision matters.</p>
+        <p>X-SNS provides a <strong>practical, model-grounded mechanism</strong> for source language selection in cross-lingual transfer. Unlike methods that depend on external typological knowledge (which may be incomplete or unavailable for many languages), X-SNS looks directly at how the model internally represents languages, making it applicable to <strong>any language with raw text data</strong>. The method's data efficiency (near-optimal with just 256 examples) and fully unsupervised nature make it particularly valuable for deploying multilingual systems to low-resource languages, where choosing the right source language can make the difference between successful and failed cross-lingual transfer. The findings also provide a deeper understanding of how multilingual models organize linguistic knowledge internally -- languages that share more sub-network structure genuinely transfer knowledge more effectively.</p>
     </div>
 
     <div class="section">

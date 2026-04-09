@@ -25,7 +25,7 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>LLM이 실제 답변과 무관하게 과도한 확신을 표현하는 "답변 독립성" 문제를 규명하고, 답변에 기반한 신뢰도 추정 미세조정 방법인 ADVICE를 제안합니다.</p>
+        <p>LLM의 과신(overconfidence)이 신뢰도 생성과 답변 생성이 내부적으로 분리되는 "답변 독립성"에서 비롯됨을 밝히고, 대조 학습 기반 미세조정 프레임워크 ADVICE를 제안하여 신뢰도 보정을 크게 개선합니다 (예: Llama-3.1-8B에서 ECE 16.9 → 10.4, AUROC 56.2 → 77.0).</p>
     </div>
 
     <figure class="paper-figure">
@@ -35,88 +35,134 @@
 
     <div class="section">
         <h2>배경 및 동기</h2>
-        <p>최근 LLM은 자연어로 신뢰도를 표현하는 능력을 갖추어 투명성이 향상되었습니다. 그러나 이 과정에서 <strong>체계적인 과신(overconfidence)</strong>이 빈번하게 발생합니다. 본 연구는 그 근본 원인을 수학적으로 분석합니다.</p>
+        <p>대규모 언어 모델(LLM)은 불가피하게 사실과 다른 내용(할루시네이션)을 생성하며, 이를 완전히 제거하는 것은 이론적으로도 어려울 수 있습니다. 이에 대한 유망한 대안으로, LLM이 답변과 함께 <strong>신뢰도 추정치</strong>를 제공하는 방법이 주목받고 있습니다. 특히 자연어로 신뢰도를 표현하는 <em>verbalized confidence</em>는 모델 내부 상태에 접근할 필요 없이 범용적으로 적용할 수 있어 매력적입니다.</p>
+        <p>그러나 핵심적인 문제가 있습니다: LLM은 출력 품질과 무관하게 높은 신뢰도를 부여하는 <strong>체계적인 과신(overconfidence)</strong>을 보입니다. 본 연구는 과신을 사후적으로 완화하는 것을 넘어, <em>왜 과신이 발생하는가</em>라는 근본적인 질문에 답합니다.</p>
         <div class="highlight-box">
-            <p><strong>핵심 발견:</strong> 과신의 근본 원인은 모델이 실제 답변과 독립적으로 신뢰도 점수를 생성하는 "답변 독립성"입니다. 정답과 오답에 대한 신뢰도 분포 간 Jensen-Shannon 발산이 거의 0에 가까워, 모델이 답변 내용을 참조하지 않고 신뢰도를 출력한다는 것이 증명되었습니다.</p>
+            <p><strong>핵심 발견:</strong> 모델 내부 프로세스를 분석한 결과, LLM의 답변 생성과 신뢰도 표현이 <strong>내부적으로 분리(decoupled)</strong>되어 있음을 발견했으며, 이를 "답변 독립성(answer-independence)"이라 명명합니다.</p>
+            <ul>
+                <li><strong>분포 분석:</strong> 정답과 오답에 조건부인 신뢰도 분포 간 Jensen-Shannon 발산(JSD)이 대부분의 샘플에서 0.1 이하에 집중되어, 모델이 답변과 무관하게 거의 동일한 신뢰도를 생성함을 증명합니다.</li>
+                <li><strong>Attention Rollout 분석:</strong> 신뢰도 토큰에서 답변 토큰으로의 어텐션 흐름이 질문 토큰 대비 유의미하게 낮아, 모델이 신뢰도 생성 시 답변 정보에 덜 의존함을 확인했습니다.</li>
+                <li><strong>Integrated Gradients 분석:</strong> 토큰 기여도 분석에서 답변 토큰이 질문이나 지시문 등 다른 구성 요소에 비해 일관되게 과소 가중치를 받고 있음이 드러났습니다.</li>
+            </ul>
         </div>
     </div>
 
     <div class="figures-row">
         <figure class="paper-figure">
             <img src="https://arxiv.org/html/2510.10913v2/x2.png" alt="Jensen-Shannon 발산 분석">
-            <figcaption><strong>Figure 2.</strong> 정답과 오답에 대한 신뢰도 분포가 거의 동일하여(JSD ≈ 0), 모델이 답변과 독립적으로 신뢰도를 표현함을 보여줍니다.</figcaption>
+            <figcaption><strong>Figure 2.</strong> 정답과 오답에 대한 신뢰도 분포 간 JSD 점수가 0 근처에 강하게 집중되어, 모델이 답변과 독립적으로 신뢰도를 표현함을 보여줍니다.</figcaption>
         </figure>
         <figure class="paper-figure">
             <img src="https://arxiv.org/html/2510.10913v2/x4.png" alt="Attention Rollout 점수">
-            <figcaption><strong>Figure 3.</strong> Attention Rollout 분석을 통해 신뢰도 토큰이 답변 토큰에 거의 주의를 기울이지 않는 것을 확인합니다.</figcaption>
+            <figcaption><strong>Figure 3.</strong> Attention Rollout 분석 결과, 신뢰도 토큰이 질문 토큰 대비 답변 토큰에 유의미하게 적은 어텐션을 보여 내부적 분리를 확인합니다.</figcaption>
         </figure>
     </div>
 
     <div class="section">
         <h2>제안 방법: ADVICE 프레임워크</h2>
-        <p>ADVICE는 답변에 기반한 신뢰도를 생성하도록 모델을 훈련하는 경량 미세조정 방법입니다. 핵심 아이디어는 <strong>정답과 오답에 따라 신뢰도가 달라져야 한다</strong>는 것을 모델에게 가르치는 것입니다.</p>
+        <p>ADVICE(<strong>A</strong>nswer-<strong>D</strong>ependent <strong>V</strong>erbal<strong>I</strong>zed <strong>C</strong>onfidence <strong>E</strong>stimation)는 답변에 기반한 신뢰도 추정을 명시적으로 촉진하는 경량 미세조정 프레임워크입니다. 핵심 아이디어는 정답/오답 쌍에 대한 대조 학습을 통해 <strong>답변의 정확성에 따라 신뢰도가 근본적으로 달라져야 한다</strong>는 것을 모델에게 가르치는 것입니다.</p>
 
         <figure class="paper-figure">
             <img src="https://arxiv.org/html/2510.10913v2/x6.png" alt="ADVICE 프레임워크 다이어그램">
-            <figcaption><strong>Figure 4.</strong> ADVICE 프레임워크의 전체 구조. 정답/오답 쌍에 대한 대조 학습을 통해 답변 의존적 신뢰도를 생성합니다.</figcaption>
+            <figcaption><strong>Figure 4.</strong> ADVICE 프레임워크의 전체 구조. 각 질문에 대해 정답과 오답을 모두 처리하며, 네 가지 손실 함수가 협력하여 신뢰도 분포를 분리하고 보정합니다.</figcaption>
         </figure>
 
         <div class="method-steps">
             <div class="method-step">
                 <div class="step-num">1</div>
-                <div class="step-title">데이터 구축</div>
-                <div class="step-desc">TriviaQA의 4,000개 인스턴스에서 정답/오답 쌍 생성</div>
+                <div class="step-title">학습 데이터 구축</div>
+                <div class="step-desc">TriviaQA 학습 세트에서 4,000개 인스턴스를 추출하되, greedy decoding으로 정답을 생성하는 인스턴스만 유지합니다. 각 인스턴스에 대해 (질문, 정답, 무작위 추출 오답) 삼중쌍을 구성하고, 다양한 신뢰도 형식(ScoreLetter, ScoreNumber)에 걸쳐 유창한 표현을 학습하도록 인스턴스당 2개 변형을 생성합니다.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">2</div>
-                <div class="step-title">대조 학습</div>
-                <div class="step-desc">4가지 손실 함수를 사용하여 정답과 오답의 신뢰도 분포를 분리</div>
+                <div class="step-title">다목적 대조 학습</div>
+                <div class="step-desc">네 가지 상호보완적 손실 함수로 모델을 미세조정합니다. 동일한 질문에 정답과 오답을 각각 입력하여, 각 손실이 두 경우의 신뢰도 분포를 체계적으로 분리합니다.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">3</div>
-                <div class="step-title">보정된 추론</div>
-                <div class="step-desc">답변에 기반한 보정된 신뢰도 생성</div>
+                <div class="step-title">답변 기반 추론</div>
+                <div class="step-desc">추론 시 모델은 답변과 신뢰도 점수를 한 번의 패스로 생성합니다. 학습을 통해 답변 인식(answer-awareness)이 내재화되어, 모델이 자연스럽게 생성된 답변에 조건부로 잘 보정된 신뢰도를 출력합니다.</div>
             </div>
         </div>
 
-        <p style="margin-top: 16px;">4가지 손실 함수의 역할:</p>
+        <p style="margin-top: 16px;">네 가지 손실 함수의 구체적 역할:</p>
         <ul class="key-points">
-            <li><strong>Language Modeling Loss:</strong> 기존 QA 능력 보존</li>
-            <li><strong>Jensen-Shannon Divergence Loss:</strong> 정답과 오답 간 신뢰도 분포 구별</li>
-            <li><strong>Margin Loss:</strong> 정답이 오답보다 높은 신뢰도를 갖도록 방향성 순서 보장</li>
-            <li><strong>Sum Loss:</strong> μ_correct + μ_wrong = 1 제약 조건 부과</li>
+            <li><strong>Language Modeling Loss (L_LM):</strong> 정답에 대한 표준 음의 로그 우도로, 모델의 일반적인 QA 능력을 보존하고 미세조정 중 치명적 망각(catastrophic forgetting)을 방지합니다.</li>
+            <li><strong>Jensen-Shannon Divergence Loss (L_JSD):</strong> 정답과 오답 간 신뢰도 분포를 명시적으로 구별하도록 유도합니다. max(0, &delta;_JSD - D_JSD(P_correct || P_wrong))로 공식화되어 두 분포가 충분히 분리되도록 합니다.</li>
+            <li><strong>Margin Loss (L_Margin):</strong> max(0, &delta;_Margin - (&mu;_correct - &mu;_wrong))를 통해 방향성 분리를 강제하여, 정답에 대한 평균 신뢰도가 오답보다 최소 &delta;_Margin 이상 높도록 보장합니다.</li>
+            <li><strong>Sum Loss (L_Sum):</strong> &mu;_correct + &mu;_wrong = 1이라는 이상적 제약을 강제하여, 신뢰도가 답변 정확성의 실제 확률을 반영하도록 합니다. 모든 가중치 파라미터는 간결성을 위해 1로 설정됩니다.</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>실험 결과</h2>
+        <p>세 가지 모델(Llama-3.1-8B-Instruct, Mistral-7B-Instruct-v0.3, Gemma-2-9b-it)을 대상으로 도메인 내(TriviaQA) 및 도메인 외(MMLU, LogiQA) 벤치마크에서 실험을 수행하며, ECE(Expected Calibration Error), |NCE|(Absolute Net Calibration Error), BS(Brier Score), AUROC의 네 가지 지표를 사용합니다.</p>
+
+        <h3>도메인 내 결과 (TriviaQA)</h3>
         <table class="results-table">
             <thead>
-                <tr><th>모델</th><th>방법</th><th>ECE ↓</th><th>AUROC ↑</th><th>Task Acc.</th></tr>
+                <tr><th>모델</th><th>방법</th><th>ECE ↓</th><th>|NCE| ↓</th><th>BS ↓</th><th>AUROC ↑</th></tr>
             </thead>
             <tbody>
-                <tr><td>Llama-3.1-8B</td><td>Default</td><td>16.9</td><td>56.2</td><td>74.8%</td></tr>
-                <tr><td>Llama-3.1-8B</td><td class="highlight-cell">ADVICE</td><td class="highlight-cell">10.4</td><td class="highlight-cell">77.0</td><td>77.4%</td></tr>
-                <tr><td>Gemma-2-9b</td><td>Default</td><td>21.9</td><td>52.7</td><td>-</td></tr>
-                <tr><td>Gemma-2-9b</td><td class="highlight-cell">ADVICE</td><td class="highlight-cell">6.2</td><td class="highlight-cell">77.4</td><td>-</td></tr>
+                <tr><td>Llama-3.1-8B</td><td>Default</td><td>16.9</td><td>16.6</td><td>21.2</td><td>56.2</td></tr>
+                <tr><td>Llama-3.1-8B</td><td>Self-Consistency</td><td>15.7</td><td>-</td><td>-</td><td>58.6</td></tr>
+                <tr><td>Llama-3.1-8B</td><td>ConfTuner</td><td>5.2</td><td>1.1</td><td>15.3</td><td>66.3</td></tr>
+                <tr><td>Llama-3.1-8B</td><td class="highlight-cell">ADVICE</td><td class="highlight-cell">10.4</td><td class="highlight-cell">9.8</td><td class="highlight-cell">14.8</td><td class="highlight-cell">77.0</td></tr>
+                <tr><td>Llama-3.1-8B</td><td class="highlight-cell">ADVICE + ConfTuner</td><td class="highlight-cell">9.4</td><td>-</td><td>-</td><td class="highlight-cell">77.9</td></tr>
+            </tbody>
+        </table>
+
+        <h3>도메인 외 결과 (Out-of-Distribution)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>데이터셋</th><th>방법</th><th>ECE ↓</th><th>AUROC ↑</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>MMLU</td><td>Default</td><td>26.9</td><td>-</td></tr>
+                <tr><td>MMLU</td><td>ConfTuner</td><td>13.9</td><td>-</td></tr>
+                <tr><td>MMLU</td><td class="highlight-cell">ADVICE</td><td class="highlight-cell">8.6</td><td class="highlight-cell">69.2</td></tr>
+                <tr><td>LogiQA</td><td>Default</td><td>53.8</td><td>-</td></tr>
+                <tr><td>LogiQA</td><td>ConfTuner</td><td>28.6</td><td>-</td></tr>
+                <tr><td>LogiQA</td><td class="highlight-cell">ADVICE</td><td class="highlight-cell">23.0</td><td class="highlight-cell">57.9</td></tr>
             </tbody>
         </table>
 
         <figure class="paper-figure">
             <img src="https://arxiv.org/html/2510.10913v2/x7.png" alt="신뢰도 다이어그램">
-            <figcaption><strong>Figure 5.</strong> 신뢰도 다이어그램: ADVICE 적용 후 모델의 신뢰도가 실제 정확도에 훨씬 가깝게 보정됩니다.</figcaption>
+            <figcaption><strong>Figure 5.</strong> 신뢰도 다이어그램: ADVICE 적용 후 모델의 신뢰도가 이상적인 대각선에 훨씬 가깝게 보정됩니다.</figcaption>
         </figure>
 
+        <h3>절삭 연구 (Gemma-2-9b, TriviaQA)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>구성</th><th>ECE ↓</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>L_LM만 사용</td><td>23.0</td></tr>
+                <tr><td>L_LM + L_JSD</td><td>8.6</td></tr>
+                <tr><td>L_LM + L_Margin</td><td>16.8</td></tr>
+                <tr><td class="highlight-cell">전체 ADVICE (모든 목적 함수)</td><td class="highlight-cell">6.2</td></tr>
+            </tbody>
+        </table>
+
         <ul class="key-points">
-            <li><strong>OOD 일반화:</strong> MMLU, LogiQA 등 미학습 데이터셋에서 24개 설정 중 19개에서 기존 방법(ConfTuner)을 능가</li>
-            <li><strong>효율성:</strong> 가장 적은 토큰 사용량으로 경쟁력 있는 보정 성능 달성</li>
-            <li><strong>태스크 성능 보존:</strong> 미세조정 후에도 기존 QA 정확도가 거의 영향을 받지 않음 (74.8% → 77.4%)</li>
+            <li><strong>OOD 일반화:</strong> MMLU와 LogiQA에서 24개 도메인 외 설정 중 19개에서 ConfTuner를 능가하며 강한 견고성을 입증합니다. MMLU에서 ECE가 26.9(Default)에서 8.6(ADVICE)으로 감소하여 ConfTuner의 13.9를 크게 상회합니다.</li>
+            <li><strong>효율성:</strong> ADVICE는 ECE-토큰 사용량 그래프의 좌하단 영역에 위치하여, 적은 토큰으로 낮은 ECE를 달성합니다. 반면 Self-Consistency(M=5)는 토큰 사용량을 급격히 증가시키면서도 보정 개선은 제한적입니다.</li>
+            <li><strong>태스크 성능 보존:</strong> 미세조정 후 QA 정확도가 유지되거나 소폭 향상됩니다. Llama-3.1은 75.2% → 78.1%, Gemma-2는 70.7% → 71.7%로, 핵심 능력의 저하가 없음을 확인합니다.</li>
+            <li><strong>형식 간 일반화:</strong> 두 가지 신뢰도 형식(ScoreLetter, ScoreNumber)으로만 학습했음에도, 미학습 형식으로 일반화됩니다: Gemma-2에서 ScoreText (ECE 8.3), ScorePercent (ECE 6.7), ScoreFloat (ECE 6.2).</li>
+            <li><strong>답변 인식 검증:</strong> 답변 마스킹 실험에서 기본 모델은 답변을 패딩으로 대체해도 높은 값에 치우친 신뢰도를 생성하지만, ADVICE 학습 모델은 답변이 마스킹되면 신뢰도가 크게 하락하여 실제로 답변 인식이 강화되었음을 입증합니다. Attention Rollout 점수도 학습 후 답변 토큰 방향으로 유의미하게 증가합니다.</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>왜 중요한가?</h2>
-        <p>AI가 "확실합니다"라고 말할 때 정말 확신하는 것인지 아는 것은 매우 중요합니다. 의료, 법률, 금융과 같은 고위험 분야에서 LLM의 과신은 심각한 결과를 초래할 수 있습니다. 본 연구는 과신의 <strong>근본 원인</strong>(답변 독립성)을 수학적으로 규명하고 경량 해결책을 제시하여, 더 신뢰할 수 있는 AI 시스템 구축의 토대를 마련합니다.</p>
+        <p>AI가 "확실합니다"라고 말할 때 정말 확신하는 것인지 아는 것은 매우 중요합니다. 의료, 법률, 금융과 같은 고위험 분야에서 LLM의 과신은 심각한 실제 결과를 초래할 수 있습니다 -- 사용자가 잘못된 출력을 의심 없이 신뢰할 수 있기 때문입니다.</p>
+        <p>본 연구는 기존 접근법을 넘어 세 가지 핵심 기여를 합니다:</p>
+        <ul class="key-points">
+            <li><strong>메커니즘적 통찰:</strong> 과신을 블랙박스 현상으로 다루는 대신, 분포 분석, Attention Rollout, Integrated Gradients를 활용하여 과신을 유발하는 구체적인 내부 메커니즘(답변 독립성)을 식별하고 엄밀하게 검증합니다.</li>
+            <li><strong>실용적이고 경량인 해결책:</strong> ADVICE는 단일 데이터셋(TriviaQA)의 4,000개 학습 인스턴스만으로도 미학습 데이터셋, 모델, 신뢰도 형식으로 일반화되어 실제 배포에 매우 실용적입니다.</li>
+            <li><strong>신뢰할 수 있는 AI의 토대:</strong> 신뢰도를 실제 답변에 기반시킴으로써, 사용자가 표현된 신뢰도 수준을 의미 있게 활용할 수 있는 시스템의 기반을 마련하여, 더 나은 인간-AI 협업과 핵심 응용 분야에서의 안전한 LLM 배포를 가능하게 합니다.</li>
+        </ul>
     </div>
 
     <div class="section">

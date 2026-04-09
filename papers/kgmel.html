@@ -22,40 +22,172 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>Improving multimodal entity linking performance by leveraging knowledge graphs</p>
+        <p>A three-stage framework that systematically integrates knowledge graph triples into multimodal entity linking via VLM-based triple generation, contrastive retrieval with gated fusion, and LLM-based reranking, achieving up to 19.13% improvement in HITS@1 over prior methods across three benchmarks.</p>
     </div>
+
     <figure class="paper-figure">
         <img src="https://arxiv.org/html/2504.15135v1/x1.png" alt="Example of multimodal entity linking using KGMEL">
         <figcaption><strong>Figure 1.</strong> An example of multimodal entity linking (MEL) using KGMEL. KGMEL generates triples for the mention to be matched with knowledge graph (KG) triples in the knowledge base (KB). Blue and yellow arrows point to triples derived from visual and textual context, respectively.</figcaption>
     </figure>
-    <figure class="paper-figure">
-        <img src="https://arxiv.org/html/2504.15135v1/x3.png" alt="Overview of the KGMEL framework with three stages: Generation, Retrieval, and Reranking">
-        <figcaption><strong>Figure 3.</strong> Overview of KGMEL. The framework consists of three stages: (1) Generation: triples are generated for mentions using VLMs. (2) Retrieval: joint embeddings integrating textual, visual, and triple-based embeddings are used to retrieve K candidates. (3) Reranking: after filtering irrelevant KG triples, the best-matching entity is determined using LLMs.</figcaption>
-    </figure>
+
     <div class="section">
         <h2>Background &amp; Motivation</h2>
-        <p>Multimodal Entity Linking (MEL) aims to link textual mentions, accompanied by visual context such as images, to corresponding entities in a knowledge base. While prior approaches rely primarily on textual and visual similarities, they largely overlook the rich structural information stored in knowledge graphs (KGs). This structural information -- relationships and attributes encoded as triples -- can be highly discriminative for distinguishing visually or textually similar entities. KGMEL addresses this gap by systematically integrating KG triples into every stage of the MEL pipeline.</p>
+        <p>Entity linking (EL) aligns textual mentions with their corresponding entities in a knowledge base, facilitating applications such as semantic search, question answering, and knowledge-grounded dialogue. Recent advances in <strong>multimodal entity linking (MEL)</strong> have shown that combining text and images can reduce ambiguity and improve alignment accuracy. However, most existing MEL methods overlook the rich structural information available in the form of knowledge graph (KG) triples -- a resource that is orders of magnitude richer than concise textual descriptions.</p>
+        <div class="highlight-box">
+            <p><strong>Key Gap in Existing MEL Methods:</strong></p>
+            <ul>
+                <li><strong>Reliance on surface-level cues:</strong> Prior approaches depend primarily on textual and visual similarities, which can be insufficient when entities are visually or textually similar. For example, distinguishing between two basketball players who share similar appearances and descriptions requires deeper structural knowledge.</li>
+                <li><strong>Underutilized KG structure:</strong> Knowledge bases like Wikidata contain entities with hundreds of triples on average, far richer than single concise textual descriptions, yet this structural information has been largely ignored in MEL research.</li>
+                <li><strong>Semantic bridging potential:</strong> Triple embeddings can bring distant mention-entity text embeddings closer together in latent space, providing a semantic bridge that surface-level features alone cannot offer. T-SNE visualization of BERT embeddings confirms that triple information pulls related mention-entity pairs closer.</li>
+                <li><strong>No end-to-end KG integration:</strong> No prior work has systematically leveraged KG triples across all stages (generation, retrieval, and reranking) of the MEL pipeline.</li>
+            </ul>
+        </div>
+        <div class="highlight-box">
+            <p><strong>Two Core Challenges for KG-Enhanced MEL:</strong></p>
+            <ul>
+                <li><strong>Mentions lack inherent triples:</strong> Unlike entities in the knowledge base, mentions appearing in natural text do not come with structured triple representations. This asymmetry must be bridged before KG-based matching can occur.</li>
+                <li><strong>Entities have noisy triples:</strong> Each entity may have hundreds of KG triples, many of which are irrelevant to a given mention. Naively using all triples introduces noise that can degrade performance rather than improve it.</li>
+            </ul>
+        </div>
+        <p>KGMEL addresses both challenges by (1) using VLMs to generate triples for mentions from multimodal context, and (2) applying semantic filtering to select only the most relevant entity triples before matching and reranking.</p>
     </div>
+
     <div class="section">
-        <h2>Method: Three-Stage Framework</h2>
+        <h2>Proposed Method: Three-Stage KG-Enhanced Framework</h2>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2504.15135v1/x3.png" alt="Overview of the KGMEL framework with three stages: Generation, Retrieval, and Reranking">
+            <figcaption><strong>Figure 3.</strong> Overview of KGMEL. The framework consists of three stages: (1) Generation: triples are generated for mentions using VLMs. (2) Retrieval: joint embeddings integrating textual, visual, and triple-based embeddings are used to retrieve K candidates. (3) Reranking: after filtering irrelevant KG triples, the best-matching entity is determined using LLMs.</figcaption>
+        </figure>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Triple Generation (VLM-Based)</div>
+                <div class="step-desc">A vision-language model (GPT-4o-mini) analyzes both textual and visual context for each mention through a structured three-step prompt: (1) identify entity type via NER categories, (2) generate a concise entity description, (3) produce structured (head, relation, tail) triples. Twenty relation types are carefully selected based on frequency in the knowledge base and semantic relevance: <em>instance of, subclass of, part of, has characteristic, field of work, occupation, sex or gender, country of citizenship, position held, religion or worldview, member of, owner of, country, capital, continent, located in, industry, participant, genre,</em> and <em>named after</em>. The VLM extracts triples from both visual cues (e.g., "occupation: basketball player" from an image) and textual cues (e.g., "appeared_in: Thunderstruck" from surrounding text), formalized as T<sub>m</sub> = VLM(P<sub>triple</sub>(t<sub>m</sub>, v<sub>m</sub>)).</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Candidate Entity Retrieval (Contrastive Learning with Gated Fusion)</div>
+                <div class="step-desc">
+                    <p><strong>Encoding:</strong> Frozen CLIP encodes text and images into d'-dimensional embeddings. Triple relations and tails are encoded separately into matrices R<sub>m</sub> and O<sub>m</sub>, then combined via an MLP with residual connections: Z&#771;<sub>m</sub> = O<sub>m</sub> + MLP([O<sub>m</sub> || R<sub>m</sub>]), preserving tail entity information.</p>
+                    <p><strong>Dual Cross-Attention:</strong> Computes relevance scores for each triple relative to both text and visual modalities: s<sub>m</sub> = Softmax((&beta; &middot; Z&#771;<sub>m</sub> &middot; T<sub>m</sub><sup>T</sup> + (1-&beta;) &middot; Z&#771;<sub>m</sub> &middot; V<sub>m</sub><sup>T</sup>) / &tau;<sub>att</sub>), with &beta;=0.5 balancing modalities and &tau;<sub>att</sub>=0.1 as temperature. Top-p selection (p &isin; {3, 5}) retains only the highest-ranked triples for denoising.</p>
+                    <p><strong>Gated Fusion:</strong> Learned sigmoid gates combine three modality embeddings: X<sub>m</sub> = g<sub>T</sub> &middot; W<sub>T</sub> &middot; T<sub>m</sub> + g<sub>V</sub> &middot; W<sub>V</sub> &middot; V<sub>m</sub> + W<sub>Z</sub> &middot; Z<sub>m</sub>, where g<sub>T</sub> = &sigma;(W<sub>T</sub><sup>(g)</sup> &middot; T<sub>m</sub> + b<sub>T</sub><sup>(g)</sup>) adaptively weights each modality.</p>
+                    <p><strong>Training:</strong> Three contrastive losses drive learning: (1) mention-entity loss L<sub>ME</sub> aligns mentions with ground-truth entities, (2) mention-mention loss L<sub>MM</sub> separates distinct mentions, and (3) entity-entity loss L<sub>EE</sub> separates distinct entities. Combined as L = L<sub>ME</sub> + &lambda;<sub>MM</sub> &middot; L<sub>MM</sub> + &lambda;<sub>EE</sub> &middot; L<sub>EE</sub> with &lambda;<sub>MM</sub> = &lambda;<sub>EE</sub> = 0.1 and contrastive temperature &tau;<sub>cl</sub> = 0.1. Top-K=16 candidates are retrieved via dot-product similarity.</p>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Entity Reranking (LLM-Based with Triple Filtering)</div>
+                <div class="step-desc">A semantic triple filtering step identifies the top-n (n &isin; {10, 15}) most relevant relations and tails from each candidate entity's KG triples by computing similarity to the generated mention triples: T<sub>e</sub><sup>(filt)</sup> = {(e,r,o) &isin; T<sub>e</sub> | r &isin; R(C(m), T<sub>m</sub>) &and; o &isin; O(C(m), T<sub>m</sub>)}. This filtering removes noisy triples that could mislead the LLM. GPT-3.5-turbo then performs zero-shot reranking using a structured step-by-step prompt: (1) identify supporting triples that serve as evidence for each candidate, (2) determine the most appropriate entity from the filtered candidates. The final selection is e<sub>m</sub>* = LLM(P<sub>rerank</sub>(t<sub>m</sub>, T<sub>m</sub>, {t<sub>e</sub>, T<sub>e</sub><sup>(filt)</sup>}<sub>e &isin; C(m)</sub>)).</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <p>KGMEL is evaluated on three MEL benchmarks with Wikidata as the knowledge base. Results are reported as mean over 3 runs. It achieves <strong>state-of-the-art HITS@1</strong> across all three datasets.</p>
+
+        <h3>Dataset Statistics</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Statistic</th><th>WikiDiverse</th><th>RichpediaMEL</th><th>WikiMEL</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Sentences</td><td>7,405</td><td>17,724</td><td>22,070</td></tr>
+                <tr><td>Mentions</td><td>15,093</td><td>17,805</td><td>25,846</td></tr>
+                <tr><td>KG Triples</td><td>60.8M</td><td>32.8M</td><td>65.1M</td></tr>
+                <tr><td>Candidate Entities</td><td>132,460</td><td>160,935</td><td>109,976</td></tr>
+                <tr><td>Total Entities</td><td>776,407</td><td>831,737</td><td>761,343</td></tr>
+                <tr><td>Relations</td><td>1,322</td><td>1,288</td><td>1,289</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Main Results (HITS@1)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Method</th><th>WikiDiverse</th><th>RichpediaMEL</th><th>WikiMEL</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>M3EL</td><td>74.06</td><td>--</td><td>--</td></tr>
+                <tr><td>IIER</td><td>--</td><td>84.63</td><td>--</td></tr>
+                <tr><td>OT-MEL</td><td>--</td><td>--</td><td>88.97</td></tr>
+                <tr><td>KGMEL (retrieval only)</td><td>82.12</td><td>76.40</td><td>87.29</td></tr>
+                <tr><td class="highlight-cell"><strong>KGMEL (retrieval + rerank)</strong></td><td class="highlight-cell"><strong>88.23</strong></td><td class="highlight-cell"><strong>85.21</strong></td><td class="highlight-cell"><strong>90.58</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>Extended Metrics</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Dataset</th><th>Metric</th><th>Retrieval</th><th>+ Rerank</th></tr>
+            </thead>
+            <tbody>
+                <tr><td rowspan="3">WikiDiverse</td><td>HITS@3</td><td>90.28</td><td>92.82</td></tr>
+                <tr><td>HITS@5</td><td>92.07</td><td>93.61</td></tr>
+                <tr><td>MRR</td><td>86.00</td><td>90.84</td></tr>
+                <tr><td rowspan="3">RichpediaMEL</td><td>HITS@3</td><td>85.92</td><td>89.85</td></tr>
+                <tr><td>HITS@5</td><td>88.82</td><td>91.32</td></tr>
+                <tr><td>MRR</td><td>80.94</td><td>88.08</td></tr>
+                <tr><td rowspan="3">WikiMEL</td><td>HITS@3</td><td>92.47</td><td>95.18</td></tr>
+                <tr><td>HITS@5</td><td>93.94</td><td>95.87</td></tr>
+                <tr><td>MRR</td><td>89.99</td><td>93.04</td></tr>
+            </tbody>
+        </table>
+
+        <h3>VLM Comparison for Triple Generation (HITS@1 after Reranking)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>VLM Model</th><th>WikiDiverse</th><th>RichpediaMEL</th><th>WikiMEL</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>LLaVA-1.6-7B (open-source)</td><td>86.43</td><td>81.94</td><td>86.22</td></tr>
+                <tr><td>LLaVA-1.6-13B (open-source)</td><td>85.94</td><td>83.26</td><td>85.96</td></tr>
+                <tr><td class="highlight-cell"><strong>GPT-4o-mini (proprietary)</strong></td><td class="highlight-cell"><strong>88.23</strong></td><td class="highlight-cell"><strong>85.21</strong></td><td class="highlight-cell"><strong>90.58</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>Ablation Study (Average HITS@1 Drop)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Removed Component</th><th>Avg. HITS@1 Drop</th><th>Interpretation</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Without image embeddings (V)</td><td>-5.54%</td><td>Visual modality is the most impactful single component</td></tr>
+                <tr><td>Without triple embeddings (Z)</td><td>-1.62%</td><td>KG triples provide meaningful complementary signal</td></tr>
+                <tr><td>Without gated fusion layer</td><td>-1.29%</td><td>Adaptive gating outperforms naive concatenation/addition</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Case Study: How KG Triples Disambiguate Entities</h3>
+        <p>Consider a mention with both text and image context referring to a basketball player. KGMEL generates triples such as <em>"occupation: basketball player"</em> from the image and <em>"appeared_in: Thunderstruck"</em> from surrounding text. These generated triples align with the correct entity's KG triples in Wikidata, enabling disambiguation when text or image features alone would match multiple similar entities. The triple-based semantic bridge is especially valuable for entities that share visual appearance or textual descriptions but differ in structured relational properties.</p>
+
         <ul class="key-points">
-            <li><strong>Stage 1 -- Generation:</strong> Vision-language models (VLMs) generate knowledge graph triples for each mention by analyzing both textual and visual context. These triples capture structured facts about the entity referenced in the mention.</li>
-            <li><strong>Stage 2 -- Retrieval:</strong> Joint mention-entity representations are built through contrastive learning that fuses textual, visual, and triple-based embeddings. These joint embeddings are used to retrieve K candidate entities from the knowledge base.</li>
-            <li><strong>Stage 3 -- Reranking:</strong> Irrelevant KG triples are filtered out, and large language models (LLMs) are applied to determine the best-matching entity among the retrieved candidates by comparing mention triples against candidate entity triples.</li>
+            <li><strong>Up to 19.13% improvement:</strong> KGMEL achieves a 14.17% gain on WikiDiverse over the previous best (M3EL), demonstrating that KG structure is a powerful complement to text and image signals.</li>
+            <li><strong>Reranking adds significant value:</strong> The reranking stage improves HITS@1 by 6.11% on WikiDiverse, 8.81% on RichpediaMEL, and 3.29% on WikiMEL over retrieval alone, with the largest gains where retrieval accuracy is lower.</li>
+            <li><strong>Image embeddings are the most impactful modality:</strong> Removing image embeddings causes the largest drop (-5.54%), confirming the importance of visual information in MEL. This makes intuitive sense given that images provide complementary identity cues not present in text.</li>
+            <li><strong>Robust across VLMs:</strong> The framework works with models ranging from open-source LLaVA-1.6-7B (86.43 on WikiDiverse) to proprietary GPT-4o-mini (88.23), showing that even smaller open-source VLMs produce useful triples, though GPT-4o-mini yields the best overall performance.</li>
+            <li><strong>KG triples as semantic bridges:</strong> Triple embeddings bring distant mention-entity text embeddings closer in latent space, providing complementary signals when surface-level cues are ambiguous. T-SNE visualization of BERT embeddings empirically confirms this bridging effect.</li>
+            <li><strong>Massive-scale KG utilization:</strong> The framework effectively handles knowledge bases with 32.8M to 65.1M triples across hundreds of thousands of entities, demonstrating scalability to real-world knowledge bases.</li>
+            <li><strong>Triple filtering is essential:</strong> Semantic filtering of entity triples before LLM reranking removes noisy relations that would otherwise mislead the language model, improving both accuracy and computational efficiency.</li>
         </ul>
     </div>
-    <div class="section">
-        <h2>Results</h2>
-        <p>KGMEL demonstrates consistent improvements over existing MEL methods by effectively leveraging the structural information in knowledge graphs. The three-stage design allows each component to contribute complementary signals, with the KG triple integration proving especially beneficial when visual or textual cues alone are ambiguous.</p>
-    </div>
+
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>Entity linking is a foundational task for information retrieval, question answering, and knowledge-grounded dialogue systems. By showing that KG structure can substantially improve multimodal entity linking, KGMEL opens new directions for integrating structured knowledge into multimodal NLP pipelines.</p>
+        <p>Entity linking is a foundational task for information retrieval, question answering, and knowledge-grounded dialogue systems. KGMEL makes four key contributions that advance the state of the art:</p>
+        <ul>
+            <li><strong>First end-to-end KG integration for MEL:</strong> By incorporating KG triples into all three stages (generation, retrieval, reranking), KGMEL shows that structural knowledge provides substantial and consistent improvements over methods using only text and image features. No prior work has systematically leveraged KG information across the entire MEL pipeline.</li>
+            <li><strong>Practical and flexible design:</strong> The framework is compatible with various VLMs (from 7B open-source LLaVA to proprietary GPT-4o-mini) and uses zero-shot LLM reranking without task-specific fine-tuning, making it adaptable to different deployment constraints and budgets.</li>
+            <li><strong>Novel technical components:</strong> The dual cross-attention mechanism with top-p selection for triple denoising, the gated fusion layer for adaptive modality weighting, and the semantic triple filtering before reranking are each individually effective innovations, as confirmed by the ablation study.</li>
+            <li><strong>New research direction:</strong> The results demonstrate that entities' rich KG structure (averaging hundreds of triples across 32.8M-65.1M total triples per dataset) is a significantly underutilized resource in multimodal NLP, opening opportunities for KG-enhanced methods in related tasks such as visual question answering, multimodal knowledge base population, and cross-modal retrieval.</li>
+        </ul>
     </div>
     <div class="section">
         <h2>Links</h2>
         <div class="links-section">
             <a href="https://dl.acm.org/doi/10.1145/3726302.3730217" target="_blank" class="paper-link">ACM Digital Library</a>
+            <a href="https://arxiv.org/abs/2504.15135" target="_blank" class="paper-link">arXiv Paper</a>
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">

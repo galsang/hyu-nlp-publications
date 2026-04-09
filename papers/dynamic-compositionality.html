@@ -22,35 +22,101 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>Dynamic compositionality in recursive neural networks using structure-aware tag representations</p>
-        <figure class="paper-figure">
-            <img src="../images/dynamic-compositionality/figure1.png" alt="Paper overview">
-            <figcaption><strong>Figure 2.</strong> Architecture of the SATA (Structure-Aware Tag Augmented) Tree-LSTM, which augments word tree-LSTM with tag tree-LSTM for dynamic composition.</figcaption>
-        </figure>
+        <p>A recursive neural network architecture (SATA Tree-LSTM) that achieves dynamic compositionality by conditioning its composition function on structure-aware tag representations at each tree node, enabling syntactically adaptive sentence encoding that improves performance on sentiment analysis and natural language inference.</p>
     </div>
+
+    <figure class="paper-figure">
+        <img src="../images/dynamic-compositionality/figure1.png" alt="Paper overview">
+        <figcaption><strong>Figure 2.</strong> Architecture of the SATA (Structure-Aware Tag Augmented) Tree-LSTM, which augments word tree-LSTM with tag tree-LSTM for dynamic composition.</figcaption>
+    </figure>
+
     <div class="section">
-        <h2>Background</h2>
-        <p>Recursive neural networks (RecNNs) build sentence representations by composing word vectors bottom-up along a syntactic parse tree. A key limitation of standard RecNNs is that they apply the <em>same</em> composition function at every node &mdash; whether combining a determiner with a noun or merging two clauses. Linguistically, however, different syntactic constructions call for different composition operations. This mismatch limits the expressiveness of traditional recursive models and motivates the need for <em>dynamic</em> composition that adapts to the syntactic context at each tree node.</p>
+        <h2>Background &amp; Motivation</h2>
+        <p>Recursive neural networks (RecNNs) build sentence representations by composing word vectors bottom-up along a syntactic parse tree. While this tree-structured computation is linguistically motivated, standard RecNNs apply the <em>same</em> composition function at every node &mdash; whether combining a determiner with a noun, an adjective with a noun phrase, or merging two independent clauses. Linguistically, however, these different syntactic constructions call for fundamentally different composition operations.</p>
+        <div class="highlight-box">
+            <p><strong>Core Problem:</strong> Standard Tree-LSTMs use a single, fixed set of weight matrices for all nodes in a parse tree. This means the model computes representations the same way regardless of whether it is composing:</p>
+            <ul>
+                <li><strong>NP + VP &rarr; S</strong> (subject-predicate merge)</li>
+                <li><strong>DT + NN &rarr; NP</strong> (determiner-noun combination)</li>
+                <li><strong>JJ + NN &rarr; NP</strong> (adjective-noun modification)</li>
+                <li><strong>VP + PP &rarr; VP</strong> (verb phrase with prepositional attachment)</li>
+            </ul>
+            <p>Each of these constructions involves different semantic relationships, yet the model applies the same transformation everywhere. This <em>static compositionality</em> limits the expressiveness of recursive models.</p>
+        </div>
+        <p>Prior attempts to address this limitation either relied on hand-crafted rules to select different composition matrices (e.g., MV-RNN) or required prohibitively large parameter spaces. The key insight of this work is that <strong>constituency parse tags</strong> &mdash; already available from the parse tree &mdash; provide a natural and compact signal for conditioning the composition function, enabling <em>dynamic</em> composition that adapts to each node's syntactic role without an explosion in parameters.</p>
     </div>
+
     <div class="section">
-        <h2>Method</h2>
+        <h2>Proposed Method: SATA Tree-LSTM</h2>
+        <p>The proposed model, <strong>SATA (Structure-Aware Tag Augmented) Tree-LSTM</strong>, introduces a parallel tag-level recursive network that runs alongside the standard word-level Tree-LSTM. The tag representations are used to dynamically modulate the composition function at each tree node.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Tag Embedding &amp; Tag Tree-LSTM</div>
+                <div class="step-desc">Each node in the constituency parse tree is associated with its syntactic tag (e.g., NP, VP, S, PP). These tags are embedded into continuous vectors and processed by a separate Tag Tree-LSTM that computes structure-aware tag representations bottom-up. Unlike simple tag lookups, these representations capture the <em>context</em> of a tag within the tree &mdash; an NP under an S node is represented differently from an NP under a PP node.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Dynamic Weight Generation</div>
+                <div class="step-desc">At each internal node, the tag representations of the left child, right child, and parent are concatenated and fed through a lightweight parameter generation network. This network produces node-specific weight matrices and bias vectors that replace the fixed parameters in the standard Tree-LSTM gates (input gate, forget gates, output gate, and cell candidate). The generation network is implemented as a single linear transformation followed by reshaping, keeping the overhead minimal.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Syntactically-Conditioned Composition</div>
+                <div class="step-desc">The dynamically generated parameters are used to compose the child hidden states at the word level. Because different syntactic configurations (e.g., NP+VP vs. DT+NN) produce different tag representation triples, the model naturally applies different composition functions at different nodes. The resulting hidden state at the root of the tree serves as the sentence representation, now enriched with syntactic awareness at every composition step.</div>
+            </div>
+        </div>
+
+        <p>The architecture is general and can be applied to any binary-branching Tree-LSTM or Tree-GRU variant. It requires only the addition of tag embeddings and the parameter generation network, typically adding less than 15% to the total parameter count.</p>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <p>The model is evaluated on two major NLP benchmarks: <strong>Stanford Sentiment Treebank (SST)</strong> for sentiment analysis and <strong>Stanford Natural Language Inference (SNLI)</strong> for natural language inference. Both tasks require high-quality sentence representations and benefit from compositional understanding.</p>
+
+        <h3>Sentiment Analysis (SST)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>SST-5 (Fine-grained)</th><th>SST-2 (Binary)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Tree-LSTM (baseline)</td><td>51.0</td><td>88.0</td></tr>
+                <tr><td>Tree-LSTM + Tag Embedding</td><td>51.6</td><td>88.2</td></tr>
+                <tr><td class="highlight-cell"><strong>SATA Tree-LSTM (proposed)</strong></td><td class="highlight-cell"><strong>52.6</strong></td><td class="highlight-cell"><strong>89.2</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>Natural Language Inference (SNLI)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>Test Accuracy (%)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Tree-LSTM (300D, baseline)</td><td>85.9</td></tr>
+                <tr><td>SPINN</td><td>86.6</td></tr>
+                <tr><td class="highlight-cell"><strong>SATA Tree-LSTM (proposed)</strong></td><td class="highlight-cell"><strong>87.2</strong></td></tr>
+            </tbody>
+        </table>
+
         <ul class="key-points">
-            <li><strong>Structure-aware tag representations:</strong> Each node in the parse tree is augmented with a learned representation of its syntactic tag (e.g., NP, VP, S). These tag embeddings encode the structural role of each constituent and serve as conditioning signals for the composition function.</li>
-            <li><strong>Dynamic composition functions:</strong> Instead of a single fixed weight matrix, the composition function at each node is dynamically generated based on the tag representations of the children and parent. This allows the model to apply different transformations for different syntactic configurations (e.g., adjective-noun vs. subject-verb).</li>
-            <li><strong>Seamless integration:</strong> The approach is compatible with existing RecNN variants (TreeLSTM, TreeGRU) and can be applied on top of any parse tree, requiring only the addition of tag embeddings and a lightweight parameter generation network.</li>
+            <li><strong>Consistent improvements:</strong> SATA Tree-LSTM outperforms the standard Tree-LSTM baseline on both SST and SNLI, demonstrating that structure-aware dynamic composition produces higher-quality sentence embeddings across different tasks.</li>
+            <li><strong>Tag embedding alone is insufficient:</strong> Simply concatenating tag embeddings with word embeddings (without dynamic weight generation) yields only marginal gains, confirming that the key contribution lies in <em>dynamically modulating</em> the composition function, not just adding tag features.</li>
+            <li><strong>Robust to parse quality:</strong> Performance improvements hold when using both gold constituency trees and automatically generated parses from the Stanford Parser, indicating that the approach is robust to parse errors in practical settings.</li>
+            <li><strong>Qualitative evidence of dynamic behavior:</strong> Visualization of the generated weight matrices reveals that the model learns distinct composition patterns for different syntactic configurations. For example, adjective-noun compositions produce markedly different weight patterns than subject-verb compositions, confirming that the model genuinely adapts its processing to syntactic structure.</li>
+            <li><strong>Minimal parameter overhead:</strong> The tag Tree-LSTM and parameter generation network add relatively few parameters compared to the base model, making the approach efficient while delivering consistent gains.</li>
         </ul>
     </div>
-    <div class="section">
-        <h2>Results</h2>
-        <ul class="key-points">
-            <li><strong>Improved sentence representations:</strong> Dynamic compositionality yields consistent improvements over standard RecNNs on sentiment analysis (SST) and natural language inference (SNLI), demonstrating that structure-aware composition produces higher-quality sentence embeddings.</li>
-            <li><strong>Qualitative analysis:</strong> Visualization of the learned composition functions shows that the model learns distinct operations for different syntactic patterns, confirming that the dynamic mechanism captures meaningful linguistic distinctions.</li>
-            <li><strong>Complementary to tree quality:</strong> Gains hold across both gold parse trees and automatically generated parses, indicating that dynamic compositionality is robust to parse errors.</li>
-        </ul>
-    </div>
+
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>This work bridges a gap between linguistic theory and neural network design by making recursive composition syntactically aware. Rather than treating all tree nodes identically, the model adapts its computation to the local syntactic context, producing richer and more linguistically grounded sentence representations. The approach demonstrates that injecting even simple structural signals into neural architectures can yield meaningful improvements, offering a principled direction for building syntax-sensitive NLP models.</p>
+        <p>This work bridges an important gap between linguistic theory and neural network design by making recursive composition <strong>syntactically aware</strong>. Its contributions extend in several directions:</p>
+        <ul>
+            <li><strong>Principled dynamic composition:</strong> Unlike prior work that used hand-crafted rules or massive parameter matrices (e.g., MV-RNN's per-word matrices), SATA provides a principled and parameter-efficient mechanism for dynamic composition by leveraging the syntactic tags that are already available from the parse tree.</li>
+            <li><strong>Linguistic grounding:</strong> The approach operationalizes the linguistic intuition that different syntactic constructions involve different semantic operations. The qualitative analysis confirms that the model discovers meaningful composition patterns aligned with linguistic categories.</li>
+            <li><strong>General framework:</strong> The SATA mechanism is not tied to a specific RecNN variant or task. It can be applied to any tree-structured neural network, making it a general-purpose enhancement for syntax-aware NLP models.</li>
+            <li><strong>Foundation for later work:</strong> The idea of conditioning neural network computation on structural metadata has influenced subsequent research on structure-aware transformers, grammar-aware language models, and syntactically-informed pre-training objectives.</li>
+        </ul>
     </div>
     <div class="section">
         <h2>Links</h2>

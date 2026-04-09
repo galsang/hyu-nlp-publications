@@ -22,51 +22,158 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>Improving BERT sentence representations through self-guided contrastive learning</p>
-        <figure class="paper-figure">
-            <img src="../images/self-guided-cl/figure1.png" alt="Paper overview">
-            <figcaption><strong>Figure 1.</strong> Self-Guided Contrastive Learning for BERT. The method uses the model's own intermediate representations to guide contrastive learning for improved sentence embeddings.</figcaption>
-        </figure>
+        <p>A self-supervised contrastive learning method that leverages BERT's own intermediate-layer representations as guidance signals to produce high-quality sentence embeddings -- without any external data, augmentation, or labeled pairs -- achieving strong results on STS benchmarks (e.g., 74.62 avg. on all STS tasks with BERT-base) and diverse transfer tasks including multilingual STS.</p>
     </div>
+
+    <figure class="paper-figure">
+        <img src="../images/self-guided-cl/figure1.png" alt="Paper overview">
+        <figcaption><strong>Figure 1.</strong> BERT(-base)'s layer-wise performance with different pooling methods on the STS-B test set. The performance can vary dramatically depending on the selected layer and pooling strategy. The self-guided training methods (SG / SG-OPT) achieve much improved results compared to all baselines.</figcaption>
+    </figure>
+
     <div class="section">
         <h2>Background & Motivation</h2>
-        <p>Pre-trained language models like BERT produce powerful contextual word representations, but deriving high-quality <strong>sentence-level</strong> representations from them remains challenging. Naive approaches such as averaging token embeddings or using the [CLS] token often yield sentence embeddings that underperform even non-contextual baselines like GloVe on semantic similarity tasks.</p>
+        <p>Pre-trained language models like BERT produce powerful contextual word representations, but deriving high-quality <strong>sentence-level</strong> representations from them remains a surprisingly difficult problem. Naive approaches such as averaging token embeddings or using the [CLS] token often yield sentence embeddings that underperform even non-contextual baselines like GloVe on semantic similarity tasks. This phenomenon, sometimes called the <em>anisotropy problem</em>, occurs because BERT's token representations tend to occupy a narrow cone in the embedding space, making cosine similarity an unreliable measure of semantic similarity.</p>
         <div class="highlight-box">
-            <p><strong>Limitation:</strong> Existing contrastive learning methods for sentence embeddings rely on external NLI datasets or data augmentation pipelines to construct positive and negative pairs, limiting their applicability when such resources are unavailable.</p>
+            <p><strong>How bad is the problem?</strong> In a preliminary experiment, the authors constructed sentence embeddings using various combinations of BERT layers and pooling methods, and tested them on STS-B. BERT-base's Spearman correlation (x100) ranged from as low as <strong>16.71</strong> ([CLS] at layer 10) to <strong>63.19</strong> (max pooling at layer 2). This dramatic variance -- nearly 47 points depending on the layer/pooling choice -- revealed that the standard practice of using the final-layer [CLS] token is far from optimal, and that there is substantial room for improvement.</p>
         </div>
         <div class="highlight-box">
-            <p><strong>Innovation:</strong> This work proposes using the model's own intermediate-layer representations as a self-supervision signal, eliminating the need for any external data or augmentation to guide contrastive learning.</p>
+            <p><strong>Limitation of Prior Work:</strong> Existing contrastive learning methods for sentence embeddings (e.g., CERT by Fang and Xie (2020) using back-translation, or NLI-supervised methods like SBERT) rely on external datasets or augmentation pipelines to construct positive and negative pairs. Back-translation requires a translation model and introduces noise; NLI supervision limits applicability to domains where such data exists. These dependencies restrict their use in specialized text domains and introduce potential domain mismatch.</p>
         </div>
+        <div class="highlight-box">
+            <p><strong>Key Insight:</strong> Different layers of BERT capture different levels of linguistic abstraction -- lower layers encode surface-level and syntactic features while higher layers encode more semantic information (Jawahar et al., 2019). This natural hierarchy provides a built-in source of diverse "views" of the same sentence, which can serve as a self-supervision signal for contrastive learning without any external data or augmentation. The intermediate representations are conceptually guaranteed to represent the corresponding sentence, making them ideal pivots for contrastive training.</p>
+        </div>
+        <p>Building on this insight, the authors propose <strong>Self-Guided Contrastive Learning</strong>, which fine-tunes BERT by contrasting its final-layer [CLS] representation against its own intermediate-layer representations. The method comes in two variants: <strong>SG</strong> (using the base NT-Xent loss) and <strong>SG-OPT</strong> (using a redesigned, optimized contrastive objective). The approach requires no external data, no augmentation, and no post-processing at inference time.</p>
     </div>
 
     <div class="section">
-        <h2>Method</h2>
-        <p>Self-Guided Contrastive Learning (SG-CL) fine-tunes BERT by contrasting its final-layer sentence representations against its own intermediate-layer representations. The key insight is that different layers of BERT capture different levels of linguistic abstraction, providing a natural source of diverse views for contrastive learning.</p>
+        <h2>Proposed Method</h2>
+        <p>The method fine-tunes BERT through a contrastive learning framework requiring only unlabeled sentences. The core idea is to clone BERT into two copies -- BERT<sub>F</sub> (fixed, providing training signals from intermediate layers) and BERT<sub>T</sub> (tuned, whose final-layer [CLS] is optimized as the sentence embedding) -- and train via a customized contrastive objective.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Dual-BERT Architecture with Self-Guided Pairs</div>
+                <div class="step-desc">BERT is cloned into BERT<sub>F</sub> (fixed) and BERT<sub>T</sub> (tuned) at the start of training. For each input sentence s<sub>i</sub>, BERT<sub>F</sub> produces token-level hidden representations H<sub>i,k</sub> at every layer k (0 to l). A pooling function p (max pooling by default) converts each layer's token representations into a sentence-level view h<sub>i,k</sub> = p(H<sub>i,k</sub>). A sampling function sigma selects one or more of these views as the positive target h<sub>i</sub>. Meanwhile, BERT<sub>T</sub> produces the sentence embedding c<sub>i</sub> = BERT<sub>T</sub>(s<sub>i</sub>)<sub>[CLS]</sub> from its final layer. The key design choice of keeping BERT<sub>F</sub> fixed prevents the training signal from degenerating as training proceeds -- if both copies were updated simultaneously, the intermediate-layer representations would drift and lose their value as diverse views.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Base Contrastive Loss (L<sup>base</sup>)</div>
+                <div class="step-desc">Given a mini-batch of b sentences, the set X = {c<sub>i</sub>} U {h<sub>i</sub>} is formed. The NT-Xent loss is computed over all elements: L<sup>base</sup><sub>m</sub> = -log(phi(x<sub>m</sub>, mu(x<sub>m</sub>)) / Z), where phi(u,v) = exp(g(f(u), f(v)) / tau), g is cosine similarity, f is a two-layer MLP projection head (hidden size 4096, GELU activation), tau is a temperature hyperparameter, and mu(.) is a matching function that maps each c<sub>i</sub> to its corresponding h<sub>i</sub> and vice versa. A regularizer L<sup>reg</sup> = ||BERT<sub>F</sub> - BERT<sub>T</sub>||<sub>2</sub><sup>2</sup> prevents BERT<sub>T</sub> from diverging too far from BERT<sub>F</sub>. Layer 0 of BERT<sub>T</sub> is also frozen for stable learning.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Optimized Loss (L<sup>opt</sup>) with Three Refinements</div>
+                <div class="step-desc">The authors analyze the four interaction factors in NT-Xent -- (1) c<sub>i</sub> toward h<sub>i</sub>, (2) c<sub>i</sub> away from c<sub>j</sub>, (3) c<sub>i</sub> away from h<sub>j</sub>, (4) h<sub>i</sub> away from h<sub>j</sub> -- and discover that only (1) and (3) are essential. Three modifications are applied: <strong>(a)</strong> The loss is re-centered on c<sub>i</sub>, treating h<sub>i</sub> only as targets to approach (not as anchors themselves), removing factor (4). <strong>(b)</strong> The repulsion between sentence embeddings (factor 2) is also removed as it proves insignificant. <strong>(c)</strong> Multiple intermediate-layer views {h<sub>i,k</sub>} for all layers k=0..l are used simultaneously instead of sampling a single one, yielding richer training signals. The final optimized loss L<sup>opt</sup> sums over all b sentences and all l+1 layers, normalized by b(l+1).</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <p><strong>Training Details:</strong> The method uses plain sentences from STS-B (training, validation, and test sets, without gold annotations) to fine-tune BERT -- identical to the setup used by BERT-flow. Hyperparameters are tuned on the STS-B validation set: temperature tau=0.01, regularization weight lambda=0.1. The projection head f is a two-layered MLP with hidden size 4096 and GELU activations. All trainable model performance is reported as the average of 8 separate runs to reduce randomness. The implementation is based on HuggingFace Transformers and SBERT, and is publicly available at <a href="https://github.com/galsang/SG-BERT" target="_blank">github.com/galsang/SG-BERT</a>.</p>
+        </div>
+
         <ul class="key-points">
-            <li><strong>Self-Guided Positive Pairs:</strong> For each sentence, intermediate-layer representations serve as positive targets for the final-layer representation, encouraging consistency across layers</li>
-            <li><strong>In-Batch Negatives:</strong> Other sentences within the same mini-batch serve as negatives, pushing apart representations of different sentences</li>
-            <li><strong>No External Data Required:</strong> The entire training procedure requires only unlabeled sentences, making it applicable to any domain without NLI or paraphrase data</li>
+            <li><strong>No data augmentation:</strong> Unlike methods that require dropout masks, back-translation, or other augmentation strategies, SG-CL derives contrastive views entirely from the model's internal layer hierarchy</li>
+            <li><strong>Efficient inference:</strong> At test time, only a single forward pass through BERT<sub>T</sub> is needed -- BERT<sub>F</sub>, the projection head, and all intermediate layers are discarded after training. The [CLS] token serves directly as the sentence vector at the same cost as standard BERT inference</li>
+            <li><strong>Domain-agnostic:</strong> Since the method requires only unlabeled text, it can be applied to any domain without NLI, paraphrase, or other specialized supervision data</li>
+            <li><strong>Principled objective design:</strong> The systematic analysis of NT-Xent's four interaction factors provides a theoretically grounded rationale for each design choice, rather than relying on ad-hoc modifications</li>
         </ul>
     </div>
 
     <div class="section">
-        <h2>Results</h2>
+        <h2>Experimental Results</h2>
+        <p>SG-CL is evaluated comprehensively on <strong>Semantic Textual Similarity (STS)</strong> tasks, <strong>SentEval transfer tasks</strong>, <strong>multilingual STS</strong>, and analyzed for <strong>computational efficiency</strong> and <strong>domain robustness</strong>. The method is tested across four base models: BERT-base, BERT-large, SBERT-base, and SBERT-large.</p>
+
+        <h3>Semantic Textual Similarity (Spearman Correlation x100, BERT-base)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>Pooling</th><th>STS-B</th><th>SICK-R</th><th>STS12</th><th>STS13</th><th>STS14</th><th>STS15</th><th>STS16</th><th>Avg.</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>GloVe</td><td>Mean</td><td>58.02</td><td>53.76</td><td>55.14</td><td>70.66</td><td>59.73</td><td>68.25</td><td>63.66</td><td>61.32</td></tr>
+                <tr><td>No tuning</td><td>CLS</td><td>20.30</td><td>42.42</td><td>21.54</td><td>32.11</td><td>21.28</td><td>37.89</td><td>44.24</td><td>31.40</td></tr>
+                <tr><td>No tuning</td><td>Mean</td><td>47.29</td><td>58.22</td><td>30.87</td><td>59.89</td><td>47.73</td><td>60.29</td><td>63.73</td><td>52.57</td></tr>
+                <tr><td>Flow</td><td>Mean-2</td><td>71.35</td><td>64.95</td><td>64.32</td><td>69.72</td><td>63.67</td><td>77.77</td><td>69.59</td><td>68.77</td></tr>
+                <tr><td>Contrastive (BT)</td><td>CLS</td><td>63.27</td><td>66.91</td><td>54.26</td><td>64.03</td><td>54.28</td><td>68.19</td><td>67.50</td><td>62.63</td></tr>
+                <tr><td>Contrastive (SG)</td><td>CLS</td><td>75.08</td><td>68.19</td><td>63.60</td><td>76.48</td><td>67.57</td><td>79.42</td><td>74.85</td><td>72.17</td></tr>
+                <tr><td class="highlight-cell"><strong>Contrastive (SG-OPT)</strong></td><td class="highlight-cell"><strong>CLS</strong></td><td class="highlight-cell"><strong>77.23</strong></td><td class="highlight-cell"><strong>70.20</strong></td><td class="highlight-cell"><strong>66.84</strong></td><td class="highlight-cell"><strong>80.13</strong></td><td class="highlight-cell"><strong>71.23</strong></td><td class="highlight-cell"><strong>81.56</strong></td><td class="highlight-cell"><strong>77.17</strong></td><td class="highlight-cell"><strong>74.62</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>SentEval Transfer Tasks (Accuracy, BERT-base)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>MR</th><th>CR</th><th>SUBJ</th><th>MPQA</th><th>SST2</th><th>TREC</th><th>MRPC</th><th>Avg.</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>+ Mean pooling</td><td>81.46</td><td>86.71</td><td>95.37</td><td>87.90</td><td>85.83</td><td>90.30</td><td>73.36</td><td>85.85</td></tr>
+                <tr><td>+ WK pooling</td><td>80.64</td><td>85.53</td><td>95.27</td><td>88.63</td><td>85.03</td><td>94.03</td><td>71.71</td><td>85.83</td></tr>
+                <tr><td class="highlight-cell"><strong>+ SG-OPT</strong></td><td class="highlight-cell"><strong>82.47</strong></td><td class="highlight-cell"><strong>87.42</strong></td><td class="highlight-cell"><strong>95.40</strong></td><td class="highlight-cell"><strong>88.92</strong></td><td class="highlight-cell"><strong>86.20</strong></td><td class="highlight-cell"><strong>91.60</strong></td><td class="highlight-cell"><strong>74.21</strong></td><td class="highlight-cell"><strong>86.60</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>Ablation Study</h3>
+        <p>The ablation study systematically validates each design decision by evaluating variants on all STS test sets:</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Variant</th><th>STS Avg.</th><th>Delta</th></tr>
+            </thead>
+            <tbody>
+                <tr><td class="highlight-cell"><strong>SG-OPT (L<sup>opt3</sup>)</strong></td><td class="highlight-cell"><strong>74.62</strong></td><td>--</td></tr>
+                <tr><td>+ L<sup>opt2</sup> (single view)</td><td>73.14</td><td>-1.48</td></tr>
+                <tr><td>+ L<sup>opt1</sup> (with c<sub>j</sub> repulsion)</td><td>72.61</td><td>-2.01</td></tr>
+                <tr><td>+ SG (L<sup>base</sup>, no optimization)</td><td>72.17</td><td>-2.45</td></tr>
+                <tr><td>tau = 0.1 (vs. 0.01)</td><td>70.39</td><td>-4.23</td></tr>
+                <tr><td>lambda = 0.0 (no regularizer)</td><td>73.76</td><td>-0.86</td></tr>
+                <tr><td>lambda = 1.0 (strong regularizer)</td><td>73.18</td><td>-1.44</td></tr>
+                <tr><td>Without projection head (f)</td><td>72.78</td><td>-1.84</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Computational Efficiency</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Method</th><th>Training Time</th><th>Inference Time (sec)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>BERT + Mean pooling</td><td>--</td><td>13.94</td></tr>
+                <tr><td>BERT + WK pooling</td><td>--</td><td>197.03 (~3.3 min)</td></tr>
+                <tr><td>BERT + Flow</td><td>155.37s (~2.6 min)</td><td>28.49</td></tr>
+                <tr><td class="highlight-cell"><strong>BERT + SG-OPT</strong></td><td><strong>455.02s (~7.5 min)</strong></td><td class="highlight-cell"><strong>10.51</strong></td></tr>
+            </tbody>
+        </table>
+        <p>Although SG-OPT requires moderate training time (~7.5 minutes), it achieves the <strong>fastest inference</strong> of all methods (10.51s on STS-B) since no post-processing is needed once training is completed. WK pooling is the slowest at inference (197s), and Flow also incurs overhead (28.5s) due to its flow-based transformation.</p>
+
+        <h3>Key Experimental Findings</h3>
         <ul class="key-points">
-            <li><strong>Semantic Textual Similarity:</strong> Achieves significant improvements on STS benchmarks over vanilla BERT representations and competitive performance with methods that use external supervision</li>
-            <li><strong>Transfer Tasks:</strong> Demonstrates strong performance on downstream transfer tasks including sentiment analysis, question classification, and natural language inference</li>
-            <li><strong>Data Efficiency:</strong> Because no labeled data is needed for contrastive fine-tuning, the method is particularly effective in low-resource or domain-specific settings</li>
+            <li><strong>Dramatic improvement over vanilla BERT:</strong> SG-OPT improves the average STS score from 31.40 (BERT [CLS]) to 74.62 -- a gain of over 43 absolute points -- demonstrating that the poor quality of default BERT sentence embeddings is a solvable problem through self-guided contrastive learning</li>
+            <li><strong>Outperforms post-hoc methods:</strong> Compared to BERT-flow (68.77 avg.) and WK pooling (25.58 avg.), SG-OPT achieves substantially higher scores. Notably, contrastive learning with self-guidance (SG-OPT: 74.62) vastly outperforms contrastive learning with back-translation (BT: 62.63), proving the superiority of internal guidance over external augmentation</li>
+            <li><strong>Consistent across model sizes:</strong> Improvements hold for BERT-base, BERT-large, SBERT-base, and SBERT-large, demonstrating the method's generalizability across model architectures and sizes</li>
+            <li><strong>Multilingual capability:</strong> Using MBERT with zero-shot cross-lingual transfer, SG-OPT achieves 82.09 on SemEval-2014 Task 10 (Spanish) and competitive results on SemEval-2017 Task 1 (Arabic, Spanish, English), showing the method extends naturally to multilingual settings</li>
+            <li><strong>Strong transfer performance:</strong> On SentEval transfer tasks, SG-OPT (86.60 avg.) outperforms both mean pooling (85.85) and WK pooling (85.83), showing that contrastive fine-tuning improves general-purpose utility rather than sacrificing it</li>
+            <li><strong>Domain robustness:</strong> When trained on NLI data instead of STS-B data, SG-OPT loses only 1.83 points on STS-B and 1.63 on average across all STS tasks -- far less than Flow which suffers losses of 12.16 and 4.19 respectively -- demonstrating strong robustness to domain shifts</li>
+            <li><strong>Ablation insights:</strong> Each of the three optimizations to NT-Xent contributes to performance; the projection head is critical (-1.84 without it); temperature tau=0.01 is far better than tau=0.1 (-4.23); and the back-translation + self-guidance ensemble (75.10 avg.) further improves over either technique alone</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>This work showed that high-quality sentence representations can be extracted from BERT without relying on curated training pairs or data augmentation. By exploiting the model's own layered structure as a self-supervision signal, SG-CL opened up a practical path toward unsupervised sentence embeddings that later influenced the broader contrastive learning for NLP community, including follow-up works like SimCSE.</p>
+        <p>This work made several important contributions to the field of sentence representation learning:</p>
+        <ul>
+            <li><strong>Pioneered self-supervised contrastive learning for sentence embeddings:</strong> SG-CL was among the first methods to show that high-quality sentence embeddings can be derived from BERT without any labeled data or data augmentation, relying solely on the model's own internal layer hierarchy as a learning signal. The idea of "recycling" intermediate hidden representations as positive samples was a novel and elegant solution.</li>
+            <li><strong>Principled analysis of contrastive objectives:</strong> Rather than using NT-Xent as a black box, the paper systematically decomposed the loss into four interaction factors, empirically tested which are essential (attraction to own intermediate views, repulsion from others' views) and which are dispensable (inter-embedding repulsion, inter-view repulsion). This analysis provides a reusable framework for customizing contrastive losses in other settings.</li>
+            <li><strong>Established that BERT's layer hierarchy is a useful inductive bias:</strong> The insight that intermediate and final layers provide naturally complementary views of the same input has influenced subsequent work on layer-wise representation learning and multi-view contrastive objectives. The preliminary experiment showing 47-point variance across layer/pooling combinations was itself an illuminating finding.</li>
+            <li><strong>Practical and efficient:</strong> SG-OPT achieves the fastest inference time (10.51s vs. 28.49s for Flow, 197s for WK pooling) because no post-processing is needed. Training requires less than 8 minutes. The code is publicly available, making it immediately applicable to domain-specific settings.</li>
+            <li><strong>Multilingual generalization:</strong> The successful application to MBERT for cross-lingual zero-shot transfer on Spanish and Arabic STS tasks demonstrated that self-guided contrastive learning is not limited to English, opening avenues for improving sentence embeddings in low-resource languages.</li>
+            <li><strong>Influential in the contrastive learning for NLP community:</strong> Published at ACL-IJCNLP 2021, this work appeared contemporaneously with SimCSE (Gao et al., 2021) and other landmark methods (Carlsson et al., 2021; Wang et al., 2021), contributing to the wave of research that established contrastive learning as a standard approach for unsupervised sentence embeddings. The ensemble experiment combining back-translation with self-guidance (achieving 75.10 avg.) also showed that these approaches are complementary.</li>
+        </ul>
     </div>
 
     <div class="section">
         <h2>Links</h2>
         <div class="links-section">
             <a href="https://aclanthology.org/2021.acl-long.197/" target="_blank" class="paper-link">ACL Anthology</a>
+            <a href="https://arxiv.org/abs/2106.07345" target="_blank" class="paper-link">arXiv Paper</a>
+            <a href="https://aclanthology.org/2021.acl-long.197.pdf" target="_blank" class="paper-link">PDF</a>
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">

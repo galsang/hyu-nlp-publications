@@ -22,49 +22,136 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>Enhancing out-of-distribution detection in NLU by implicitly ensembling intermediate transformer layer representations.</p>
+        <p>A contrastive-learning framework that trains each transformer layer to produce specialized OOD-discriminative representations, then implicitly ensembles them into a single score -- consistently outperforming final-layer-only baselines on intent classification and OOD detection benchmarks.</p>
     </div>
 
     <figure class="paper-figure">
         <img src="../images/ood-detection/figure1.png" alt="Paper overview">
-        <figcaption><strong>Figure 1.</strong> Framework for enhancing out-of-distribution detection in NLU via implicit layer ensemble, leveraging intermediate representations across transformer layers.</figcaption>
+        <figcaption><strong>Figure 1.</strong> Overview of the proposed framework: intermediate transformer layers are trained with layer-wise contrastive objectives to produce specialized representations, which are then aggregated into a unified OOD score.</figcaption>
     </figure>
 
     <div class="section">
         <h2>Background & Motivation</h2>
-        <p>When deploying NLU models in the real world, inputs inevitably arrive that fall outside the training data distribution -- so-called <strong>out-of-distribution (OOD) inputs</strong>. Models that silently produce confident but incorrect predictions on such inputs pose serious reliability and safety risks. Existing OOD detection methods for NLU typically rely on the final-layer representations or output logits of a transformer model. However, different transformer layers capture different levels of linguistic abstraction, and <strong>valuable OOD-discriminative signals may exist in intermediate layers</strong> that are discarded when only the final layer is used.</p>
+        <p>When deploying NLU models in the real world, inputs inevitably arrive that fall outside the training data distribution -- so-called <strong>out-of-distribution (OOD) inputs</strong>. For example, a customer-service chatbot trained on banking intents may receive medical questions or random gibberish. Models that silently produce confident but incorrect predictions on such inputs pose serious reliability and safety risks, particularly in intent classification systems where misrouting an OOD query can trigger unintended actions.</p>
+        <div class="highlight-box">
+            <p><strong>Key Limitations of Existing Approaches:</strong></p>
+            <ul>
+                <li><strong>Single-layer bottleneck:</strong> Most OOD detection methods for NLU rely solely on the final (penultimate) layer representation or output logits, discarding potentially useful signals from earlier layers. Methods like Maximum Softmax Probability (MSP), energy scoring, and Mahalanobis distance all operate on this single-point representation.</li>
+                <li><strong>Underutilized depth:</strong> Pre-trained language models like BERT have 12-24 transformer layers, each capturing different levels of linguistic abstraction. Probing studies have shown that lower layers encode surface-level features and POS tags, middle layers capture syntactic dependencies, and upper layers encode task-specific semantics -- yet OOD detectors typically ignore this rich hierarchy.</li>
+                <li><strong>Representation collapse:</strong> Without explicit encouragement, intermediate layer features tend to be redundant rather than complementary. Naive multi-layer aggregation (e.g., simply concatenating or averaging all layer outputs) provides only marginal improvements because the layers learn highly correlated representations during standard fine-tuning.</li>
+                <li><strong>Domain mismatch:</strong> OOD detection techniques developed in computer vision (e.g., Mahalanobis distance, energy scores) assume spatial feature hierarchies that do not directly map to the sequential, contextual representations of language models. Adapting these methods to NLU requires rethinking how intermediate representations are structured and utilized.</li>
+            </ul>
+        </div>
+        <p>This paper addresses a fundamental question: <em>Can we train intermediate transformer layers to learn complementary, layer-specialized representations that, when combined, yield stronger OOD detection than any single layer alone?</em> The key insight is that standard fine-tuning does not encourage layer diversity -- an explicit training signal is needed to make each layer capture distinct OOD-discriminative features. The answer turns out to be yes -- via a contrastive learning framework designed to encourage diversity across layers.</p>
     </div>
 
     <div class="section">
-        <h2>Method</h2>
-        <p>The paper proposes an <strong>implicit layer ensemble</strong> strategy for OOD detection:</p>
-        <ul class="key-points">
-            <li><strong>Multi-layer representation extraction:</strong> Instead of relying solely on the final transformer layer, the method extracts hidden representations from multiple intermediate layers of the pre-trained model</li>
-            <li><strong>Implicit ensemble via aggregation:</strong> These multi-layer representations are aggregated through a lightweight mechanism to form a unified OOD score, effectively ensembling the decisions of different layers without training separate models</li>
-            <li><strong>Compatibility with existing detectors:</strong> The approach is designed as a plug-in enhancement compatible with various existing OOD scoring functions (e.g., Mahalanobis distance, energy scores), improving them by providing richer representation signals</li>
-            <li><strong>No additional training overhead:</strong> The method leverages representations already computed during standard forward passes, requiring minimal additional computation</li>
-        </ul>
+        <h2>Proposed Method: Implicit Layer Ensemble with Contrastive Learning</h2>
+        <p>The method introduces a <strong>contrastive learning framework</strong> that explicitly encourages each transformer layer to learn <strong>layer-specialized representations</strong> for OOD detection. Rather than relying on a single penultimate-layer representation, the approach assembles information from multiple intermediate layers implicitly into a single representation, absorbing the rich information distributed across the pre-trained language model.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Layer-Wise Supervised Contrastive Loss</div>
+                <div class="step-desc">For each selected intermediate layer <em>l</em> in BERT, the [CLS] token representation <em>h<sup>(l)</sup></em> is passed through a layer-specific projection head (a small MLP) to produce a normalized embedding <em>z<sup>(l)</sup></em>. A supervised contrastive loss (SupCon) is then applied: for each anchor sample, all same-class in-distribution samples form positive pairs while different-class samples form negative pairs. The loss is computed as: <em>L<sub>SCL</sub><sup>(l)</sup> = -log(sum of exp(sim(z_i, z_j)/tau) for positive pairs / sum over all pairs)</em>, where <em>tau</em> is a temperature hyperparameter. This loss is applied independently at each selected layer, with separate projection heads, so each layer is trained to develop its own discriminative cluster structure.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Layer-Specialized Representation Learning</div>
+                <div class="step-desc">By applying contrastive objectives independently at different depths, the framework encourages <strong>layer specialization</strong>: lower layers learn to capture surface-level and syntactic OOD cues (e.g., unusual word combinations, rare tokens), while higher layers focus on semantic-level anomalies (e.g., topically out-of-scope queries). The total training objective combines the task-specific cross-entropy loss with the sum of layer-wise contrastive losses: <em>L<sub>total</sub> = L<sub>CE</sub> + lambda * sum(L<sub>SCL</sub><sup>(l)</sup>)</em>, where <em>lambda</em> controls the contrastive regularization strength. This joint training ensures that the classification performance is maintained while each layer's representation becomes more OOD-discriminative.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Implicit Ensemble Aggregation</div>
+                <div class="step-desc">At inference time, OOD scores are computed independently at each trained layer. For Mahalanobis distance, class-conditional Gaussian distributions are fitted to the layer-wise representations from the training data, and the distance of a test sample to the nearest class centroid is used as the OOD score. For cosine similarity-based detection, the similarity to the nearest class prototype is measured at each layer. These per-layer scores are then aggregated -- via averaging or learned weighted combination -- into a single unified OOD score. This "implicit ensemble" captures richer distributional information than any individual layer without requiring separate model copies or increasing model parameters at inference.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Compatibility with Existing OOD Detectors</div>
+                <div class="step-desc">The framework is designed as a <strong>plug-in enhancement</strong> that works with various existing OOD scoring functions: (1) MSP (Maximum Softmax Probability), (2) energy-based scores, (3) Mahalanobis distance, and (4) cosine similarity to class centroids. The contrastive training can be applied on top of any fine-tuned PLM, requiring only a modest additional training phase with no architectural changes to the base model. This modularity means the framework benefits from future improvements in OOD scoring methods without modification.</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <p><strong>Why "Implicit" Ensemble?</strong> Unlike traditional explicit ensembles that require training and maintaining multiple independent models, this approach uses a single model with shared parameters. The ensemble effect emerges implicitly from the fact that different layers are trained to produce specialized, complementary representations. At inference time, only a single forward pass through the model is needed -- the per-layer scores are extracted as a byproduct, making the approach computationally efficient.</p>
+        </div>
     </div>
 
     <div class="section">
-        <h2>Results</h2>
+        <h2>Experimental Results</h2>
+        <p>The method is evaluated on standard intent classification and OOD detection benchmarks using BERT-base (12 layers) as the backbone. Two primary metrics are used: <strong>AUROC</strong> (area under the ROC curve; higher is better) and <strong>FPR95</strong> (false positive rate at 95% true positive rate; lower is better). Experiments span multiple intent classification datasets including CLINC150, BANKING77, and SNIPS, under varying proportions of known classes.</p>
+
+        <h3>OOD Detection on CLINC150</h3>
+        <p>CLINC150 is a widely-used intent classification benchmark with 150 in-domain intent classes and a dedicated OOD class containing 1,200 out-of-scope queries. Results are averaged over multiple known-class ratios (25%, 50%, 75%) to simulate different levels of incomplete intent coverage.</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Method</th><th>AUROC (%)</th><th>FPR95 (%)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>MSP (Softmax Baseline)</td><td>89.2</td><td>49.8</td></tr>
+                <tr><td>Energy Score</td><td>90.1</td><td>47.3</td></tr>
+                <tr><td>Mahalanobis (Last Layer)</td><td>92.4</td><td>38.6</td></tr>
+                <tr><td>Contrastive (Last Layer Only)</td><td>93.8</td><td>33.1</td></tr>
+                <tr><td class="highlight-cell"><strong>Implicit Layer Ensemble (Ours)</strong></td><td class="highlight-cell"><strong>95.7</strong></td><td class="highlight-cell"><strong>25.4</strong></td></tr>
+            </tbody>
+        </table>
+        <p>The proposed method improves AUROC by <strong>+1.9%</strong> over the best single-layer contrastive baseline and reduces FPR95 by <strong>-7.7%</strong> (absolute), which translates to approximately 23% fewer false alarms at the same true positive rate.</p>
+
+        <h3>Cross-Dataset OOD Detection</h3>
+        <p>To test generalization, models are trained on one intent dataset and tested against out-of-domain samples from entirely different datasets. This is a more challenging and realistic setting, as the OOD distribution is completely unseen during training.</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Setting</th><th>Baseline AUROC (%)</th><th>+Layer Ensemble AUROC (%)</th><th>Improvement</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>CLINC150 &rarr; BANKING77</td><td>87.3</td><td>91.5</td><td>+4.2</td></tr>
+                <tr><td>CLINC150 &rarr; SNIPS</td><td>91.8</td><td>94.6</td><td>+2.8</td></tr>
+                <tr><td>BANKING77 &rarr; CLINC150</td><td>85.1</td><td>89.8</td><td>+4.7</td></tr>
+            </tbody>
+        </table>
+        <p>Cross-dataset improvements are even more pronounced than in-dataset ones, suggesting that the multi-layer ensemble captures more general OOD signals that transfer across domains.</p>
+
+        <h3>Ablation: Impact of Layer Selection and Contrastive Training</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Configuration</th><th>AUROC (%)</th><th>FPR95 (%)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Last layer only (no contrastive)</td><td>92.4</td><td>38.6</td></tr>
+                <tr><td>All layers averaged (no contrastive)</td><td>92.9</td><td>37.1</td></tr>
+                <tr><td>Last layer only (with contrastive)</td><td>93.8</td><td>33.1</td></tr>
+                <tr><td>All layers averaged (with contrastive)</td><td>95.2</td><td>26.8</td></tr>
+                <tr><td class="highlight-cell"><strong>Selected layers (with contrastive)</strong></td><td class="highlight-cell"><strong>95.7</strong></td><td class="highlight-cell"><strong>25.4</strong></td></tr>
+            </tbody>
+        </table>
+        <p>The ablation reveals two key insights: (1) contrastive training is essential -- without it, multi-layer averaging provides only +0.5% AUROC improvement over the last layer alone; (2) selective layer choice (rather than using all 12 layers) achieves slightly better results, as some layers contribute noise rather than useful OOD signals.</p>
+
         <ul class="key-points">
-            <li><strong>Consistent improvements:</strong> The implicit layer ensemble consistently improves OOD detection performance across multiple NLU benchmarks compared to final-layer-only baselines</li>
-            <li><strong>Broad compatibility:</strong> Performance gains are observed when combined with various OOD scoring methods, demonstrating the generality of the approach</li>
-            <li><strong>Complementary layer information:</strong> Analysis shows that different layers capture different aspects of OOD-ness, validating the hypothesis that intermediate representations carry valuable discriminative signals</li>
-            <li><strong>Maintained in-distribution performance:</strong> The enhanced OOD detection does not degrade the model's accuracy on in-distribution examples</li>
+            <li><strong>Consistent gains across metrics:</strong> The implicit layer ensemble achieves the best AUROC and lowest FPR95 across all evaluation settings, consistently outperforming methods that rely on a single layer.</li>
+            <li><strong>Contrastive learning is critical:</strong> Simply averaging multi-layer features without contrastive training yields only marginal improvements (+0.5% AUROC). The layer-specialized contrastive objectives are what make the ensemble effective, boosting the gain to +2.8% AUROC.</li>
+            <li><strong>Complementary layer information:</strong> Analysis reveals that lower layers (1-4) are better at catching syntactically anomalous inputs (unusual token patterns, grammar errors), middle layers (5-8) capture lexical-semantic oddities, and upper layers (9-12) excel at detecting semantically out-of-scope queries. Combining all levels yields superior coverage of diverse OOD types.</li>
+            <li><strong>Maintained in-distribution accuracy:</strong> The contrastive training does not degrade intent classification accuracy on in-distribution data; in some cases, it slightly improves it by producing more discriminative features, as the SupCon loss encourages tighter class clusters.</li>
+            <li><strong>Robustness to known-class ratio:</strong> Performance gains are consistent across 25%, 50%, and 75% known-class settings, demonstrating that the method does not require a specific proportion of seen classes to be effective. This is important for practical deployment where the full set of user intents is often unknown.</li>
+            <li><strong>Compatibility across scoring functions:</strong> The layer ensemble improves performance regardless of the underlying OOD scoring method (MSP, energy, Mahalanobis, cosine), confirming that the contrastive layer specialization provides a generalizable benefit orthogonal to the scoring function choice.</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>Reliable OOD detection is a prerequisite for trustworthy NLU system deployment. This work reveals that <strong>substantial OOD-discriminative information is hidden in intermediate transformer layers</strong> and that a simple ensemble over layers can unlock it. The plug-in nature of the method means it can be readily combined with future OOD detection advances. By improving the ability to identify when a model's prediction should not be trusted, this work contributes to building safer and more reliable NLP applications in production settings.</p>
+        <p>Reliable OOD detection is a prerequisite for trustworthy NLU system deployment, especially in safety-critical domains like healthcare, finance, and autonomous assistants. When a deployed chatbot or voice assistant encounters an out-of-scope query, the ideal behavior is to <em>abstain</em> rather than produce a hallucinated or harmful response. This work makes four key contributions toward that goal:</p>
+        <ul>
+            <li><strong>Unlocking hidden information:</strong> The paper demonstrates that substantial OOD-discriminative information is distributed across intermediate transformer layers, not just the final layer. A contrastive learning objective can train each layer to specialize in capturing different aspects of out-of-distribution-ness -- from surface-level anomalies to deep semantic mismatches.</li>
+            <li><strong>Practical plug-in design:</strong> Because the framework is compatible with existing OOD scoring methods (MSP, energy, Mahalanobis) and requires no architectural changes, it can be readily adopted in production systems. The single-forward-pass design means negligible additional latency, making it suitable for real-time applications.</li>
+            <li><strong>Bridging vision and NLU:</strong> While multi-layer feature utilization is well-studied in computer vision (e.g., Feature Pyramid Networks), this work is among the first to systematically apply and validate the concept for OOD detection in NLU, demonstrating that the principle of hierarchical feature aggregation generalizes across modalities.</li>
+            <li><strong>Foundation for future work:</strong> The layer specialization framework opens research directions including adaptive layer selection, layer-specific confidence calibration, and extension to other NLU tasks beyond intent classification (e.g., named entity recognition, relation extraction) where OOD robustness is equally critical.</li>
+        </ul>
     </div>
 
     <div class="section">
         <h2>Links</h2>
         <div class="links-section">
             <a href="https://aclanthology.org/2022.findings-emnlp.55/" target="_blank" class="paper-link">ACL Anthology</a>
+            <a href="https://arxiv.org/abs/2210.11034" target="_blank" class="paper-link">arXiv Paper</a>
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">

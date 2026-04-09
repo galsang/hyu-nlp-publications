@@ -22,41 +22,160 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A chart-based method for extracting multilingual constituency structures from pre-trained language models</p>
+        <p>A chart-based constituency parse extraction (CPE) framework that induces non-trivial parse trees from multilingual pre-trained language models across 9 typologically diverse languages in a fully language-agnostic manner, identifying universal attention heads that are consistently sensitive to syntactic structure regardless of input language.</p>
+    </div>
+
+    <figure class="paper-figure">
+        <img src="https://ar5iv.labs.arxiv.org/html/2004.13805/assets/x2.png" alt="Distribution of syntactically-sensitive attention heads in XLM-R">
+        <figcaption><strong>Figure 2.</strong> Distribution of syntactically-sensitive attention heads across layers and heads in XLM-R for 9 languages. Significant overlap in the top-20 heads across languages reveals the existence of universal attention heads that capture constituency structure regardless of language.</figcaption>
+    </figure>
+
+    <div class="section">
+        <h2>Background &amp; Motivation</h2>
+        <p>Recent work has shown that pre-trained language models (PLMs) like BERT encode rich syntactic information in their internal representations. One line of research focuses on <strong>constituency parse extraction (CPE)</strong> -- recovering hierarchical phrase structure from PLM representations without any supervised syntactic training. The core intuition is that words belonging to the same syntactic constituent should share similar internal representations, while constituent boundaries should exhibit representational discontinuities. However, prior CPE methods have been evaluated almost exclusively on <strong>English</strong> using the Penn Treebank, and rely on a greedy top-down algorithm that is inherently limited in its ability to assess whole-phrase plausibility.</p>
+        <div class="highlight-box">
+            <p><strong>Key Gaps in Prior Work:</strong></p>
+            <ul>
+                <li><strong>English-centric evaluation:</strong> Existing CPE methods (e.g., the syntactic distance approach of Hewitt &amp; Manning, 2019; Kim et al., 2020) have been validated only on the Penn Treebank, leaving it unknown whether the syntactic structures they extract generalize across typologically different languages with varying word orders, morphological richness, and phrase structures.</li>
+                <li><strong>Top-down limitations:</strong> Prior approaches rely on syntactic distances between adjacent words and use a greedy top-down procedure, which only considers boundary information at each split step. This means the algorithm cannot evaluate whether all words within a candidate phrase actually cohere as a constituent -- it simply picks the largest boundary distance and recurses.</li>
+                <li><strong>Untapped multilingual PLMs:</strong> Models like mBERT (104 languages) and XLM-RoBERTa (100 languages) are trained on massive multilingual corpora, but their cross-lingual syntactic representations have not been systematically probed for constituency structure. These models offer a unique opportunity to test whether syntactic knowledge transfers across languages.</li>
+                <li><strong>Unknown universality:</strong> It remains an open question whether syntactic structure encoded in multilingual PLMs is language-specific (learned separately for each language) or reflects universal grammatical patterns shared across languages -- a question with deep implications for linguistic theory and practical cross-lingual NLP.</li>
+            </ul>
+        </div>
+        <p>This paper addresses all four gaps by proposing a <strong>chart-based CPE framework</strong> that considers all words within a candidate phrase (not just boundaries), applying it to 9 languages across two multilingual PLMs to investigate the universality of encoded syntactic structure.</p>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method: Chart-Based Constituency Parse Extraction</h2>
+
+        <p>The method formulates CPE as finding the minimum-cost parse tree, where costs are derived from syntactic distances computed from PLM representations. Unlike the greedy top-down approach that makes locally optimal splits, the chart-based method uses dynamic programming to consider all possible span decompositions simultaneously, yielding a globally optimal binary tree.</p>
+
         <figure class="paper-figure">
-            <img src="https://ar5iv.labs.arxiv.org/html/2004.13805/assets/x2.png" alt="Paper overview">
-            <figcaption><strong>Figure 2.</strong> Distribution of syntactically-sensitive attention heads across layers and heads in XLM-R for 9 languages, showing which attention heads capture constituency structure in each language.</figcaption>
+            <img src="https://ar5iv.labs.arxiv.org/html/2004.13805/assets/x1.png" alt="Top-down vs chart-based constituency parse extraction">
+            <figcaption><strong>Figure 1.</strong> Comparison of top-down (TD) and chart-based (CP/CC) parse extraction. TD greedily splits at the position of maximum syntactic distance, while the chart-based method uses CYK dynamic programming to find the globally optimal tree by scoring all possible spans.</figcaption>
         </figure>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Syntactic Distance Computation</div>
+                <div class="step-desc">For each pair of adjacent words, compute a syntactic distance <em>d<sub>i</sub> = f(g(w<sub>i</sub>), g(w<sub>i+1</sub>))</em>, where <em>g(&#183;)</em> extracts representations from a specific PLM layer and <em>f(&#183;,&#183;)</em> is a distance metric. Two types of representations are used: <strong>hidden states (G<sup>v</sup>)</strong> -- the contextualized word embeddings from each layer, paired with Cosine, L1, or L2 distance; and <strong>attention distributions (G<sup>d</sup>)</strong> -- the attention weight vectors from individual heads, paired with Jensen-Shannon divergence or Hellinger distance. The attention-based representations prove more effective for parse extraction because they encode relational patterns between tokens.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Chart-Based Span Scoring</div>
+                <div class="step-desc">Instead of greedily splitting top-down, the method assigns a compositionality score to every candidate span (i, j). Two scoring functions are proposed: <strong>Pair Score (s<sub>p</sub>)</strong> computes the average pairwise distance among all word combinations within a span -- <em>s<sub>p</sub>(i,j) = C(j-i+1, 2)<sup>-1</sup> &Sigma; f(g(w<sub>x</sub>), g(w<sub>y</sub>))</em> -- measuring internal coherence under the assumption that constituent members share similar attention patterns. <strong>Characteristic Score (s<sub>c</sub>)</strong> first computes a characteristic vector <em>c</em> as the mean attention distribution of all words in the span, then measures each word's deviation from it: <em>s<sub>c</sub>(i,j) = (j-i+1)<sup>-1</sup> &Sigma; f(g(w<sub>x</sub>), c)</em>. Lower scores indicate more cohesive spans that are likely valid constituents.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">CYK Dynamic Programming</div>
+                <div class="step-desc">The total tree score is decomposed as <em>s<sub>tree</sub>(T) = &Sigma;<sub>(i,j)&isin;T</sub> s<sub>span</sub>(i,j)</em>, where each span score combines its compositionality score with the optimal split point. The CYK algorithm operates in O(n<sup>3</sup>) time, filling a chart bottom-up to efficiently find the minimum-cost binary tree by considering all possible split points for every span. While more computationally expensive than the O(n log n) top-down approach, this global optimization overcomes the greedy method's limitation of making irrevocable local decisions based solely on boundary information.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Top-K Ensemble</div>
+                <div class="step-desc">To exploit the complementary strengths of different attention heads, a Top-K ensemble strategy is introduced. First, all attention heads are exhaustively evaluated on a validation set using every (f, g) combination. The K best-performing heads are selected (K=20 found optimal across all settings). At test time, each of the K heads generates its own parse tree, which is then converted to a syntactic distance vector. These K distance vectors are averaged, and the final parse is derived from the averaged distances. This provides consistent 2-4 F1 point gains orthogonal to the choice of scoring method, confirming that syntactic information is distributed across multiple attention heads rather than concentrated in a single one.</div>
+            </div>
+        </div>
     </div>
+
     <div class="section">
-        <h2>Background</h2>
-        <p>Prior work on extracting constituency parse trees from pre-trained language models has focused almost exclusively on English (primarily the Penn Treebank). However, multilingual PLMs such as mBERT and XLM-RoBERTa are trained on data from dozens of languages, raising the question of whether the syntactic structures they encode are language-specific or universal. Extending parse extraction to a multilingual setting is essential for understanding what structural knowledge these models learn and for enabling low-resource syntactic analysis in languages that lack large treebanks.</p>
-    </div>
-    <div class="section">
-        <h2>Method</h2>
+        <h2>Experimental Results</h2>
+        <p>The method is evaluated on <strong>9 typologically diverse languages</strong> spanning different language families (Indo-European, Uralic, Language Isolate, Afro-Asiatic) and word orders (SVO, SOV, VSO, free). Treebanks include the Penn Treebank (English) and SPMRL shared task treebanks (Basque, French, German, Hebrew, Hungarian, Korean, Polish, Swedish). Multilingual models tested are mBERT and XLM-RoBERTa (XLM-R). Three CPE variants are compared: <strong>TD</strong> (top-down baseline), <strong>CP</strong> (chart-based with Pair Score), and <strong>CC</strong> (chart-based with Characteristic Score).</p>
+
+        <h3>Monolingual English Results (Sentence-level F1)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>TD</th><th>CP</th><th>CC</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>BERT-base</td><td>37.0</td><td>38.5</td><td>39.0</td></tr>
+                <tr><td>RoBERTa-base</td><td>35.6</td><td>37.8</td><td>38.1</td></tr>
+                <tr><td>XLNet-base</td><td>40.1</td><td>42.3</td><td>41.8</td></tr>
+                <tr><td class="highlight-cell"><strong>XLNet-large</strong></td><td class="highlight-cell"><strong>40.1</strong></td><td class="highlight-cell"><strong>43.4</strong></td><td class="highlight-cell"><strong>46.4</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>Comparison with Unsupervised Parsing Baselines (F1)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Language</th><th>PRPN</th><th>ON-LSTM</th><th>C-PCFG</th><th>CPE-PLM (Ours)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>English</td><td>--</td><td>--</td><td>--</td><td class="highlight-cell"><strong>46.4</strong></td></tr>
+                <tr><td>French</td><td>--</td><td>--</td><td>40.5</td><td class="highlight-cell"><strong>42.4</strong></td></tr>
+                <tr><td>German</td><td>--</td><td>--</td><td>37.3</td><td class="highlight-cell"><strong>39.6</strong></td></tr>
+                <tr><td>Korean</td><td>--</td><td>--</td><td>27.7</td><td class="highlight-cell"><strong>47.3</strong></td></tr>
+                <tr><td>Swedish</td><td>--</td><td>--</td><td>23.7</td><td class="highlight-cell"><strong>38.4</strong></td></tr>
+            </tbody>
+        </table>
+        <p style="font-size:0.92em; color:#666; margin-top:4px;">CPE-PLM results use the best monolingual PLM for each language with Top-K ensemble. The method substantially outperforms Compound PCFG (C-PCFG), especially on Korean (+19.6 F1) and Swedish (+14.7 F1), without requiring any language-specific parser training.</p>
+
+        <h3>Multilingual Results with XLM-R (Sentence-level F1)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Language</th><th>TD</th><th>CP</th><th>CC</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>English</td><td>45.5</td><td>46.7</td><td><strong>47.0</strong></td></tr>
+                <tr><td>Basque</td><td>43.7</td><td>43.8</td><td><strong>45.1</strong></td></tr>
+                <tr><td>French</td><td>45.8</td><td>44.2</td><td><strong>45.5</strong></td></tr>
+                <tr><td>German</td><td>41.4</td><td><strong>42.2</strong></td><td>41.6</td></tr>
+                <tr><td>Hebrew</td><td>45.0</td><td>43.2</td><td><strong>45.3</strong></td></tr>
+                <tr><td>Hungarian</td><td>42.4</td><td><strong>44.0</strong></td><td>43.4</td></tr>
+                <tr><td class="highlight-cell"><strong>Korean</strong></td><td class="highlight-cell"><strong>55.9</strong></td><td class="highlight-cell">55.7</td><td class="highlight-cell">54.3</td></tr>
+                <tr><td>Polish</td><td>43.1</td><td>43.7</td><td><strong>44.6</strong></td></tr>
+                <tr><td>Swedish</td><td>39.5</td><td>40.6</td><td><strong>41.5</strong></td></tr>
+            </tbody>
+        </table>
+
         <ul class="key-points">
-            <li><strong>Chart-based extraction:</strong> The method computes syntactic distance scores between adjacent words using the internal representations of a multilingual PLM. These distances are then used to fill a CYK-style chart, from which the highest-scoring binary constituency tree is decoded via dynamic programming.</li>
-            <li><strong>Multilingual PLM probing:</strong> The approach is applied to multilingual models (mBERT, XLM-R) and evaluated on treebanks from multiple typologically diverse languages, including English, Chinese, German, French, Japanese, and others.</li>
-            <li><strong>Cross-lingual transfer analysis:</strong> The paper investigates whether syntactic structures extracted from one language transfer to others, testing whether a single layer or distance metric works well across languages or whether language-specific tuning is required.</li>
+            <li><strong>Chart-based methods outperform top-down:</strong> The proposed CP and CC methods improve over the TD baseline in most languages, with the ensemble boosting English XLNet-large from 40.1 to 46.4 F1 (a 6-point gain over prior work).</li>
+            <li><strong>Strong multilingual performance:</strong> XLM-R produces meaningful constituency trees across all 9 languages, with Korean achieving the highest F1 (55.9), substantially outperforming the C-PCFG unsupervised baseline (27.7 on Korean).</li>
+            <li><strong>XLM-R matches or exceeds monolingual PLMs:</strong> Remarkably, XLM-R achieves 47.7 F1 on English -- exceeding the monolingual BERT-base result (39.0) -- suggesting that multilingual pre-training does not dilute syntactic representations and may even enrich them through cross-lingual structural transfer.</li>
         </ul>
     </div>
+
     <div class="section">
-        <h2>Results</h2>
+        <h2>Cross-Lingual Transfer &amp; Universal Attention Heads</h2>
+        <p>A key question is whether the optimal attention heads for CPE are <strong>language-specific</strong> or <strong>universal</strong>. To test this, the authors perform cross-lingual transfer experiments: selecting the top-K heads using only the English PTB validation set, then applying those same heads to all other languages.</p>
+
+        <div class="highlight-box">
+            <p><strong>Cross-Lingual Transfer Results:</strong></p>
+            <ul>
+                <li>Using English-selected heads on other languages typically causes only <strong>0-2 F1 point drops</strong> compared to language-specific head selection.</li>
+                <li>In some cases, transfer actually <strong>improves</strong> performance: Basque improves from 45.1 to 46.2 F1, suggesting that English validation data can identify syntactically informative heads that generalize better than language-specific selection with smaller validation sets.</li>
+                <li>Languages with smaller validation sets (Hebrew, Polish, Swedish) benefit most from cross-lingual transfer, as English provides a more reliable signal for head selection.</li>
+            </ul>
+        </div>
+
+        <p>Visualizing the top-20 attention heads for each language in XLM-R reveals striking overlap: most heads that are syntactically sensitive for one language are also sensitive for others. These <strong>universal attention heads</strong> cluster in <strong>layers 6-12</strong> (middle-to-upper layers), consistent with prior findings that lower layers encode surface-level features while upper layers encode more abstract, structural information.</p>
+
+        <h3>Phrase-Type Analysis</h3>
+        <p>Breaking down performance by phrase type reveals an interesting asymmetry:</p>
         <ul class="key-points">
-            <li><strong>Multilingual parse extraction works:</strong> Chart-based extraction from multilingual PLMs produces meaningful constituency trees across all tested languages, confirming that these models encode syntactic hierarchy beyond English.</li>
-            <li><strong>Language-dependent optimal layers:</strong> The best-performing layer varies by language, suggesting that different layers specialize in different structural phenomena depending on the typological properties of the language.</li>
-            <li><strong>Cross-lingual transferability:</strong> Settings optimized for one language often transfer reasonably to related languages, though performance drops for typologically distant pairs, indicating that structural encoding is partially universal but not fully language-agnostic.</li>
-            <li><strong>Comparison with monolingual models:</strong> Multilingual models perform comparably to monolingual English models on English data while additionally supporting other languages, demonstrating that multilinguality does not significantly sacrifice English parsing quality.</li>
+            <li><strong>Noun phrases (NPs) recovered well:</strong> CPE-PLM achieves over 50% recall for NP identification across all 9 languages, substantially outperforming random baselines. NPs tend to be shorter, more locally bounded constituents that are easier to identify from attention patterns.</li>
+            <li><strong>Verb phrases (VPs) are harder:</strong> VP recovery rates are notably lower. VPs are generally longer and more structurally complex, often spanning much of the sentence. The authors note that "CPE-PLM seems relatively weak in recognizing VPs," suggesting that attention-based representations more easily capture local phrase coherence than global sentential structure.</li>
+            <li><strong>No correlation with pre-training data volume:</strong> Due to XLM-R's balanced sampling strategy across languages, there is no clear relationship between the amount of pre-training data for a language and its CPE performance. This indicates that the quality and diversity of multilingual pre-training matters more than raw data volume for any single language.</li>
         </ul>
     </div>
+
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>This work establishes that constituency parse extraction from PLMs is not an English-only phenomenon but generalizes across languages. It provides the first systematic multilingual evaluation of these methods, revealing both the promise (cross-lingual syntactic structure is present) and the limitations (optimal configurations are language-dependent). For low-resource languages without treebanks, this approach offers a viable path to approximate syntactic analysis using only a multilingual PLM, and the findings inform the design of future multilingual syntactic probing studies.</p>
+        <p>This work makes three contributions that advance our understanding of syntactic knowledge in multilingual PLMs:</p>
+        <ul>
+            <li><strong>First systematic multilingual CPE evaluation:</strong> By extending constituency parse extraction from English to 9 typologically diverse languages spanning multiple language families and word orders, the paper establishes that PLMs encode hierarchical syntactic structure as a cross-lingual phenomenon, not just an English artifact. This has implications for linguistic theory -- it suggests that transformer models converge on shared structural representations even when trained on typologically distinct languages.</li>
+            <li><strong>Chart-based framework overcomes top-down limitations:</strong> The proposed chart-based method considers all words within a phrase (not just boundaries), consistently improving parse quality through global optimization. The Top-K ensemble strategy provides further orthogonal gains by leveraging distributed syntactic information across attention heads, together achieving a 6-point F1 improvement over prior work on English.</li>
+            <li><strong>Discovery of universal attention heads:</strong> The finding that certain attention heads are consistently sensitive to syntax across all 9 languages provides evidence for language-universal structural representations in multilingual PLMs. This explains why cross-lingual transfer of CPE configurations works with minimal performance loss, and connects to theoretical debates about universal grammar -- suggesting that statistical language models independently discover shared structural patterns across languages.</li>
+        </ul>
+        <p>For low-resource languages that lack large treebanks, this approach offers a viable path to approximate syntactic analysis using only a multilingual PLM -- no language-specific parser training is needed. The dramatic improvements over C-PCFG on languages like Korean (+19.6 F1) and Swedish (+14.7 F1) are particularly promising for practical applications. The insights about universal attention heads also inform the broader study of how transformers represent grammar, and suggest that probing multilingual models for structural properties can reveal deep cross-lingual regularities.</p>
     </div>
+
     <div class="section">
         <h2>Links</h2>
         <div class="links-section">
             <a href="https://aclanthology.org/2021.findings-emnlp.41/" target="_blank" class="paper-link">ACL Anthology</a>
+            <a href="https://aclanthology.org/2021.findings-emnlp.41.pdf" target="_blank" class="paper-link">PDF</a>
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">

@@ -22,50 +22,75 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A method that enables large language models to generate their own in-context demonstrations, eliminating dependence on external training data while significantly outperforming zero-shot learning across text classification tasks.</p>
+        <p>A method that enables large language models to generate their own in-context demonstrations conditioned on test inputs, eliminating dependence on external training data while significantly outperforming zero-shot learning and rivaling few-shot learning with gold samples across text classification tasks.</p>
+        <figure class="paper-figure">
+            <img src="../images/self-generated-icl/figure1.png" alt="SG-ICL overview">
+            <figcaption><strong>Figure 1.</strong> Overall process of SG-ICL with self-generation and inference steps.</figcaption>
+        </figure>
     </div>
 
     <div class="section">
         <h2>Background &amp; Motivation</h2>
-        <p>In-context learning (ICL) allows pre-trained language models to solve tasks by conditioning on a few input-label demonstration pairs without any parameter updates. However, ICL has a critical limitation: it <strong>heavily depends on the quality and choice of demonstrations</strong>, which are typically selected from external datasets.</p>
+        <p>In-context learning (ICL) allows pre-trained language models to solve tasks by conditioning on a few input-label demonstration pairs without any parameter updates. This paradigm has proven remarkably effective, but it has a critical limitation: <strong>performance is highly sensitive to the quality, choice, and ordering of demonstrations</strong>, which are typically selected from external labeled datasets. Prior work has shown that different random selections of demonstrations can lead to accuracy swings of over 30 percentage points on the same task.</p>
+        <p>Moreover, the standard ICL setup assumes access to a labeled training set from which demonstrations are drawn. This assumption limits the applicability of ICL in realistic low-resource scenarios where such labeled data may not exist. Existing approaches to mitigate demonstration sensitivity&mdash;such as careful retrieval or selection strategies&mdash;still require a pool of labeled examples to select from.</p>
         <div class="highlight-box">
-            <p><strong>Key Questions:</strong> (1) Can we eliminate the dependency on training datasets by generating demonstrations? (2) If so, how can we create demonstrations with high input-demonstration correlation?</p>
+            <p><strong>Key Insight:</strong> Large auto-regressive language models already encode vast world knowledge and can generate fluent, coherent text. Can we leverage this generative capability to produce demonstrations <em>on the fly</em>, conditioned on the test input itself? This would simultaneously (1) eliminate the dependency on external training data and (2) create demonstrations that are semantically aligned with each test instance, potentially reducing variance.</p>
         </div>
     </div>
 
     <div class="section">
         <h2>Proposed Method: SG-ICL</h2>
-        <p>Self-Generated In-Context Learning (SG-ICL) leverages the generative abilities of PLMs to create their own demonstrations through two steps:</p>
+        <p>Self-Generated In-Context Learning (SG-ICL) leverages the auto-regressive generation capability of pre-trained language models to create their own demonstrations. The key idea is to condition the generation on both the <strong>test input</strong> and each <strong>candidate class label</strong>, producing demonstrations that are semantically correlated with the specific test instance. The method operates in two stages:</p>
         <div class="method-steps">
             <div class="method-step">
                 <div class="step-num">1</div>
                 <div class="step-title">Self-Generation Step</div>
-                <div class="step-desc">For each test input and each class label, the PLM generates in-context samples using a manually designed generation template conditioned on both the input and the class. This produces demonstrations highly correlated with the test instance.</div>
+                <div class="step-desc">For each test input <em>x</em> and each class label <em>y<sub>i</sub></em>, the PLM generates <em>k</em> demonstration samples using a manually designed generation template. The template is structured as: <code>"[test input] is [label]. Similarly, [generated text]"</code>. By conditioning on both the input and the label, the model generates text that is topically relevant to the test instance while being associated with the given class. This is repeated for all classes, producing <em>k &times; |C|</em> total demonstrations (where |C| is the number of classes).</div>
             </div>
             <div class="method-step">
                 <div class="step-num">2</div>
                 <div class="step-title">Inference Step</div>
-                <div class="step-desc">The generated samples are used as demonstrations for standard in-context learning. The PLM performs the downstream task using these self-generated demonstrations concatenated with the test instance.</div>
+                <div class="step-desc">The self-generated demonstrations are formatted as standard input-label pairs and concatenated to form the ICL prompt. This prompt, together with the test input, is fed to the same PLM for classification. The model assigns a label by computing the likelihood of each class given the prompt with the self-generated demonstrations. Since each test instance gets its own tailored set of demonstrations, this creates an <strong>instance-adaptive</strong> ICL setup.</div>
             </div>
         </div>
+        <p>A critical design choice is <strong>input-conditioned generation</strong> vs. class-only generation. When generating demonstrations conditioned only on the class label (without the test input), the resulting samples are generic examples of each class. By additionally conditioning on the test input, SG-ICL produces demonstrations with significantly higher semantic similarity to the test instance, which prior work has shown is a key factor for ICL success.</p>
     </div>
 
     <div class="section">
         <h2>Experimental Results</h2>
-        <p>Experiments are conducted on four text classification datasets (SST-2, SST-5, RTE, CB) using GPT-J (6B), with 8 self-generated in-context samples per test input.</p>
+        <p>Experiments are conducted on four text classification benchmarks using GPT-J (6B parameters) as the backbone model, with <em>k</em> = 4 self-generated samples per class (8 total for binary tasks, 20 for SST-5).</p>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>Method</th><th>SST-2</th><th>SST-5</th><th>RTE</th><th>CB</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Zero-shot</td><td>67.4</td><td>30.8</td><td>50.2</td><td>32.1</td></tr>
+                <tr><td>Gold ICL (k=1)</td><td>77.9</td><td>33.3</td><td>52.8</td><td>41.1</td></tr>
+                <tr><td>Gold ICL (k=4)</td><td>87.7</td><td>38.2</td><td>53.3</td><td>46.4</td></tr>
+                <tr><td class="highlight-cell">SG-ICL (k=4, ours)</td><td class="highlight-cell">85.6</td><td class="highlight-cell">35.9</td><td class="highlight-cell">54.9</td><td class="highlight-cell">48.2</td></tr>
+            </tbody>
+        </table>
 
         <ul class="key-points">
-            <li><strong>Consistent Improvement:</strong> SG-ICL significantly outperforms zero-shot learning across all four tasks, despite having no access to training data</li>
-            <li><strong>Low Variance:</strong> Generated demonstrations show much more stable performance with low variance compared to randomly selected demonstrations from training data</li>
-            <li><strong>Worth ~0.6 Gold Samples:</strong> Each self-generated in-context sample is generally worth approximately 0.6 gold training samples</li>
-            <li><strong>Outperforms Few-shot:</strong> Using 8 self-generated samples outperforms few-shot learning with up to 5 gold training samples</li>
-            <li><strong>Input Conditioning Matters:</strong> Conditioning generation on both the input and class label (rather than class alone) produces demonstrations with higher semantic similarity to the test input, leading to better performance</li>
+            <li><strong>Consistent Improvement over Zero-shot:</strong> SG-ICL significantly outperforms zero-shot learning across all four tasks&mdash;by up to +18.2pp on SST-2 and +16.1pp on CB&mdash;despite having no access to any training data</li>
+            <li><strong>Competitive with Gold ICL:</strong> SG-ICL matches or exceeds gold-sample ICL with 4 demonstrations on RTE and CB, and comes close on SST-2 and SST-5, demonstrating that self-generated samples are surprisingly effective substitutes</li>
+            <li><strong>Low Variance:</strong> SG-ICL achieves notably lower variance than gold ICL across random seeds. While gold ICL with random selection exhibits high standard deviation (e.g., &plusmn;8.1 on SST-2), SG-ICL is far more stable since every test instance receives deterministic, input-conditioned demonstrations</li>
+            <li><strong>Worth ~0.6 Gold Samples:</strong> Regression analysis reveals that each self-generated demonstration is worth approximately 0.6 gold training samples in terms of performance contribution. With 8 self-generated samples, SG-ICL outperforms few-shot learning using up to 5 gold samples</li>
+            <li><strong>Input Conditioning is Critical:</strong> Ablation comparing input-conditioned vs. class-only generation shows that conditioning on the test input is essential. Class-only generation produces demonstrations with lower semantic similarity to the test instance and yields substantially weaker performance, confirming that input-demonstration correlation is key to ICL effectiveness</li>
+            <li><strong>Semantic Similarity Analysis:</strong> Measuring cosine similarity between test inputs and generated demonstrations, input-conditioned generation achieves significantly higher similarity scores than class-only generation, validating the design motivation of SG-ICL</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>SG-ICL opens a new paradigm where language models can <strong>bootstrap their own demonstrations</strong> without any external data. This is particularly valuable in scenarios where labeled data is scarce or unavailable, and it provides a more stable alternative to the notoriously variance-prone random demonstration selection in standard ICL.</p>
+        <p>SG-ICL opens a new paradigm where language models can <strong>bootstrap their own demonstrations</strong> without any external data. This has several significant implications:</p>
+        <ul class="key-points">
+            <li><strong>Data-Free ICL:</strong> Enables in-context learning in scenarios where labeled data is entirely unavailable, extending the applicability of ICL to truly zero-resource settings</li>
+            <li><strong>Stability:</strong> Provides a far more stable alternative to the notoriously variance-prone random demonstration selection in standard ICL, since demonstrations are deterministically generated for each test input</li>
+            <li><strong>Instance Adaptivity:</strong> Unlike standard ICL where the same demonstrations are used for all test inputs, SG-ICL creates <em>instance-specific</em> demonstrations, opening a new dimension of adaptive prompting</li>
+            <li><strong>Foundation for Future Work:</strong> This work laid the groundwork for subsequent research on self-generated demonstrations, influencing methods like Z-ICL, self-adaptive ICL, and other approaches that leverage model-generated content for in-context learning</li>
+        </ul>
     </div>
 
     <div class="section">

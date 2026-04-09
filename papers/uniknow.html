@@ -25,7 +25,7 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A framework that comprehensively evaluates and addresses 4 scenarios — conflict, distraction, absence, etc. — that arise when LLMs integrate parametric (internal) and external knowledge.</p>
+        <p>UniKnow is a unified evaluation framework and training methodology that addresses all four knowledge scenarios (conflict, external-only, parametric-only, unknown) arising when LLMs combine parametric and external knowledge, demonstrating that scenario-comprehensive supervision with just 4,000 training instances significantly outperforms fragmented approaches on reliability.</p>
     </div>
 
     <figure class="paper-figure">
@@ -35,15 +35,15 @@
 
     <div class="section">
         <h2>Background & Motivation</h2>
-        <p>LLMs utilize both their internally learned knowledge (parametric knowledge) and externally retrieved knowledge (external knowledge) via RAG and similar methods. However, various situations arise depending on the relationship between these two knowledge sources:</p>
+        <p>Language models rely on two knowledge sources: <strong>parametric knowledge (PK)</strong> encoded during pretraining, which remains static, and <strong>external knowledge (EK)</strong> provided at inference time via retrieval-augmented generation (RAG). However, real-world deployment exposes models to complex interactions between these sources that existing work addresses only in isolation:</p>
         <ul class="key-points">
-            <li><strong>Conflict:</strong> Internal knowledge and external knowledge contradict each other</li>
-            <li><strong>External-Only:</strong> Relevant knowledge exists only in external sources, not in parametric memory</li>
-            <li><strong>Parametric-Only:</strong> External knowledge is distracting noise and only internal knowledge is accurate</li>
-            <li><strong>Unknown:</strong> No knowledge source has the answer</li>
+            <li><strong>Conflict (C):</strong> Both PK and EK are present but contradict each other &mdash; the model must prioritize external knowledge for its recency and task-specificity</li>
+            <li><strong>External-Only (E-Only):</strong> The model lacks relevant parametric knowledge and must rely entirely on the provided context</li>
+            <li><strong>Parametric-Only (P-Only):</strong> External context is irrelevant noise (random or misleadingly retrieved) and only internal knowledge yields correct answers</li>
+            <li><strong>Unknown (U):</strong> Neither knowledge source contains the answer &mdash; the model should abstain rather than hallucinate</li>
         </ul>
         <div class="highlight-box">
-            <p><strong>Core Problem:</strong> Existing methods focus on specific scenarios (e.g., only conflicts) and exhibit bias where performance degrades in other scenarios.</p>
+            <p><strong>Core Problem:</strong> Prior methods like COIECD (conflict-only), RetRobust (robustness-only), and KAFT (conflict + robustness) each address at most 3 of 4 scenarios. When evaluated across all four, these fragmented approaches exhibit severe scenario-specific biases: methods that excel at answerability hallucinate in the Unknown scenario, while abstention-capable methods over-refuse when answers are available. UniKnow is the first framework to define, evaluate, and train for all four scenarios jointly.</p>
         </div>
     </div>
 
@@ -52,44 +52,152 @@
 
         <figure class="paper-figure">
             <img src="https://arxiv.org/html/2502.13648v1/x2.png" alt="UniKnow overview">
-            <figcaption><strong>Figure 2.</strong> Overall architecture of the UniKnow framework: Systematically evaluates 4 scenarios across 7 QA datasets.</figcaption>
+            <figcaption><strong>Figure 2.</strong> Overall architecture of the UniKnow framework: Systematically evaluates 4 scenarios across 7 QA datasets with controlled knowledge conditions.</figcaption>
         </figure>
 
-        <p><strong>Parametric Knowledge Estimation:</strong> For each question, 10 samples are drawn; if 70% or more are correct, relevant PK is deemed present</p>
-        <p style="margin-top:8px;"><strong>Context Construction:</strong> 4 types — original, conflict-generated, irrelevant random, and inaccurately retrieved contexts enable scenario-specific evaluation</p>
-        <p style="margin-top:8px;"><strong>Evaluation Scope:</strong> 7 datasets total: NQ, TriviaQA, HotpotQA, SQuAD, BioASQ, TextbookQA, RelationExtraction</p>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div>
+                    <div class="step-title">Parametric Knowledge Estimation</div>
+                    <div class="step-desc">For each question, sample n=10 responses from the model without any context. If 70% or more are correct (threshold &tau;=0.7), classify as &exist;PK (parametric knowledge present). If zero correct, classify as &empty;PK. Questions between thresholds are excluded as ambiguous. This enables controlled scenario assignment per question.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div>
+                    <div class="step-title">External Knowledge Construction</div>
+                    <div class="step-desc">Each question is paired with four context types: (a) <strong>original context</strong> containing the answer, (b) <strong>conflicting context</strong> generated via LLM instruction to contradict the answer while maintaining part-of-speech consistency, (c) <strong>random context</strong> &mdash; topically unrelated passages from the same dataset, and (d) <strong>incorrectly retrieved context</strong> &mdash; highest-ranked passages from Contriever-msmarco that do not contain the answer, simulating realistic retrieval failures.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div>
+                    <div class="step-title">Scenario-Aligned Evaluation</div>
+                    <div class="step-desc">Crossing PK presence (&exist;PK/&empty;PK) with EK type (relevant/conflicting/irrelevant) produces the four scenarios. Models are evaluated on 7 QA datasets: NaturalQuestions (3,994 test), TriviaQA (7,712), HotpotQA (4,760), SQuAD (7,918), BioASQ (697), TextbookQA (1,056), and RelationExtraction (1,974), with all contexts limited to ~100 words.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div>
+                    <div class="step-title">LM<sub>UniKnow</sub> Training</div>
+                    <div class="step-desc">The proposed training method uses balanced sampling: 250 questions each from &exist;PK and &empty;PK categories from NaturalQuestions and TriviaQA, paired with all 4 context types, yielding <strong>4,000 training instances</strong> total. For answerable scenarios (C, E-Only, P-Only), the model is trained to produce scenario-specific expected answers. For the Unknown scenario, it is trained to output an "unknown" abstention token. Efficient fine-tuning is done via <strong>QLoRA</strong>.</div>
+                </div>
+            </div>
+        </div>
+
+        <p style="margin-top:16px;">The paper also proposes <strong>COIECD<sub>Prompt</sub></strong>, an inference-only variant that extends the COIECD decoding strategy with explicit prompting for all four scenarios, enabling complete coverage without any training.</p>
     </div>
 
     <div class="section">
         <h2>Experimental Results</h2>
 
+        <p>Evaluated on 8 LLMs (Llama 2 7B/13B, Llama 3 8B, Mistral 7B v0.3, Qwen 2.5 1.5B/3B/7B/14B) across 7 datasets, using Exact Match (EM) and a Reliability score that balances correctness with appropriate abstention.</p>
+
         <div class="figures-row">
             <figure class="paper-figure">
                 <img src="https://arxiv.org/html/2502.13648v1/x4.png" alt="EM scores by scenario">
-                <figcaption><strong>Figure 4.</strong> EM scores by scenario: Confirms that each method is biased toward specific scenarios.</figcaption>
+                <figcaption><strong>Figure 4.</strong> EM scores by scenario (Llama 3 8B): Confirms that each method is biased toward specific scenarios, while LM<sub>UniKnow</sub> achieves the best overall performance.</figcaption>
             </figure>
             <figure class="paper-figure">
                 <img src="https://arxiv.org/html/2502.13648v1/x6.png" alt="Error type distributions">
-                <figcaption><strong>Figure 6.</strong> Error type distributions: Parametric errors are highest in the Conflict scenario, and hallucinations are most frequent in the Unknown scenario.</figcaption>
+                <figcaption><strong>Figure 6.</strong> Error type distributions: Parametric errors dominate in the Conflict scenario (40&ndash;45%), while hallucinations are most frequent in the Unknown scenario for methods without abstention training.</figcaption>
             </figure>
         </div>
 
+        <h3>Scenario-Specific Findings</h3>
         <ul class="key-points">
-            <li><strong>LM_UniKnow Achieves Best Performance:</strong> Training that covers all scenarios yields the best overall performance — "broader scenario coverage leads to better results"</li>
-            <li><strong>Difficulty of Conflict Resolution:</strong> Processing external knowledge that conflicts with existing PK is much harder than integrating new information</li>
-            <li><strong>Answerability vs Reliability Trade-off:</strong> Answerability-focused methods excel at P-Only but hallucinate on Unknown; abstention-focused methods show the opposite pattern</li>
-            <li><strong>Scale Effect:</strong> As model size increases, abstention ability consistently improves, but improvement on E-Only remains marginal</li>
+            <li><strong>LM<sub>UniKnow</sub> achieves highest overall reliability (~0.82&ndash;0.85):</strong> Training that covers all four scenarios yields the best combined performance, confirming that broader scenario coverage leads to better generalization</li>
+            <li><strong>Conflict is the hardest scenario:</strong> EM scores cluster more tightly with less variance across methods, indicating that overcoming parametric knowledge interference is fundamentally harder than incorporating new information</li>
+            <li><strong>Answerability vs. reliability trade-off:</strong> COIECD, RetRobust, and KAFT excel at P-Only but generate hallucinations in Unknown; abstention-capable methods (Prompting, COIECD<sub>Prompt</sub>, LM<sub>UniKnow</sub>) show the inverse pattern, with LM<sub>UniKnow</sub> achieving the best balance</li>
+            <li><strong>Scale effects are scenario-dependent:</strong> Testing on Qwen 1.5B&ndash;14B reveals that E-Only performance is stable across sizes (~65&ndash;70% EM), while Conflict and P-Only improve significantly with scale when explicitly trained, and Unknown abstention consistently improves with larger models</li>
         </ul>
+
+        <h3>Ablation: Context Diversity (Llama 3 8B)</h3>
+        <table class="results-table">
+            <thead>
+                <tr>
+                    <th>Training Configuration</th>
+                    <th>TriviaQA Rely</th>
+                    <th>NQ Rely</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>LM<sub>UniKnow</sub> (full)</strong></td>
+                    <td><strong>0.842</strong></td>
+                    <td><strong>0.740</strong></td>
+                </tr>
+                <tr>
+                    <td>w/o conflicting contexts</td>
+                    <td>0.733</td>
+                    <td>0.623</td>
+                </tr>
+                <tr>
+                    <td>w/o incorrectly retrieved contexts</td>
+                    <td>0.733</td>
+                    <td>0.623</td>
+                </tr>
+                <tr>
+                    <td>w/o both</td>
+                    <td>0.708</td>
+                    <td>0.621</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Ablation: Abstention Data Proportion (Llama 3 8B)</h3>
+        <table class="results-table">
+            <thead>
+                <tr>
+                    <th>Unknown Proportion</th>
+                    <th>Accuracy</th>
+                    <th>Truth</th>
+                    <th>Reliability</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>0% (no abstention)</td>
+                    <td>Highest</td>
+                    <td>Lowest</td>
+                    <td>~0.75</td>
+                </tr>
+                <tr>
+                    <td><strong>25% (LM<sub>UniKnow</sub> default)</strong></td>
+                    <td>0.69</td>
+                    <td>0.88</td>
+                    <td><strong>~0.84</strong></td>
+                </tr>
+                <tr>
+                    <td>50%</td>
+                    <td>Lowest</td>
+                    <td>Highest</td>
+                    <td>~0.79</td>
+                </tr>
+            </tbody>
+        </table>
 
         <figure class="paper-figure">
             <img src="https://arxiv.org/html/2502.13648v2/x7.png" alt="Accuracy and Reliability scores">
-            <figcaption><strong>Figure 7.</strong> Accuracy (Acc) and Reliability (Rely) scores: LM_UniKnow achieves the highest reliability while maintaining accuracy.</figcaption>
+            <figcaption><strong>Figure 7.</strong> Accuracy (Acc) vs. Reliability (Rely): LM<sub>UniKnow</sub> achieves the highest reliability score while maintaining competitive accuracy. Methods on the diagonal sacrifice answerability for safety.</figcaption>
         </figure>
+
+        <ul class="key-points">
+            <li><strong>Diverse context types are essential:</strong> Removing conflicting or incorrectly retrieved contexts from training drops reliability by 10+ points, confirming each context type contributes meaningfully</li>
+            <li><strong>Equal scenario allocation is optimal:</strong> 25% abstention data (equal across 4 scenarios) achieves the best reliability balance between correct answering and appropriate refusal</li>
+            <li><strong>Over-reliance depends on PK presence:</strong> Error analysis reveals that parametric errors concentrate in Conflict (40&ndash;45% of errors), a finding obscured in prior work that treats conflict in isolation</li>
+        </ul>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>In reality, knowledge conflicts, distractions, and absences can occur simultaneously. Rather than handling only one situation well, a comprehensive approach is needed to build <strong>AI that is reliable across all knowledge states</strong>. UniKnow provides a systematic evaluation framework and training methodology for this purpose.</p>
+        <p>In real-world RAG systems, knowledge conflicts, irrelevant retrievals, and unanswerable queries occur simultaneously and unpredictably. UniKnow makes three key contributions to building <strong>reliable AI across all knowledge states</strong>:</p>
+        <ul class="key-points">
+            <li><strong>First unified evaluation:</strong> Defines and operationalizes four exhaustive knowledge scenarios, enabling systematic diagnosis of model weaknesses that fragmented benchmarks miss</li>
+            <li><strong>Efficient training recipe:</strong> LM<sub>UniKnow</sub> achieves state-of-the-art reliability with only 4,000 training instances via QLoRA, making it practical to apply to any open-weight LLM</li>
+            <li><strong>Actionable insights:</strong> Reveals that parametric knowledge interactions fundamentally alter model behavior &mdash; a critical finding for designing future knowledge-grounded systems that must handle conflict, distraction, and absence gracefully</li>
+        </ul>
     </div>
 
     <div class="section">

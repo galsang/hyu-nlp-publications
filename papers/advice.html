@@ -25,7 +25,7 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>We identify the "answer-independence" problem where LLMs express excessive confidence regardless of their actual answers, and propose ADVICE, an answer-grounded confidence estimation fine-tuning method.</p>
+        <p>We discover that LLM overconfidence stems from "answer-independence" -- where confidence verbalization is internally decoupled from the model's own answer -- and propose ADVICE, a contrastive fine-tuning framework that grounds confidence estimation in the actual answer, achieving substantial calibration improvements (e.g., ECE from 16.9 to 10.4 on Llama-3.1-8B) with strong out-of-distribution generalization.</p>
     </div>
 
     <figure class="paper-figure">
@@ -35,88 +35,134 @@
 
     <div class="section">
         <h2>Background & Motivation</h2>
-        <p>Recent LLMs have gained the ability to verbalize their confidence levels in natural language, improving transparency. However, <strong>systematic overconfidence</strong> frequently occurs during this process. This study mathematically analyzes the root cause.</p>
+        <p>Large language models inevitably generate factually inaccurate content (hallucinations), and while eliminating this entirely may be theoretically unavoidable, a promising mitigation strategy is to have LLMs provide <strong>confidence estimates</strong> alongside their answers. Verbalized confidence -- where models express confidence levels in natural language -- is particularly attractive due to its universal applicability and user-friendly nature, requiring no access to internal model states.</p>
+        <p>However, a well-known and critical issue hinders broader application: <strong>systematic overconfidence</strong>, where models assign high confidence irrespective of output quality. Rather than simply mitigating overconfidence after the fact, this work asks a deeper question: <em>why</em> does overconfidence arise in the first place?</p>
         <div class="highlight-box">
-            <p><strong>Key Finding:</strong> The core cause of overconfidence is "answer-independence," where models generate confidence scores independent of their actual answers. The Jensen-Shannon divergence between confidence distributions for correct and incorrect answers is nearly zero, proving that models output confidence without referencing the answer content.</p>
+            <p><strong>Key Finding:</strong> Through analysis of intermediate processes, the authors discover that LLM-generated answers and confidence verbalization are <strong>internally decoupled</strong> -- a phenomenon they term "answer-independence." Specifically:</p>
+            <ul>
+                <li><strong>Distribution analysis:</strong> The Jensen-Shannon divergence (JSD) between confidence distributions conditioned on correct vs. incorrect answers shows strong concentration near zero (JSD &le; 0.1 for the vast majority of samples), proving that models produce nearly identical confidence regardless of the answer.</li>
+                <li><strong>Attention Rollout analysis:</strong> Attention flow from confidence tokens to answer tokens is significantly lower than attention to question tokens, indicating models rely less on answer-specific information when generating confidence.</li>
+                <li><strong>Integrated Gradients analysis:</strong> Token attribution reveals that answer tokens are consistently under-weighted compared to tokens in other components (e.g., question, instruction), further confirming the decoupling.</li>
+            </ul>
         </div>
     </div>
 
     <div class="figures-row">
         <figure class="paper-figure">
             <img src="https://arxiv.org/html/2510.10913v2/x2.png" alt="Jensen-Shannon divergence analysis">
-            <figcaption><strong>Figure 2.</strong> Confidence distributions for correct and incorrect answers are nearly identical (JSD ≈ 0), demonstrating that models express confidence independently of their answers.</figcaption>
+            <figcaption><strong>Figure 2.</strong> JSD scores between confidence distributions for correct vs. incorrect answers concentrate near zero with long right tails, demonstrating that models express confidence independently of their answers.</figcaption>
         </figure>
         <figure class="paper-figure">
             <img src="https://arxiv.org/html/2510.10913v2/x4.png" alt="Attention Rollout scores">
-            <figcaption><strong>Figure 3.</strong> Attention Rollout analysis confirms that confidence tokens pay almost no attention to answer tokens.</figcaption>
+            <figcaption><strong>Figure 3.</strong> Attention Rollout analysis shows that confidence tokens pay significantly less attention to answer tokens compared to question tokens, confirming the internal decoupling.</figcaption>
         </figure>
     </div>
 
     <div class="section">
         <h2>Proposed Method: ADVICE Framework</h2>
-        <p>ADVICE is a lightweight fine-tuning method that trains models to produce answer-grounded confidence. The key idea is to teach the model that <strong>confidence should differ between correct and incorrect answers</strong>.</p>
+        <p>ADVICE (<strong>A</strong>nswer-<strong>D</strong>ependent <strong>V</strong>erbal<strong>I</strong>zed <strong>C</strong>onfidence <strong>E</strong>stimation) is a lightweight fine-tuning framework that explicitly promotes answer-grounded confidence estimation. The key insight is to teach the model, through contrastive training on correct/incorrect answer pairs, that <strong>confidence should fundamentally differ depending on the answer's correctness</strong>.</p>
 
         <figure class="paper-figure">
             <img src="https://arxiv.org/html/2510.10913v2/x6.png" alt="ADVICE framework diagram">
-            <figcaption><strong>Figure 4.</strong> Overall architecture of the ADVICE framework. Contrastive learning over correct/incorrect answer pairs produces answer-dependent confidence.</figcaption>
+            <figcaption><strong>Figure 4.</strong> Overall architecture of the ADVICE framework. For each question, the model processes both a correct and an incorrect answer, and the four loss objectives work together to separate and calibrate the resulting confidence distributions.</figcaption>
         </figure>
 
         <div class="method-steps">
             <div class="method-step">
                 <div class="step-num">1</div>
-                <div class="step-title">Data Construction</div>
-                <div class="step-desc">Generate correct/incorrect answer pairs from 4,000 instances in TriviaQA</div>
+                <div class="step-title">Training Data Construction</div>
+                <div class="step-desc">Source 4,000 instances from TriviaQA training split, retaining only those where the model generates correct answers under greedy decoding. For each instance, construct a triplet: (question, correct answer, randomly sampled incorrect answer). Two variants per instance are created to train fluent expression across multiple confidence formats (ScoreLetter and ScoreNumber).</div>
             </div>
             <div class="method-step">
                 <div class="step-num">2</div>
-                <div class="step-title">Contrastive Learning</div>
-                <div class="step-desc">Separate confidence distributions of correct and incorrect answers using 4 loss functions</div>
+                <div class="step-title">Multi-Objective Contrastive Training</div>
+                <div class="step-desc">Fine-tune the model using four complementary loss objectives that jointly enforce answer-dependent confidence. The model processes the same question with both the correct and incorrect answer, and the losses drive the confidence distributions apart in a principled manner.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">3</div>
-                <div class="step-title">Calibrated Inference</div>
-                <div class="step-desc">Generate calibrated confidence grounded in the answer</div>
+                <div class="step-title">Answer-Grounded Inference</div>
+                <div class="step-desc">At inference time, the model generates both an answer and a confidence score in a single pass. Because training has instilled answer-awareness, the model now naturally conditions its confidence on the generated answer, producing well-calibrated estimates.</div>
             </div>
         </div>
 
-        <p style="margin-top: 16px;">Roles of the 4 loss functions:</p>
+        <p style="margin-top: 16px;">The four loss objectives and their specific roles:</p>
         <ul class="key-points">
-            <li><strong>Language Modeling Loss:</strong> Preserves existing QA capabilities</li>
-            <li><strong>Jensen-Shannon Divergence Loss:</strong> Distinguishes confidence distributions between correct and incorrect answers</li>
-            <li><strong>Margin Loss:</strong> Ensures directional ordering so that correct answers have higher confidence than incorrect ones</li>
-            <li><strong>Sum Loss:</strong> Imposes the constraint that μ_correct + μ_wrong = 1</li>
+            <li><strong>Language Modeling Loss (L_LM):</strong> Standard negative log-likelihood of correct answers, preserving the model's general QA capabilities and preventing catastrophic forgetting during fine-tuning.</li>
+            <li><strong>Jensen-Shannon Divergence Loss (L_JSD):</strong> Explicitly drives the model to distinguish confidence distributions between correct and incorrect answers. Formulated as max(0, &delta;_JSD - D_JSD(P_correct || P_wrong)), ensuring the two distributions are sufficiently separated.</li>
+            <li><strong>Margin Loss (L_Margin):</strong> Enforces directional separation via max(0, &delta;_Margin - (&mu;_correct - &mu;_wrong)), guaranteeing that the mean confidence for correct answers exceeds that for incorrect ones by at least &delta;_Margin.</li>
+            <li><strong>Sum Loss (L_Sum):</strong> Enforces the ideal constraint &mu;_correct + &mu;_wrong = 1, reflecting that confidence should represent the true likelihood of answer correctness. All weighting parameters are set to 1 for simplicity.</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>Experimental Results</h2>
+        <p>Experiments are conducted on three models (Llama-3.1-8B-Instruct, Mistral-7B-Instruct-v0.3, Gemma-2-9b-it) across in-domain (TriviaQA) and out-of-distribution (MMLU, LogiQA) benchmarks, using four metrics: Expected Calibration Error (ECE), Absolute Net Calibration Error (|NCE|), Brier Score (BS), and AUROC.</p>
+
+        <h3>In-Domain Results (TriviaQA)</h3>
         <table class="results-table">
             <thead>
-                <tr><th>Model</th><th>Method</th><th>ECE ↓</th><th>AUROC ↑</th><th>Task Acc.</th></tr>
+                <tr><th>Model</th><th>Method</th><th>ECE ↓</th><th>|NCE| ↓</th><th>BS ↓</th><th>AUROC ↑</th></tr>
             </thead>
             <tbody>
-                <tr><td>Llama-3.1-8B</td><td>Default</td><td>16.9</td><td>56.2</td><td>74.8%</td></tr>
-                <tr><td>Llama-3.1-8B</td><td class="highlight-cell">ADVICE</td><td class="highlight-cell">10.4</td><td class="highlight-cell">77.0</td><td>77.4%</td></tr>
-                <tr><td>Gemma-2-9b</td><td>Default</td><td>21.9</td><td>52.7</td><td>-</td></tr>
-                <tr><td>Gemma-2-9b</td><td class="highlight-cell">ADVICE</td><td class="highlight-cell">6.2</td><td class="highlight-cell">77.4</td><td>-</td></tr>
+                <tr><td>Llama-3.1-8B</td><td>Default</td><td>16.9</td><td>16.6</td><td>21.2</td><td>56.2</td></tr>
+                <tr><td>Llama-3.1-8B</td><td>Self-Consistency</td><td>15.7</td><td>-</td><td>-</td><td>58.6</td></tr>
+                <tr><td>Llama-3.1-8B</td><td>ConfTuner</td><td>5.2</td><td>1.1</td><td>15.3</td><td>66.3</td></tr>
+                <tr><td>Llama-3.1-8B</td><td class="highlight-cell">ADVICE</td><td class="highlight-cell">10.4</td><td class="highlight-cell">9.8</td><td class="highlight-cell">14.8</td><td class="highlight-cell">77.0</td></tr>
+                <tr><td>Llama-3.1-8B</td><td class="highlight-cell">ADVICE + ConfTuner</td><td class="highlight-cell">9.4</td><td>-</td><td>-</td><td class="highlight-cell">77.9</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Out-of-Distribution Results</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Dataset</th><th>Method</th><th>ECE ↓</th><th>AUROC ↑</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>MMLU</td><td>Default</td><td>26.9</td><td>-</td></tr>
+                <tr><td>MMLU</td><td>ConfTuner</td><td>13.9</td><td>-</td></tr>
+                <tr><td>MMLU</td><td class="highlight-cell">ADVICE</td><td class="highlight-cell">8.6</td><td class="highlight-cell">69.2</td></tr>
+                <tr><td>LogiQA</td><td>Default</td><td>53.8</td><td>-</td></tr>
+                <tr><td>LogiQA</td><td>ConfTuner</td><td>28.6</td><td>-</td></tr>
+                <tr><td>LogiQA</td><td class="highlight-cell">ADVICE</td><td class="highlight-cell">23.0</td><td class="highlight-cell">57.9</td></tr>
             </tbody>
         </table>
 
         <figure class="paper-figure">
             <img src="https://arxiv.org/html/2510.10913v2/x7.png" alt="Reliability diagrams">
-            <figcaption><strong>Figure 5.</strong> Reliability diagram: After applying ADVICE, model confidence is calibrated much closer to actual accuracy.</figcaption>
+            <figcaption><strong>Figure 5.</strong> Reliability diagram: After applying ADVICE, model confidence is calibrated much closer to actual accuracy, shifting the bars toward the ideal diagonal.</figcaption>
         </figure>
 
+        <h3>Ablation Study (Gemma-2-9b on TriviaQA)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Configuration</th><th>ECE ↓</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>L_LM only</td><td>23.0</td></tr>
+                <tr><td>L_LM + L_JSD</td><td>8.6</td></tr>
+                <tr><td>L_LM + L_Margin</td><td>16.8</td></tr>
+                <tr><td class="highlight-cell">Full ADVICE (all objectives)</td><td class="highlight-cell">6.2</td></tr>
+            </tbody>
+        </table>
+
         <ul class="key-points">
-            <li><strong>OOD Generalization:</strong> Outperforms existing methods (ConfTuner) in 19 out of 24 settings on unseen datasets such as MMLU and LogiQA</li>
-            <li><strong>Efficiency:</strong> Achieves competitive calibration performance with the fewest tokens used</li>
-            <li><strong>Task Performance Preservation:</strong> Existing QA accuracy is nearly unaffected after fine-tuning (74.8% → 77.4%)</li>
+            <li><strong>OOD Generalization:</strong> ADVICE outperforms ConfTuner in 19 of 24 out-of-distribution settings across MMLU and LogiQA, demonstrating strong robustness. On MMLU, ECE drops from 26.9 (Default) to 8.6 (ADVICE), surpassing ConfTuner's 13.9.</li>
+            <li><strong>Efficiency:</strong> ADVICE clusters in the lower-left region of the ECE-vs-token-usage plot, achieving lower ECE with fewer generated tokens. Self-Consistency (M=5), by contrast, dramatically increases token usage with limited calibration gains.</li>
+            <li><strong>Task Performance Preservation:</strong> QA accuracy is preserved or even slightly improved after fine-tuning -- Llama-3.1 goes from 75.2% to 78.1%, and Gemma-2 from 70.7% to 71.7%, confirming no degradation of core capabilities.</li>
+            <li><strong>Cross-Format Generalization:</strong> Trained on only two confidence formats (ScoreLetter, ScoreNumber), ADVICE generalizes to unseen formats: ScoreText (ECE 8.3), ScorePercent (ECE 6.7), and ScoreFloat (ECE 6.2) on Gemma-2.</li>
+            <li><strong>Verified Answer-Awareness:</strong> Answer masking experiments confirm that Default models produce confidence markedly skewed toward high values even when answers are replaced with padding, while ADVICE-trained models show substantially declined confidence when answers are masked -- validating that ADVICE genuinely enhances answer-awareness. Attention Rollout scores also increase significantly toward answer tokens after training.</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>Knowing whether an AI is truly confident when it says "I'm sure" is critically important. In high-stakes domains such as healthcare, law, and finance, LLM overconfidence can lead to serious consequences. This study mathematically identifies the <strong>root cause</strong> of overconfidence (answer-independence) and presents a lightweight solution, laying the groundwork for building more trustworthy AI systems.</p>
+        <p>Knowing whether an AI is truly confident when it says "I'm sure" is critically important. In high-stakes domains such as healthcare, law, and finance, LLM overconfidence can lead to serious real-world consequences -- users may trust incorrect outputs without questioning them.</p>
+        <p>This work makes three key contributions beyond prior approaches:</p>
+        <ul class="key-points">
+            <li><strong>Mechanistic insight:</strong> Rather than treating overconfidence as a black-box phenomenon, the paper identifies and rigorously validates the specific internal mechanism (answer-independence) causing it, using distributional analysis, attention rollout, and integrated gradients.</li>
+            <li><strong>Practical and lightweight solution:</strong> ADVICE requires only 4,000 training instances from a single dataset (TriviaQA) yet generalizes to unseen datasets, models, and confidence formats -- making it highly practical for real-world deployment.</li>
+            <li><strong>Foundation for trustworthy AI:</strong> By grounding confidence in the actual answer, ADVICE lays the groundwork for systems where users can meaningfully rely on stated confidence levels, enabling better human-AI collaboration and safer deployment of LLMs in critical applications.</li>
+        </ul>
     </div>
 
     <div class="section">

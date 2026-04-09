@@ -25,7 +25,7 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A benchmark that systematically generates knowledge conflicts between retrieved documents in RAG systems using knowledge graphs, and evaluates conflict detection and localization capabilities in multi-hop reasoning settings.</p>
+        <p>A knowledge-graph-based benchmark of 1,080 instances that systematically generates inter-context knowledge conflicts in RAG systems across eight conflict types (single/multi-hop x 1-4 conflicts), revealing that even the best LLMs achieve only 55% localization accuracy versus 83.3% for humans.</p>
     </div>
 
     <figure class="paper-figure">
@@ -35,10 +35,17 @@
 
     <div class="section">
         <h2>Background & Motivation</h2>
-        <p>Retrieval-Augmented Generation (RAG) is a technique that retrieves external documents to enhance LLM responses. But what happens when retrieved documents <strong>contradict each other</strong> or <strong>conflict with the model's internal knowledge</strong>?</p>
+        <p>Retrieval-Augmented Generation (RAG) enhances LLM responses by retrieving external documents, but what happens when those retrieved documents <strong>contradict each other</strong>? This problem of <em>inter-context conflict</em> is critical for safe RAG deployment, yet existing benchmarks fail to capture its full complexity.</p>
         <div class="highlight-box">
-            <p><strong>Limitations of Existing Benchmarks:</strong> Existing datasets (ECON, WikiContradict) consist of 78% single-hop conflicts, covering only simple contradictions. In real-world settings, complex contradictions that can only be discovered by connecting multiple documents are far more common.</p>
+            <p><strong>Four Key Limitations of Existing Benchmarks:</strong></p>
+            <ul>
+                <li><strong>Narrow task focus:</strong> Prior datasets (ECON: 168 instances, WikiContradict: 103 instances) are limited to QA settings where conflicts occur only among answer candidates.</li>
+                <li><strong>Oversimplified construction:</strong> Heavy reliance on entity substitution fails to capture nuanced, real-world knowledge conflicts.</li>
+                <li><strong>Limited conflict typology:</strong> No systematic distinction between single-hop and multi-hop conflicts; ~78% of existing instances are single-hop only.</li>
+                <li><strong>Underexplored inter-context conflicts:</strong> Most research focuses on conflicts between parametric and external knowledge, not among multiple retrieved documents.</li>
+            </ul>
         </div>
+        <p>In practice, real-world discrepancies often involve <strong>multi-hop reasoning</strong> and <strong>multiple simultaneous conflicts</strong> across documents -- scenarios that existing benchmarks rarely cover. MAGIC addresses all four limitations with a scalable, KG-based framework.</p>
     </div>
 
     <div class="section">
@@ -49,21 +56,23 @@
             <figcaption><strong>Figure 2.</strong> Overall architecture of the MAGIC framework: Subgraphs are extracted from Wikidata5M, knowledge conflicts are generated, and then converted into natural language documents.</figcaption>
         </figure>
 
+        <p>MAGIC uses a three-step pipeline built on <strong>Wikidata5M</strong> (~20 million triplets), producing 1,080 carefully curated instances across 46 relation types organized into 7 semantic domains (Human, Geography, Organization, Creative Work, Class/Concept, Cause-Effect, General).</p>
+
         <div class="method-steps">
             <div class="method-step">
                 <div class="step-num">1</div>
                 <div class="step-title">Subgraph Extraction</div>
-                <div class="step-desc">Filter 825 relations from Wikidata5M down to 46, and extract subgraphs via DFS traversal</div>
+                <div class="step-desc">From Wikidata5M's 825 relations, 46 are selected based on (a) semantic clarity for controlled conflict manipulation and (b) support for meaningful multi-hop reasoning chains. Depth-First Search (DFS) traversal extracts subgraphs with constraints: max 15 edges per subgraph and max 5 edges per node, with randomly determined DFS depth to ensure structural diversity.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">2</div>
                 <div class="step-title">Conflict Generation</div>
-                <div class="step-desc">Generate diverse conflicts using o3-mini with subgraph-level few-shot prompting, including human verification</div>
+                <div class="step-desc">OpenAI o3-mini generates conflicts via few-shot prompting, receiving the target seed triplet plus surrounding subgraph context (3 validated examples per relation type). Eight conflict types are produced along two dimensions: number of hops (single/multi) x number of conflicts (1/2/3/4). A two-stage human-in-the-loop process ensures quality: manual filtering of demonstrations before generation, then expert review to remove trivial or incoherent outputs.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">3</div>
-                <div class="step-title">Text Conversion</div>
-                <div class="step-desc">Convert to natural language with GPT-4o-mini; verify triplet coverage with Claude 3.5 Sonnet (accuracy: 95.21%)</div>
+                <div class="step-title">KG-to-Text Conversion</div>
+                <div class="step-desc">GPT-4o-mini converts subgraphs to coherent natural language while preserving all semantic relations. Claude 3.5 Sonnet then validates triplet coverage automatically, achieving 95.21% accuracy on conflict triplets and 82.04% on full subgraph triplets. Human inspection of 167 sampled outputs confirmed high reliability across all data types.</div>
             </div>
         </div>
 
@@ -71,45 +80,82 @@
             <img src="https://arxiv.org/html/2507.21544v3/x4.png" alt="Four conflict types">
             <figcaption><strong>Figure 4.</strong> Four conflict types: Combinations of single-hop/multi-hop x single-conflict/multi-conflict enable evaluation at varying levels of difficulty.</figcaption>
         </figure>
+
+        <h3>Dataset Composition</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Type</th><th>1 Conflict</th><th>2 Conflicts</th><th>3 Conflicts</th><th>4 Conflicts</th><th>Total</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Single-Hop</td><td>208</td><td>154</td><td>80</td><td>50</td><td>492</td></tr>
+                <tr><td>Multi-Hop</td><td>300</td><td>158</td><td>80</td><td>50</td><td>588</td></tr>
+                <tr><td class="highlight-cell"><strong>Total</strong></td><td class="highlight-cell"><strong>508</strong></td><td class="highlight-cell"><strong>312</strong></td><td class="highlight-cell"><strong>160</strong></td><td class="highlight-cell"><strong>100</strong></td><td class="highlight-cell"><strong>1,080</strong></td></tr>
+            </tbody>
+        </table>
     </div>
 
     <div class="section">
         <h2>Experimental Results</h2>
-        <p>MAGIC consists of 1,080 instances and evaluates two capabilities: <strong>conflict identification (ID)</strong> and <strong>conflict localization (LOC)</strong>.</p>
+        <p>Five LLMs are evaluated on MAGIC using two metrics: <strong>Identification (ID)</strong> -- binary detection of whether conflicts exist (scored across 3 inference runs; any failure = 0), and <strong>Localization (LOC)</strong> -- pinpointing all exact conflict sources (full score only if all locations correctly identified). A multi-step prompting strategy (asking for conflict count, reasoning, and conflicting sentences) outperforms simple binary prompting by up to <strong>39.41%</strong>.</p>
 
+        <h3>Cross-Benchmark Comparison (5-Model Average)</h3>
         <table class="results-table">
             <thead>
                 <tr><th>Benchmark</th><th>ID Score (%)</th><th>LOC Score (%)</th></tr>
             </thead>
             <tbody>
-                <tr><td>ECON (existing)</td><td>74.73</td><td>57.09</td></tr>
-                <tr><td>WikiContradict (existing)</td><td>69.93</td><td>55.74</td></tr>
-                <tr><td class="highlight-cell">MAGIC (proposed)</td><td class="highlight-cell">64.54</td><td class="highlight-cell">40.51</td></tr>
+                <tr><td>ECON (168 instances)</td><td>74.73</td><td>57.09</td></tr>
+                <tr><td>WikiContradict (103 instances)</td><td>69.93</td><td>55.74</td></tr>
+                <tr><td class="highlight-cell">MAGIC (1,080 instances)</td><td class="highlight-cell">64.54</td><td class="highlight-cell">40.51</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Per-Model Performance on MAGIC</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>ID Score (%)</th><th>LOC Score (%)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Mixtral 8x7B</td><td>37.92</td><td>17.40</td></tr>
+                <tr><td>Llama 3.1 70B</td><td>72.86</td><td>37.92</td></tr>
+                <tr><td>Claude 3.5 Haiku</td><td>60.28</td><td>42.50</td></tr>
+                <tr><td>OpenAI o1</td><td>68.06</td><td>49.72</td></tr>
+                <tr><td class="highlight-cell">GPT-4o-mini</td><td class="highlight-cell">83.61</td><td class="highlight-cell">55.00</td></tr>
+                <tr><td><em>Human Baseline</em></td><td><em>92.50</em></td><td><em>83.30</em></td></tr>
             </tbody>
         </table>
 
         <div class="figures-row">
             <figure class="paper-figure">
                 <img src="https://arxiv.org/html/2507.21544v3/x9.png" alt="Performance by conflict type">
-                <figcaption><strong>Figure 7.</strong> Performance by conflict type: Multi-hop conflicts (46.13%) are far more challenging than single-hop conflicts (70.91%).</figcaption>
+                <figcaption><strong>Figure 7.</strong> Performance by conflict type: Multi-hop conflicts are far more challenging than single-hop conflicts across all models.</figcaption>
             </figure>
             <figure class="paper-figure">
                 <img src="https://arxiv.org/html/2507.21544v3/x11.png" alt="Context length impact">
-                <figcaption><strong>Figure 9.</strong> Conflict detection performance degrades as context length increases.</figcaption>
+                <figcaption><strong>Figure 9.</strong> Both ID and LOC scores decline as context length increases, with LOC dropping more sharply.</figcaption>
             </figure>
         </div>
 
         <ul class="key-points">
-            <li><strong>Best Performance:</strong> GPT-4o-mini achieves the highest with ID 83.61% and LOC 55%, yet still falls far short of human performance (ID 92.5%, LOC 83.3%)</li>
-            <li><strong>Multi-hop vs Single-hop:</strong> Average ID score drops sharply from 70.91% to 46.13% for multi-hop conflicts</li>
-            <li><strong>Difficulty of Localization:</strong> Pinpointing the exact location of conflicts is much harder than detecting their existence (LOC << ID)</li>
-            <li><strong>Context Length Effect:</strong> Performance decreases as document length increases</li>
+            <li><strong>MAGIC is harder:</strong> Compared to existing benchmarks, MAGIC lowers average ID by ~10% and LOC by ~17%, confirming substantially greater difficulty.</li>
+            <li><strong>Multi-hop is the bottleneck:</strong> Average ID drops from ~71% (single-hop) to ~55% (multi-hop); LOC drops from ~63% to ~29%. Multi-hop reasoning remains a critical weakness for current LLMs.</li>
+            <li><strong>Detection vs. Localization gap:</strong> Even when models detect that conflicts exist, pinpointing exact sources is far harder (40.51% LOC vs. 64.54% ID on average).</li>
+            <li><strong>More conflicts = easier detection, harder localization:</strong> Increasing the number of conflicts makes their presence more obvious but makes finding all conflict locations harder.</li>
+            <li><strong>Human-LLM gap:</strong> The best model (GPT-4o-mini) trails human performance by 8.89% on ID and 28.30% on LOC, revealing substantial room for improvement.</li>
+            <li><strong>Domain matters:</strong> Class/Concept relations are easiest (~68-73%); Organization relations show the most variance (14.52-75.86%). Relations like "captain" and "mother" are handled easily, while "work location" and "father" prove significantly harder.</li>
+            <li><strong>Context length effect:</strong> Both ID and LOC degrade as document length grows, with LOC dropping more sharply -- localization in long contexts is especially challenging.</li>
+            <li><strong>Prompting strategy matters:</strong> Multi-step prompting (conflict count + reasoning + extraction) improves performance by up to 39.41% over simple binary yes/no prompting.</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>RAG is currently the most widely used LLM deployment pattern. If contradictions in retrieved results go undetected, incorrect information may be delivered to users. MAGIC leverages the <strong>interpretable structure</strong> of knowledge graphs to trace the causes and effects of conflicts, and is the first to systematically evaluate <strong>multi-hop conflicts</strong>, which are common in real-world settings.</p>
+        <p>As RAG becomes the dominant paradigm for deploying LLMs in production, robust handling of conflicting information is essential for safe and reliable systems. MAGIC makes three contributions that advance this goal:</p>
+        <ul>
+            <li><strong>First systematic KG-based conflict benchmark:</strong> By grounding conflicts in explicit knowledge graph structures, MAGIC enables interpretable analysis of why and where conflicts arise, unlike prior entity-substitution approaches.</li>
+            <li><strong>Comprehensive conflict typology:</strong> The eight-category taxonomy (single/multi-hop x 1-4 conflicts) covers a much broader range of real-world conflict scenarios than any existing dataset.</li>
+            <li><strong>Actionable insights for model improvement:</strong> The finding that multi-hop reasoning is a critical bottleneck (LOC drops from 63% to 29%) and the 28-point human-LLM gap in localization point to concrete directions for future research in conflict-aware RAG systems.</li>
+        </ul>
     </div>
 
     <div class="section">

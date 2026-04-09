@@ -22,7 +22,7 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>모호한 질의를 명시적으로 처리하도록 언어 모델을 정렬하는 방법</p>
+        <p>Alignment with Perceived Ambiguity (APA)는 각 모델 고유의 모호성 인식을 활용하여 모호한 질의를 명시적으로 감지하고 처리하도록 언어 모델을 정렬하며, 특히 분포 외(OOD) 시나리오에서 골드 레이블 기반 학습을 능가합니다.</p>
     </div>
     <figure class="paper-figure">
         <img src="https://arxiv.org/html/2404.11972v1/x1.png" alt="모호한 질의 예시: 모델의 지식에 따라 인식되는 모호성 정도가 달라짐">
@@ -34,61 +34,90 @@
     </figure>
     <div class="section">
         <h2>배경 및 동기</h2>
-        <p>"누가 전국 대회에서 우승했나요?"와 같은 질문은 다양한 종목과 연도의 대회를 지칭할 수 있어 본질적으로 모호합니다. 그러나 대부분의 대형 언어 모델(LLM)은 하나의 해석만 선택하여 자신 있게 답변하며, 내재된 모호성을 무시합니다.</p>
+        <p>사용자와 언어 모델 에이전트의 상호작용에서, 사용자 발화는 효율성을 위해 <strong>생략(ellipsis)</strong>이나 <strong>부정확성(imprecision)</strong>을 빈번하게 포함합니다. 예를 들어, "누가 전국 대회에서 우승했나요?"라는 질문은 다양한 종목과 연도의 대회를 지칭할 수 있어, 서로 다른 가정이나 배경 지식에 따라 다양한 해석이 가능합니다. 그러나 대부분의 대형 언어 모델(LLM)은 하나의 해석만 선택하여 자신 있게 답변하며, 내재된 모호성을 무시합니다.</p>
         <div class="highlight-box">
-            <p><strong>한계:</strong> 기존 LLM은 질문이 실제로 모호한 경우에도 단일 답변을 생성하는 경향이 있어, 사용자가 의도했을 수 있는 다른 유효한 해석을 제시하지 못합니다.</p>
+            <p><strong>한계 1 &mdash; 명시적 학습의 부재:</strong> 기존 LLM은 모호한 발화를 처리하도록 명시적으로 학습되지 않았습니다. 질문이 실제로 모호한 경우에도 단일 답변을 생성하는 경향이 있어, 사용자가 의도했을 수 있는 다른 유효한 해석을 제시하지 못합니다.</p>
         </div>
         <div class="highlight-box">
-            <p><strong>핵심 통찰:</strong> 모호성의 인식 정도는 <strong>모델에 따라 다릅니다</strong> — 넓은 지식을 가진 모델은 제한된 지식을 가진 모델보다 더 많은 가능한 해석을 인식합니다. 따라서 정렬은 각 모델 고유의 지식 경계에 맞춰 수행되어야 합니다.</p>
+            <p><strong>한계 2 &mdash; 모델 의존적 모호성:</strong> 모호성의 인식 정도는 <strong>모델에 따라 다릅니다</strong> &mdash; 넓은 지식을 가진 모델은 제한된 지식을 가진 모델보다 더 많은 가능한 해석을 인식합니다. 모든 모델에 동일한 골드 레이블을 사용하는 것은 이 근본적 차이를 무시하여 차선의 정렬로 이어집니다.</p>
+        </div>
+        <div class="highlight-box">
+            <p><strong>핵심 통찰:</strong> 외부 주석 모호성 레이블에 의존하기보다, 정렬은 각 모델 고유의 지식 경계에 맞춰 수행되어야 합니다. 모델은 보편적 기준이 아닌 <em>자신의 지식</em> 경계에서 정확히 모호성을 표시하도록 학습해야 합니다.</p>
         </div>
     </div>
 
     <div class="section">
-        <h2>방법론</h2>
-        <p>본 논문은 LLM이 모호성을 감지하고 명확화 응답을 생성하도록 학습시키는 4단계 정렬 파이프라인을 제안합니다:</p>
+        <h2>제안 방법: Alignment with Perceived Ambiguity (APA)</h2>
+        <p>APA는 외부 골드 레이블이 아닌 모델 자체의 모호성 인식을 활용하여, LLM이 모호성을 감지하고 명확화 응답을 생성하도록 학습시키는 4단계 정렬 파이프라인입니다:</p>
         <div class="method-steps">
             <div class="method-step">
                 <div class="step-num">1</div>
-                <div class="step-title">모호성 필터링</div>
-                <div class="step-desc">모델이 아직 명시적으로 처리하지 못하는 샘플, 즉 실제로 모호함에도 단일 답변을 제공하는 질문을 식별합니다.</div>
+                <div class="step-title">명시적 예측 및 필터링</div>
+                <div class="step-desc">모델이 모든 샘플을 처리하여, 올바르게 처리된 예측은 D<sub>correct</sub>를, 잘못 처리된 것(실제로 모호함에도 단일 답변을 제공)은 D<sub>incorrect</sub>를 구성합니다. 이를 통해 모델이 명확화<em>해야 하는</em> 것과 현재 하지 <em>않는</em> 것 사이의 격차를 식별합니다.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">2</div>
                 <div class="step-title">자기 모호성 해소 및 정보 이득 측정</div>
-                <div class="step-desc">모델이 각 질문의 모호성을 자체적으로 해소하고, 모호성 해소로 인한 정보 이득을 측정하여 학습에 가장 유용한 샘플 순위를 매깁니다.</div>
+                <div class="step-desc">D<sub>incorrect</sub>의 각 샘플에 대해 모델이 모호성 해소를 생성합니다. <strong>정보 이득</strong>은 엔트로피 감소량으로 계산됩니다: <em>InfoGain = H(x) &minus; H(x<sub>disambig</sub>)</em>. 토큰 수준 불확실성 변화를 측정하여, 임계값(&epsilon; = 0.1) 이상인 샘플을 모델 관점에서 진정으로 모호한 것으로 분류합니다.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">3</div>
-                <div class="step-title">지도 미세조정 (SFT)</div>
-                <div class="step-desc">높은 정보 이득을 가진 샘플을 사용하여 모델을 미세조정하고, 가능한 해석들을 열거하는 응답을 생성하도록 학습시킵니다.</div>
+                <div class="step-title">데이터 구성 및 지도 미세조정 (SFT)</div>
+                <div class="step-desc">모호한 샘플에 명확화 레이블(예: "이 질문은 모호합니다. 왜냐하면...")을 부여하고 D<sub>correct</sub>와 균형을 맞추어 학습 데이터셋 D를 형성합니다. 이 균형 잡힌 데이터셋에서 표준 다음 토큰 예측으로 모델을 미세조정합니다.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">4</div>
                 <div class="step-title">선호도 최적화</div>
-                <div class="step-desc">선호도 기반 학습을 통해 단일 답변 응답보다 명시적 모호성 처리를 강화합니다.</div>
+                <div class="step-desc">선호도 기반 학습(DPO)을 통해 단일 답변 응답보다 명시적 모호성 처리를 강화하여, 적절한 경우 모델이 일관되게 여러 해석을 제시하도록 합니다.</div>
             </div>
         </div>
     </div>
 
     <div class="section">
         <h2>실험 결과</h2>
+        <p>APA는 Llama-2 (7B, 13B)와 Mistral (7B)을 기반 모델로 사용하여 4개의 질의응답 데이터셋에서 평가되었습니다. 모델은 AmbigQA에서 학습되고, 분포 내 및 분포 외(SituatedQA, AmbigTriviaQA)에서 모두 테스트됩니다. 베이스라인으로는 추론 전용 방법(naive prompting, 모호성 인식 지시문, 샘플 반복, self-ask)과 학습 기반 방법(honesty-tuned, 전체 데이터셋, 무작위 부분집합)이 포함됩니다.</p>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>데이터셋</th><th>지표</th><th>Llama-2 7B</th><th>Mistral 7B</th><th>Llama-2 13B</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>AmbigQA</td><td>비모호 정확도</td><td>27.23%</td><td>37.23%</td><td>37.83%</td></tr>
+                <tr><td>AmbigQA</td><td>모호 F1</td><td>63.69</td><td>50.31</td><td>58.15</td></tr>
+                <tr><td>SituatedQA (지리)</td><td>비모호 정확도</td><td>24.51%</td><td>32.21%</td><td>24.51%</td></tr>
+                <tr><td>SituatedQA (지리)</td><td>모호 F1</td><td>42.05</td><td>42.18</td><td>41.59</td></tr>
+                <tr><td>SituatedQA (시간)</td><td>비모호 정확도</td><td>21.90%</td><td>35.74%</td><td>24.36%</td></tr>
+                <tr><td>SituatedQA (시간)</td><td>모호 F1</td><td>40.77</td><td>40.17</td><td>41.09</td></tr>
+                <tr><td>AmbigTriviaQA</td><td>비모호 정확도</td><td>53.41%</td><td>58.14%</td><td>63.74%</td></tr>
+                <tr><td>AmbigTriviaQA</td><td>모호 F1</td><td>61.34</td><td>58.93</td><td>55.23</td></tr>
+            </tbody>
+        </table>
+
         <ul class="key-points">
-            <li><strong>모호성 감지:</strong> 정렬된 모델은 질문이 모호한 경우를 인식하는 능력이 크게 향상되어, 하나의 해석만 맹목적으로 선택하는 문제를 개선</li>
-            <li><strong>답변 커버리지:</strong> 정렬된 모델은 모호한 질의의 여러 타당한 해석을 다루는 더 포괄적인 응답을 생성</li>
-            <li><strong>명확성 유지:</strong> 모호하지 않은 질문에 대해서는 불필요한 유보 없이 직접적이고 단일한 답변을 계속 제공</li>
-            <li><strong>정보 이득 기반 선택:</strong> 학습 샘플 선택에 정보 이득을 활용하는 것이 무작위 선택보다 효과적이며, 모델 인지 기반 데이터 큐레이션 전략의 가치를 확인</li>
+            <li><strong>OOD에서 골드 레이블 능가:</strong> APA는 전체 골드 레이블로 학습한 베이스라인 대비 분포 외 데이터셋에서 최대 <strong>17 F1 포인트</strong> 향상을 달성하며, Llama-2 기준 약 32%, Mistral 기준 약 13%의 데이터만 사용</li>
+            <li><strong>정보 이득 &gt; 무작위 선택:</strong> 절삭 연구(ablation study)에서 정보 이득 기반 샘플 선택이 무작위 부분집합 선택보다 OOD 데이터셋에서 약 10 F1 포인트 우수하며, 모델 인지 기반 큐레이션 전략의 가치를 검증</li>
+            <li><strong>균형 잡힌 정렬:</strong> APA는 최고의 전체 정렬 성능(AmbigTriviaQA에서 23.87%)을 달성하며, 높은 유효 정렬율과 낮은 오정렬 명확화율을 결합 &mdash; 즉, 명확한 질문에 대한 거짓 모호성 신호를 방지</li>
+            <li><strong>명확성 유지:</strong> 모호하지 않은 질문에 대해서는 불필요한 유보 없이 직접적이고 단일한 답변을 계속 제공하여, 일반 QA 성능을 보존</li>
+            <li><strong>규모 및 모델 간 일관성:</strong> Llama-2, Mistral 등 서로 다른 모델 계열과 7B, 13B 규모에서 효과적으로 작동하여 폭넓은 적용 가능성을 입증</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>왜 중요한가</h2>
-        <p>실제 사용자 질의는 종종 불충분하거나 모호하지만, 대부분의 LLM은 단일한 확정적 답변을 제공하도록 학습됩니다. 본 연구는 모델이 <strong>언제 명확화를 요청해야 하는지</strong>와 <strong>여러 유효한 해석을 어떻게 제시해야 하는지</strong>를 가르치는 원칙적 프레임워크를 제공합니다. 각 모델 고유의 지식을 기반으로 정렬 과정을 수행함으로써, 과도한 유보(명확한 질문을 모호하다고 판단)와 과소 유보(실제 모호성을 무시) 모두를 방지하여 LLM과의 상호작용을 더 신뢰할 수 있고 유익하게 만듭니다.</p>
+        <p>실제 사용자 질의는 종종 불충분하거나 모호하지만, 대부분의 LLM은 단일한 확정적 답변을 제공하도록 학습됩니다. 본 연구는 모델이 <strong>언제 명확화를 요청해야 하는지</strong>와 <strong>여러 유효한 해석을 어떻게 제시해야 하는지</strong>를 가르치는 원칙적 프레임워크를 제공합니다. APA가 특히 중요한 세 가지 측면이 있습니다:</p>
+        <ul class="key-points">
+            <li><strong>모델 인지 기반 정렬:</strong> 각 모델 고유의 지식을 기반으로 정렬 과정을 수행함으로써, 과도한 유보(명확한 질문을 모호하다고 판단)와 과소 유보(실제 모호성을 무시) 모두를 방지하여 LLM과의 상호작용을 더 신뢰할 수 있게 만듦</li>
+            <li><strong>데이터 효율성:</strong> APA는 가용 학습 데이터의 일부만으로 우수한 OOD 성능을 달성하며, 지능적 샘플 선택이 모든 데이터에 대한 무차별 학습을 능가함을 입증</li>
+            <li><strong>실용적 신뢰성:</strong> LLM이 검색, 어시스턴트, 챗봇 등 사용자 대면 애플리케이션에 점차 배포됨에 따라, 조용히 추측하는 대신 명시적으로 모호성을 처리하는 능력은 사용자 신뢰와 안전에 핵심적</li>
+        </ul>
     </div>
 
     <div class="section">
         <h2>링크</h2>
         <div class="links-section">
             <a href="https://aclanthology.org/2024.emnlp-main.119/" target="_blank" class="paper-link">ACL Anthology</a>
+            <a href="https://arxiv.org/abs/2404.11972" target="_blank" class="paper-link">arXiv Paper</a>
+            <a href="https://github.com/heyjoonkim/APA" target="_blank" class="paper-link">GitHub</a>
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">

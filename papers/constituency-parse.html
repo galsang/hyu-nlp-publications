@@ -22,43 +22,217 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A study revisiting the practical effectiveness of constituency parse extraction</p>
-        <figure class="paper-figure">
-            <img src="https://ar5iv.labs.arxiv.org/html/2211.00479/assets/x1.png" alt="Paper overview">
-            <figcaption><strong>Figure 1.</strong> Concept diagram of CPE-PLM (Constituency Parse Extraction from PLM) with various ensemble methods including single attention head, top-K ensemble, and layer-wise ensemble.</figcaption>
-        </figure>
+        <p>A rigorous re-examination of constituency parse extraction from pre-trained language models (CPE-PLM) that introduces novel ensemble techniques combining multiple heterogeneous PLMs, achieving 55.7 F1 on PTB -- competitive with unsupervised parsers -- and demonstrating clear advantages over supervised parsers in few-shot settings.</p>
     </div>
+
+    <figure class="paper-figure">
+        <img src="https://ar5iv.labs.arxiv.org/html/2211.00479/assets/x1.png" alt="Paper overview">
+        <figcaption><strong>Figure 1.</strong> Concept diagram of CPE-PLM (Constituency Parse Extraction from PLM) with various ensemble methods including single attention head, top-K ensemble, and layer-wise ensemble.</figcaption>
+    </figure>
+
     <div class="section">
-        <h2>Background</h2>
-        <p>A growing body of work has shown that pre-trained language models (PLMs) such as BERT encode syntactic information in their hidden representations, and several methods have been proposed to extract constituency parse trees from these representations without supervised parsing. While initial results appeared promising, most evaluations were conducted under limited and sometimes inconsistent experimental settings, making it difficult to judge whether these techniques are genuinely practical. This paper takes a step back to rigorously re-examine how well constituency parse extraction from PLMs actually works across a broader range of realistic conditions.</p>
+        <h2>Background &amp; Motivation</h2>
+        <p>Constituency Parse Extraction from Pre-trained Language Models (CPE-PLM) is a recent paradigm that attempts to induce constituency parse trees relying <strong>only on the internal knowledge</strong> of pre-trained language models, without any task-specific fine-tuning. The key idea is that PLMs such as BERT and RoBERTa encode syntactic structure in their attention patterns and hidden representations, which can be decoded into parse trees using chart-based algorithms.</p>
+        <div class="highlight-box">
+            <p><strong>Key Challenges with Prior Work:</strong></p>
+            <ul>
+                <li><strong>Inconsistent evaluation:</strong> Previous studies used different PLMs, layer selection strategies, distance metrics, and decoding algorithms, making fair comparison impossible.</li>
+                <li><strong>Limited scope:</strong> Most evaluations focused on a single PLM or a narrow set of configurations, missing the bigger picture of what CPE-PLM can truly achieve.</li>
+                <li><strong>Unexplored ensemble potential:</strong> While individual attention heads show limited parsing ability, the potential of combining information across multiple heads, layers, and even multiple PLMs had not been systematically explored.</li>
+                <li><strong>Unknown practical value:</strong> It was unclear whether CPE-PLM -- a training-free approach -- could offer any practical advantage over established unsupervised or supervised parsers in real-world scenarios.</li>
+            </ul>
+        </div>
+        <p>This paper addresses all of these gaps by providing a <strong>mathematical reformulation</strong> of CPE-PLM, proposing <strong>novel ensemble methods</strong>, and conducting comprehensive experiments across multiple languages, downstream tasks, and data regimes. The study systematically evaluates <strong>16 PLMs</strong> (12 English and 4 multilingual), covering encoder-based (BERT, RoBERTa, ELECTRA), decoder-based (GPT-2, CTRL), and hybrid architectures (XLNet, BART), providing the most thorough assessment of CPE-PLM to date.</p>
     </div>
+
     <div class="section">
-        <h2>Method</h2>
+        <h2>Proposed Method</h2>
+        <p>The paper first reformulates CPE-PLM in a unified mathematical framework that clarifies the relationship between prior approaches and enables principled ensemble strategies.</p>
+
+        <h3>Core Formulation</h3>
+        <p>Given a sentence, each attention head provides a pair-wise score function for spans. The tree score decomposes as:</p>
+        <p style="text-align:center;"><em>s<sub>tree</sub>(T) = &Sigma;<sub>(i,j)&isin;T</sub> s<sub>span</sub>(i,j)</em></p>
+        <p>where span scores are recursively defined: <em>s<sub>span</sub>(i,j) = s<sub>comp</sub>(i,j) + min<sub>i&le;k&lt;j</sub> s<sub>split</sub>(i,k,j)</em> for <em>i &lt; j</em>, and <em>s<sub>span</sub>(i,i) = 0</em>. The split score further decomposes as <em>s<sub>split</sub>(i,k,j) = s<sub>span</sub>(i,k) + s<sub>span</sub>(k+1,j)</em>. Parse trees are then found via the <strong>CKY algorithm</strong> that minimizes the total tree score: <em>T&#770; = argmin<sub>T</sub> s<sub>tree</sub>(T)</em>.</p>
+        <p>Two distance functions are used to measure divergence between attention distributions: <strong>Jensen-Shannon divergence (JSD)</strong> and <strong>Hellinger distance (HEL)</strong>, with Hellinger distance favored for its simplicity and comparable effectiveness.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Mathematical Reformulation</div>
+                <div class="step-desc">The pair score function is defined as <em>s<sub>p</sub>(i,j) := C(j-i+1,2)<sup>-1</sup> &Sigma; f(g(w<sub>x</sub>), g(w<sub>y</sub>))</em>, where <em>g(m,n)</em> extracts attention distributions from the <em>n</em>-th head at layer <em>m</em>, and <em>f</em> measures the distance between attention distributions of word pairs. This formulation unifies prior approaches under a single framework and enables principled ensemble strategies. Each attention head in a PLM with <em>l</em> layers and <em>a</em> heads produces a candidate tree, yielding <em>l &times; a</em> candidate trees per model.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Greedy Ensemble</div>
+                <div class="step-desc">Starting from the best-performing single attention head, sequentially adds additional heads to the ensemble if they improve overall parsing performance on a validation set. The algorithm iterates over a sorted set of candidate heads <em>G<sub>sorted</sub></em> and retains each head only if it improves the validation metric. There is no fixed limit on the number of participants, allowing the method to adaptively determine the optimal ensemble size.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Beam Ensemble</div>
+                <div class="step-desc">Inspired by beam search in neural text generation, this method maintains <em>b</em> best hypotheses (head combinations) at each expansion step. At each iteration, it expands all current hypotheses by adding one more candidate head, evaluates all expansions, and keeps only the top-<em>b</em> combinations. Each head is selected at most once (no replacement). The beam size is set to <em>b=5</em> for single-PLM and <em>b=30</em> for multi-PLM setups, avoiding greedy local optima at a modest computational cost.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Multi-PLM Extension</div>
+                <div class="step-desc">Expands the candidate pool of attention heads beyond a single PLM to include heads from <em>P</em> heterogeneous models, forming a combined tree pool: <em>&tau;<sub>multi</sub> := {T&#770;<sub>(p,m,n)</sub> | p&isin;{1,...,P}, m&isin;{1,...,l}, n&isin;{1,...,a}}</em>. The ensemble selects the best combination across all available heads from all PLMs, exploiting complementary syntactic knowledge encoded in different architectures. The paper evaluates 16 PLMs total: 12 English (BERT-base/large, RoBERTa-base/large, ELECTRA-base/large, GPT-2, GPT-2-medium, CTRL, BART-large, XLNet-base/large) and 4 multilingual (MBERT, XLM, XLM-R, XLM-R-large).</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+
+        <h3>Single-PLM Performance on PTB (Selected Models)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>PLM</th><th>Best Single Head</th><th>Greedy Ensemble</th><th>Beam Ensemble</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>BERT-base</td><td>42.7</td><td>43.0</td><td>--</td></tr>
+                <tr><td>BERT-large</td><td>44.2</td><td>45.0</td><td>--</td></tr>
+                <tr><td>RoBERTa-large</td><td>41.9</td><td>47.2</td><td>--</td></tr>
+                <tr><td>ELECTRA-large</td><td>44.3</td><td>47.9</td><td>--</td></tr>
+                <tr><td>XLNet-large</td><td>46.4</td><td>47.2</td><td>--</td></tr>
+                <tr><td>XLM-R</td><td>46.7</td><td>48.5</td><td>--</td></tr>
+                <tr><td>Prior best (Kim et al., 2021)</td><td colspan="3" style="text-align:center;">47.7</td></tr>
+            </tbody>
+        </table>
+
+        <h3>CPE-PLM vs. Unsupervised Parsers (PTB Test Set)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>Type</th><th>F1</th><th>NP</th><th>VP</th><th>PP</th><th>ADVP</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>PRPN</td><td>Unsupervised</td><td>47.3</td><td>59</td><td>46</td><td>57</td><td>32</td></tr>
+                <tr><td>ON-LSTM</td><td>Unsupervised</td><td>48.1</td><td>64</td><td>41</td><td>54</td><td>31</td></tr>
+                <tr><td>Neural PCFG</td><td>Unsupervised</td><td>50.8</td><td>71</td><td>33</td><td>58</td><td>45</td></tr>
+                <tr><td>Compound PCFG</td><td>Unsupervised</td><td>55.2</td><td>74</td><td>41</td><td>68</td><td>52</td></tr>
+                <tr><td>Neural L-PCFG</td><td>Unsupervised</td><td>55.3</td><td>67</td><td>48</td><td>65</td><td>58</td></tr>
+                <tr><td>XLM-R + Greedy</td><td>CPE-PLM (single)</td><td>48.5</td><td>69</td><td>29</td><td>62</td><td>73</td></tr>
+                <tr><td>All PLMs + Greedy</td><td>CPE-PLM (multi)</td><td>55.3</td><td>75</td><td>36</td><td>76</td><td>76</td></tr>
+                <tr><td class="highlight-cell"><strong>All PLMs + Beam</strong></td><td class="highlight-cell"><strong>CPE-PLM (multi)</strong></td><td class="highlight-cell"><strong>55.7</strong></td><td class="highlight-cell"><strong>74</strong></td><td class="highlight-cell"><strong>42</strong></td><td class="highlight-cell"><strong>75</strong></td><td class="highlight-cell"><strong>72</strong></td></tr>
+            </tbody>
+        </table>
+        <div class="highlight-box">
+            <p><strong>Phrase-level analysis:</strong> CPE-PLM excels at recognizing NP (75%), PP (76%), and ADVP (76%) constituents, substantially outperforming unsupervised parsers on PP and ADVP. However, VP recall (42%) remains a relative weakness compared to Neural L-PCFG (48%), suggesting that verb phrase boundaries are harder to capture from attention patterns alone.</p>
+        </div>
+
+        <h3>Multilingual Results (9 Languages, F1)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Method</th><th>Avg</th><th>EN</th><th>EU</th><th>FR</th><th>DE</th><th>HE</th><th>HU</th><th>KO</th><th>PL</th><th>SV</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Top-K (MBERT)</td><td>39.8</td><td>44.6</td><td>39.3</td><td>35.9</td><td>35.9</td><td>37.8</td><td>33.2</td><td>47.5</td><td>51.1</td><td>32.6</td></tr>
+                <tr><td>Greedy (MBERT)</td><td>40.4</td><td>47.1</td><td>40.2</td><td>36.9</td><td>37.5</td><td>38.6</td><td>30.2</td><td>49.1</td><td>52.4</td><td>31.9</td></tr>
+                <tr><td class="highlight-cell"><strong>Greedy (All MLMs)</strong></td><td class="highlight-cell"><strong>47.5</strong></td><td class="highlight-cell"><strong>51.9</strong></td><td class="highlight-cell"><strong>44.0</strong></td><td class="highlight-cell"><strong>41.9</strong></td><td class="highlight-cell"><strong>47.3</strong></td><td class="highlight-cell"><strong>48.1</strong></td><td class="highlight-cell"><strong>40.1</strong></td><td class="highlight-cell"><strong>53.7</strong></td><td class="highlight-cell"><strong>61.4</strong></td><td class="highlight-cell"><strong>39.0</strong></td></tr>
+            </tbody>
+        </table>
+        <p>Combining four multilingual PLMs (MBERT, XLM, XLM-R, XLM-R-large) boosts the average F1 from 40.4 to 47.5 (+7.1 points). Polish achieves the highest score at 61.4 F1, followed by Korean (53.7) and English (51.9). The consistent gains across all nine typologically diverse languages confirm that multi-PLM synergy is a language-agnostic phenomenon.</p>
+
+        <h3>Few-Shot Parsing: CPE-PLM vs. Supervised Parser (Benepar)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Annotations</th><th>CPE-PLM Greedy</th><th>CPE-PLM Beam</th><th>Benepar (Supervised)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>46.2</td><td>45.4</td><td>11.6</td></tr>
+                <tr><td>2</td><td>48.4</td><td>45.9</td><td>12.5</td></tr>
+                <tr><td>5</td><td>49.9</td><td>47.7</td><td>12.5</td></tr>
+                <tr><td>10</td><td>49.1</td><td>49.6</td><td>14.0</td></tr>
+                <tr><td>17 (1% of data)</td><td>49.4</td><td>51.3</td><td>31.1</td></tr>
+                <tr><td class="highlight-cell">100% validation</td><td class="highlight-cell">55.3</td><td class="highlight-cell">55.7</td><td class="highlight-cell">92.2</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Validation Set Dependency</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Validation Data</th><th>Greedy F1</th><th>Relative Loss</th><th>Beam F1</th><th>Relative Loss</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>1%</td><td>49.4</td><td>-5.9%</td><td>51.3</td><td>-4.5%</td></tr>
+                <tr><td>2%</td><td>49.9</td><td>-5.3%</td><td>49.8</td><td>-6.0%</td></tr>
+                <tr><td>5%</td><td>52.7</td><td>-2.5%</td><td>51.8</td><td>-4.0%</td></tr>
+                <tr><td>10%</td><td>54.3</td><td>-0.9%</td><td>52.9</td><td>-2.9%</td></tr>
+                <tr><td>100%</td><td>55.3</td><td>--</td><td>55.7</td><td>--</td></tr>
+            </tbody>
+        </table>
+        <p>Even with only 1% of the validation data (17 annotated trees), CPE-PLM retains over 90% of its full performance, confirming its extreme data efficiency.</p>
+
+        <h3>Downstream Task: URNNG Training</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Configuration</th><th>Perplexity</th><th>F1</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Compound PCFG</td><td>85.4</td><td>57.8</td></tr>
+                <tr><td>CPE-PLM (All + Greedy) &rarr; URNNG</td><td>81.3</td><td>57.2</td></tr>
+                <tr><td class="highlight-cell"><strong>CPE-PLM (All + Beam) &rarr; URNNG</strong></td><td class="highlight-cell"><strong>82.0</strong></td><td class="highlight-cell"><strong>60.7</strong></td></tr>
+            </tbody>
+        </table>
+        <p>Using CPE-PLM-induced trees to train URNNG boosts parsing F1 from 55.7 to 60.7 (+5 points), demonstrating that CPE-PLM trees serve as effective supervision for training dedicated parsers.</p>
+
+        <h3>Downstream Task: TreeLSTM Classification Accuracy</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Parse Source</th><th>SST-2</th><th>MR</th><th>SUBJ</th><th>TREC</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Right-branching</td><td>85.72</td><td>83.37</td><td>94.80</td><td>94.50</td></tr>
+                <tr><td>CPE-PLM (All + Beam)</td><td>86.10</td><td>83.62</td><td>94.85</td><td>94.75</td></tr>
+                <tr><td>Supervised Parser</td><td>86.70</td><td>83.62</td><td>95.12</td><td>95.05</td></tr>
+            </tbody>
+        </table>
+        <p>CPE-PLM trees consistently outperform the right-branching baseline and nearly match supervised parser trees on all four text classification benchmarks, confirming that the induced syntactic structure carries meaningful information for downstream applications.</p>
+
+        <h3>Inference Time Comparison</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Approach</th><th>F1</th><th>Time</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Compound PCFG</td><td>55.2</td><td>31 min</td></tr>
+                <tr><td>CPE-PLM (Greedy)</td><td>55.3</td><td>27 min</td></tr>
+                <tr><td>Distance parser trained on CPE-PLM</td><td>55.0</td><td>36 sec</td></tr>
+                <tr><td class="highlight-cell"><strong>Benepar trained on CPE-PLM</strong></td><td class="highlight-cell"><strong>59.3</strong></td><td class="highlight-cell"><strong>32 sec</strong></td></tr>
+            </tbody>
+        </table>
+        <p>Knowledge distillation from CPE-PLM to a supervised parser (Benepar) reduces inference time from 27 minutes to just 32 seconds while actually <em>improving</em> F1 from 55.7 to 59.3, offering a practical deployment path.</p>
+
         <ul class="key-points">
-            <li><strong>Systematic evaluation framework:</strong> The study establishes a unified evaluation protocol that controls for variables often inconsistent across prior work &mdash; including the choice of PLM, layer selection strategy, distance metric for span scoring, and tree decoding algorithm.</li>
-            <li><strong>Broad experimental coverage:</strong> Multiple PLMs (BERT, RoBERTa, XLNet, etc.), various layer aggregation strategies (single layer, layer averaging, learned combination), and different chart-based decoding methods are compared under identical conditions.</li>
-            <li><strong>Practical stress tests:</strong> Beyond standard PTB evaluation, the paper tests on out-of-domain data, different sentence lengths, and varying tree depths to assess robustness in conditions that better reflect real-world deployment.</li>
+            <li><strong>Competitive with unsupervised parsers:</strong> The multi-PLM beam ensemble achieves 55.7 F1, surpassing Compound PCFG (55.2) and matching Neural L-PCFG (55.3) -- all without any training.</li>
+            <li><strong>Massive few-shot advantage:</strong> With only 1 annotated example, CPE-PLM scores 46.2 F1 versus Benepar's 11.6 F1. Even with 17 examples (1% of data), CPE-PLM outperforms supervised parsing by 20+ F1 points, making it highly practical in low-resource settings.</li>
+            <li><strong>Ensemble diversity is key:</strong> Single-PLM extraction tops out around 47-48 F1, but combining heads across heterogeneous models (BERT, RoBERTa, ELECTRA, multilingual variants) boosts performance by +8.5 F1, demonstrating that different PLMs encode complementary syntactic knowledge.</li>
+            <li><strong>Multi-PLM synergy is consistent:</strong> The benefit of heterogeneous ensembles holds across all 9 evaluated languages, with the multi-MLM greedy ensemble improving average F1 from 40.4 to 47.5 (+7.1 points).</li>
+            <li><strong>Useful for downstream tasks:</strong> CPE-PLM-induced parse trees used in URNNG training yield 60.7 F1 (+5 points above standalone), and TreeLSTM classifiers trained with CPE-PLM parses rank second only to supervised parsers across four benchmarks.</li>
+            <li><strong>Knowledge distillation enables fast deployment:</strong> Distilling CPE-PLM's output into Benepar achieves 59.3 F1 in just 32 seconds -- a 50x speedup over direct CPE-PLM while improving accuracy by 3.6 points.</li>
+            <li><strong>Encoder PLMs dominate:</strong> Encoder-based models (BERT, RoBERTa, ELECTRA) consistently outperform decoder-based (GPT-2: 37.2-40.8 F1) and hybrid architectures (BART: 38.5 F1) for parse extraction, suggesting that bidirectional attention is crucial for capturing syntactic structure.</li>
         </ul>
     </div>
-    <div class="section">
-        <h2>Results</h2>
-        <ul class="key-points">
-            <li><strong>Performance is sensitive to choices:</strong> Parsing quality varies dramatically depending on the PLM, the layer used, and the decoding method. Some previously reported strong results do not replicate under controlled settings, revealing that minor implementation details heavily influence outcomes.</li>
-            <li><strong>Gap to supervised parsers remains large:</strong> Even the best extraction configurations fall substantially short of supervised constituency parsers, indicating that PLM-based extraction is not yet a practical substitute for trained parsers in downstream applications.</li>
-            <li><strong>Robustness issues:</strong> Performance degrades noticeably on longer sentences and out-of-domain text, highlighting practical limitations for real-world use.</li>
-            <li><strong>Actionable recommendations:</strong> The paper provides concrete guidance on which PLM-layer-decoder combinations work best and when extraction methods can be useful (e.g., as cheap approximations in low-resource settings).</li>
-        </ul>
-    </div>
+
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>This paper serves as an important reality check for the field of unsupervised constituency parsing from PLMs. By providing a rigorous, controlled comparison that had been missing from the literature, it clarifies what these methods can and cannot do in practice. The findings help researchers avoid overly optimistic conclusions and redirect efforts toward addressing the genuine bottlenecks &mdash; such as robustness to sentence length and domain shift &mdash; that must be solved before extraction-based parsing becomes practically viable.</p>
+        <p>This paper makes several important contributions to the field of syntactic analysis and PLM interpretability:</p>
+        <ul>
+            <li><strong>Training-free parsing that works:</strong> CPE-PLM requires no training data or model fine-tuning, yet achieves competitive results with unsupervised parsers that require extensive training. This makes it an attractive option when computational resources or training data are limited.</li>
+            <li><strong>Clear practical niche in few-shot settings:</strong> The dramatic advantage over supervised parsers in low-data regimes (46.2 vs. 11.6 F1 with 1 example) establishes CPE-PLM as the method of choice when only a handful of annotated parse trees are available.</li>
+            <li><strong>Insights into PLM syntactic knowledge:</strong> The success of multi-PLM ensembles reveals that different pre-trained models encode complementary aspects of syntactic structure, advancing our understanding of what linguistic knowledge PLMs capture and how it can be effectively extracted.</li>
+            <li><strong>Practical deployment pathway:</strong> The knowledge distillation results (distilling CPE-PLM to Benepar: 59.3 F1 in 32 seconds) show that CPE-PLM is not just a research curiosity but can be deployed efficiently in production systems, bridging the gap between training-free extraction and practical inference speed.</li>
+            <li><strong>Unified theoretical framework:</strong> The mathematical reformulation brings clarity to a previously fragmented research area, providing a principled foundation for future work on extracting structured linguistic knowledge from pre-trained models.</li>
+        </ul>
     </div>
+
     <div class="section">
         <h2>Links</h2>
         <div class="links-section">
             <a href="https://aclanthology.org/2022.coling-1.479/" target="_blank" class="paper-link">ACL Anthology</a>
+            <a href="https://arxiv.org/abs/2211.00479" target="_blank" class="paper-link">arXiv Paper</a>
+            <a href="https://aclanthology.org/2022.coling-1.479.pdf" target="_blank" class="paper-link">PDF</a>
         </div>
     </div>
+
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-parsing">Parsing &amp; Syntax</span>
     </div>

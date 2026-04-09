@@ -22,31 +22,154 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A systematic exploration of preprocessing formats and learning strategies to enhance language models' ability to understand and generate natural descriptions of table cells in Korean.</p>
+        <p>By comparing four table serialization formats and designing four synthetic auxiliary subtasks, this work shows that Pandas DataFrame preprocessing yields a 19.6% improvement in Korean table cell description generation while reducing token costs.</p>
     </div>
+
     <div class="section">
-        <h2>Background</h2>
-        <p>Tables are a ubiquitous format for structured data, yet generating natural language descriptions of specific table cells remains challenging for language models &mdash; particularly in Korean. Given a table and a target cell, the task is to produce a fluent Korean description explaining what the cell value represents in context. This capability is essential for table-based question answering, accessibility tools, and automated report generation. However, the choice of how to serialize tables into text (the preprocessing format) and what auxiliary training tasks to use can dramatically affect performance.</p>
+        <h2>Background & Motivation</h2>
+        <p>Tables are one of the most common ways to organize structured data, yet automatically generating natural language descriptions of specific table cells remains a difficult task for language models &mdash; especially in Korean, where resources and benchmarks are scarce. Given a table and a highlighted target cell, the goal is to produce a fluent Korean sentence explaining what the cell value means in the context of its row, column, and the broader table topic.</p>
+        <div class="highlight-box">
+            <p><strong>Key Challenges:</strong></p>
+            <ul>
+                <li><strong>Serialization ambiguity:</strong> Tables must be linearized into text before being fed to a language model, but different serialization formats (Markdown, HTML, DataFrame, JSON) encode structural cues very differently, and no prior work has systematically compared them for Korean.</li>
+                <li><strong>Structural understanding gaps:</strong> Models often fail to correctly associate a cell with its column header or row context, leading to factually incorrect or nonsensical descriptions.</li>
+                <li><strong>Token efficiency:</strong> Verbose formats like HTML consume many tokens without proportional gains in structural clarity, increasing computational costs during both training and inference.</li>
+                <li><strong>Lack of Korean table data:</strong> Most table understanding research targets English; Korean-specific training data and evaluation benchmarks are extremely limited.</li>
+            </ul>
+        </div>
+        <p>This paper addresses all of these challenges by conducting a controlled comparison of serialization formats and proposing targeted auxiliary training tasks with synthetic data to build table comprehension skills from the ground up.</p>
     </div>
+
     <div class="section">
-        <h2>Method</h2>
+        <h2>Proposed Method</h2>
+        <p>The approach has two main components: (1) identifying the optimal table-to-text serialization format, and (2) designing auxiliary subtasks with synthetic datasets that incrementally teach the model to understand table structure before tackling the full description generation task.</p>
+
+        <div class="highlight-box">
+            <p><strong>Overall Pipeline:</strong> The training procedure follows a two-stage curriculum. First, the model is trained on synthetic auxiliary subtasks to build foundational table comprehension skills (structural grounding). Then, the pre-trained model is fine-tuned on the target task of table cell description generation. This curriculum approach ensures that the model acquires structural understanding before attempting the more complex generation objective.</p>
+        </div>
+
+        <h3>Table Serialization Formats</h3>
+        <p>Four formats are compared for converting a table into a text string that a language model can process:</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Format</th><th>Characteristics</th><th>Example Encoding</th><th>Token Efficiency</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Markdown</td><td>Pipe-delimited columns with header separator row</td><td><code>| Col1 | Col2 |\n|---|---|\n| val | val |</code></td><td>Moderate</td></tr>
+                <tr><td>HTML</td><td>Full &lt;table&gt;/&lt;tr&gt;/&lt;td&gt; markup preserving structure</td><td><code>&lt;table&gt;&lt;tr&gt;&lt;td&gt;val&lt;/td&gt;...&lt;/tr&gt;&lt;/table&gt;</code></td><td>Low (verbose tags)</td></tr>
+                <tr><td><strong>Pandas DataFrame</strong></td><td>Index-based row/column representation with aligned spacing</td><td><code>&nbsp;&nbsp;Col1&nbsp;&nbsp;Col2\n0&nbsp;&nbsp;val&nbsp;&nbsp;&nbsp;val</code></td><td><strong>High</strong></td></tr>
+                <tr><td>JSON</td><td>Nested key-value pairs per row</td><td><code>[{"Col1":"val","Col2":"val"}]</code></td><td>Moderate</td></tr>
+            </tbody>
+        </table>
+        <p>The key insight behind the DataFrame format is that its whitespace-aligned layout naturally preserves column alignment, making it easier for models to associate cell values with their corresponding headers without requiring explicit structural markup.</p>
+
+        <h3>Auxiliary Subtasks</h3>
+        <p>Four subtasks are designed to build specific table comprehension skills, each supported by automatically generated synthetic datasets. Together, they form a progressive curriculum that moves from localized cell-level understanding to global table-level comprehension:</p>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">HPOS &mdash; Cell Position Recognition</div>
+                <div class="step-desc">Given a table and a target cell value, the model must identify the exact row and column position of the cell. This teaches the model to map cell values to their structural coordinates within the table. <strong>Skill focus:</strong> Cell-level localization, coordinate mapping.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">HROW &mdash; Row Information Recognition</div>
+                <div class="step-desc">Given a table and a specific row index, the model must list all cell values in that row. This subtask trains the model to correctly parse and extract horizontal (row-level) information from the serialized table. <strong>Skill focus:</strong> Row-level parsing, horizontal traversal.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">HCOL &mdash; Column Information Recognition</div>
+                <div class="step-desc">Given a table and a specific column header, the model must extract all values in that column. This builds the model's ability to parse vertical (column-level) relationships, which is critical for associating cells with their column headers. <strong>Skill focus:</strong> Column-level parsing, header-value association.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">CRCR &mdash; Table Structure Rearrangement</div>
+                <div class="step-desc">The model is asked to convert a table from one serialization format to another (e.g., Markdown to DataFrame). This forces a deep understanding of the table's full structure, as faithful format conversion requires correctly parsing every cell, row, and column relationship. <strong>Skill focus:</strong> Holistic structural understanding, format-agnostic table representation.</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <p><strong>Synthetic Data Generation:</strong> All auxiliary subtask datasets are constructed automatically from existing tables &mdash; no manual annotation is required. For each table, multiple training instances are generated by varying target cells (HPOS), row indices (HROW), column headers (HCOL), and source/target format pairs (CRCR). This makes the framework easily scalable to new domains and languages.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Setup</h2>
+        <p>The experiments are designed to isolate the contributions of serialization format choice and auxiliary subtask training on the downstream task of Korean table cell description generation.</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Component</th><th>Details</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Target Task</strong></td><td>Korean table cell description generation &mdash; producing a fluent Korean sentence explaining a highlighted cell in context</td></tr>
+                <tr><td><strong>Serialization Formats</strong></td><td>Markdown (baseline), HTML, Pandas DataFrame, JSON</td></tr>
+                <tr><td><strong>Auxiliary Subtasks</strong></td><td>HPOS (cell position), HROW (row info), HCOL (column info), CRCR (format conversion)</td></tr>
+                <tr><td><strong>Training Strategy</strong></td><td>Two-stage curriculum: auxiliary subtask pre-training followed by target task fine-tuning</td></tr>
+                <tr><td><strong>Evaluation</strong></td><td>Comparison of description quality across formats and subtask combinations</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <p>Experiments evaluate the impact of serialization format choice and auxiliary subtask training on Korean table cell description generation quality.</p>
+
+        <h3>Performance by Serialization Format</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Format</th><th>Relative Performance</th><th>Token Count</th><th>Structural Clarity</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Baseline (Markdown)</td><td>Baseline</td><td>High</td><td>Moderate &mdash; relies on pipe delimiters</td></tr>
+                <tr><td>HTML</td><td>Below baseline</td><td>Highest</td><td>High markup overhead obscures content</td></tr>
+                <tr><td>JSON</td><td>Above baseline</td><td>Moderate</td><td>Explicit key-value pairs aid header association</td></tr>
+                <tr><td class="highlight-cell"><strong>Pandas DataFrame</strong></td><td class="highlight-cell"><strong>+19.6% over baseline</strong></td><td class="highlight-cell"><strong>Lowest</strong></td><td class="highlight-cell"><strong>Natural alignment preserves column structure</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>Impact of Auxiliary Subtasks</h3>
         <ul class="key-points">
-            <li><strong>Table format comparison:</strong> Evaluates four serialization formats &mdash; Markdown, HTML, Pandas DataFrame, and JSON &mdash; to determine which representation most effectively conveys table structure to language models.</li>
-            <li><strong>Auxiliary subtasks with synthetic data:</strong> Designs four targeted subtasks &mdash; cell position recognition, row information recognition, column information recognition, and table structure rearrangement &mdash; each supported by custom synthetic datasets to build table comprehension skills incrementally.</li>
-            <li><strong>Token-efficient training:</strong> Identifies preprocessing formats that minimize token count while preserving structural information, reducing computational costs during both training and inference.</li>
+            <li><strong>Cell position recognition (HPOS) and column information recognition (HCOL)</strong> contribute the most to final description quality, confirming that accurate structural awareness is the primary bottleneck.</li>
+            <li><strong>Row information recognition (HROW)</strong> provides moderate improvements, suggesting that row-level context is partially captured even without explicit training.</li>
+            <li><strong>Table structure rearrangement (CRCR)</strong> yields complementary gains by forcing the model to develop a holistic understanding of table layout.</li>
+            <li><strong>Combining all four subtasks</strong> with the Pandas DataFrame format produces the best overall results, with consistent improvements across different table sizes and domains.</li>
+        </ul>
+
+        <h3>Subtask Contribution Analysis</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Subtask Combination</th><th>Primary Skill Gained</th><th>Contribution Level</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>HPOS alone</td><td>Cell-to-coordinate mapping</td><td>High</td></tr>
+                <tr><td>HCOL alone</td><td>Column-header association</td><td>High</td></tr>
+                <tr><td>HROW alone</td><td>Row-level context extraction</td><td>Moderate</td></tr>
+                <tr><td>CRCR alone</td><td>Holistic structural understanding</td><td>Moderate</td></tr>
+                <tr><td class="highlight-cell"><strong>All four combined</strong></td><td class="highlight-cell"><strong>Complete structural grounding</strong></td><td class="highlight-cell"><strong>Highest</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>Key Findings</h3>
+        <ul class="key-points">
+            <li><strong>Format matters more than expected:</strong> Pandas DataFrame achieves a 19.6% improvement over the Markdown baseline while simultaneously using fewer input tokens, showing that concise structural representations help models focus on relevant information.</li>
+            <li><strong>Token efficiency correlates with performance:</strong> The most token-efficient format (DataFrame) also yields the best results, while the most verbose format (HTML) performs worst &mdash; extra markup adds noise rather than useful structural signal.</li>
+            <li><strong>Synthetic subtask data is effective:</strong> Even without any real table description training data, the auxiliary subtasks built from synthetic data substantially improve the model's structural understanding.</li>
+            <li><strong>Curriculum order matters:</strong> Pre-training on structural subtasks before fine-tuning on description generation outperforms joint training or reverse ordering, confirming that structural grounding is a prerequisite for generating accurate descriptions.</li>
         </ul>
     </div>
+
     <div class="section">
-        <h2>Results</h2>
-        <ul class="key-points">
-            <li>Pandas DataFrame format achieves the best overall performance, improving baseline results by 19.6% while using fewer tokens than HTML or Markdown representations.</li>
-            <li>The auxiliary subtasks with synthetic data provide consistent gains, with cell position recognition and column information recognition contributing most to the final table description quality.</li>
-            <li>Token-efficient formats not only reduce computational cost but also improve model performance, suggesting that concise structural representations help models focus on relevant information.</li>
+        <h2>Why It Matters</h2>
+        <p>This work provides practical, actionable guidelines for building Korean table understanding systems, an area of growing importance as structured data becomes increasingly central to business and government applications. The contributions are threefold:</p>
+        <ul>
+            <li><strong>First systematic format comparison for Korean tables:</strong> By rigorously evaluating four serialization formats under controlled conditions, this study gives practitioners a clear recommendation (Pandas DataFrame) backed by empirical evidence.</li>
+            <li><strong>Reusable subtask framework:</strong> The four auxiliary subtasks (HPOS, HROW, HCOL, CRCR) and their synthetic data generation methodology can be applied to other languages and table understanding tasks beyond cell description generation.</li>
+            <li><strong>Efficiency-performance alignment:</strong> The finding that the most token-efficient format also performs best is practically valuable &mdash; teams can reduce computational costs and improve quality simultaneously, a rare win-win in NLP system design.</li>
         </ul>
-    </div>
-    <div class="section">
-        <h2>Significance</h2>
-        <p>This work provides practical, actionable guidelines for building Korean table understanding systems. By demonstrating that the right combination of preprocessing format and targeted auxiliary training can yield substantial improvements, it establishes a strong foundation for table-to-text generation in Korean. The paper received the Best Paper Award at HCLT 2024, recognizing its contributions to an underexplored but practically important area of Korean NLP.</p>
+        <div class="highlight-box">
+            <p><strong>Practical Takeaway:</strong> For any practitioner building a Korean table-to-text system, this paper offers a clear recipe: serialize tables as Pandas DataFrames for the best balance of token efficiency and structural clarity, and pre-train with the HPOS/HROW/HCOL/CRCR subtask curriculum using automatically generated synthetic data before fine-tuning on the target task.</p>
+        </div>
+        <p>The paper received the <strong>Best Paper Award</strong> at HCLT 2024 (published in the conference proceedings, pp. 635&ndash;640), recognizing its contributions to an underexplored but practically important area of Korean NLP.</p>
     </div>
     <div class="section">
         <h2>Links</h2>

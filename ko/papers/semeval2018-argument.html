@@ -23,66 +23,118 @@
     <div class="section">
         <h2>한줄 요약</h2>
         <p>기계번역 사전학습에서 얻은 맥락화된 단어 벡터(CoVe)를 활용하는 간단한 3부분 신경망 구조 SECOVARC로, 논증 추론 이해라는 도전적인 논리적 추론 과제에서 전이학습의 효과를 입증합니다.</p>
+        <figure class="paper-figure">
+            <img src="../../images/semeval2018-argument/figure1.png" alt="SECOVARC 구조">
+            <figcaption><strong>Figure 1.</strong> 파라미터 공유 GloVe 및 CoVe 모듈을 포함한 SECOVARC 구조. 점선 상자는 모든 입력에 대해 파라미터를 공유하는 모듈을 나타냅니다. v<sub>d</sub>는 요소별 차이 |v<sub>w</sub> &minus; v<sub>c</sub> &minus; v<sub>r</sub>|, v<sub>m</sub>은 요소별 곱 v<sub>w</sub> &odot; v<sub>c</sub> &odot; v<sub>r</sub>를 의미하며, FC는 완전연결 레이어입니다.</figcaption>
+        </figure>
     </div>
 
     <div class="section">
         <h2>배경 및 동기</h2>
-        <p>논증 추론 이해 과제는 주장과 이유가 주어졌을 때, 두 후보 중 올바른 암시적 보증(warrant)을 선택하는 것을 요구합니다. 이는 <strong>인간 수준의 추론</strong>으로 논리적 타당성을 판단해야 하며, 입력에 존재하지 않는 상식 지식에 의존하는 경우가 많아 매우 도전적입니다.</p>
+        <p>논증 추론 이해 과제(Argument Reasoning Comprehension Task, Habernal et al., 2018)는 SemEval 2018에서 새롭게 발표된 과제로, 자연어 논증에서 추론의 핵심인 <strong>암시적 보증(implicit warrant)</strong>을 식별하는 것을 목표로 합니다. 주장(claim)과 이유(reason)가 주어졌을 때, 두 후보 보증 중 논리적으로 올바른 것을 선택해야 합니다. 데이터셋은 약 2K개의 크라우드소싱 인스턴스로 구성되며, 각 인스턴스에는 토론의 제목과 간략한 설명, 그리고 주장, 이유, 두 후보 보증이 포함됩니다.</p>
+        <p>이 과제가 도전적인 이유는 다음과 같습니다:</p>
+        <ul class="key-points">
+            <li><strong>인간 수준의 추론 필요:</strong> 이진 분류로 단순화할 수 있지만, 주장이 이유와 보증에 의해 논리적으로 뒷받침되는지 판단하는 고차원적 추론이 요구됨</li>
+            <li><strong>상식 지식 의존:</strong> 문제 해결을 위해 입력 문장에 명시적으로 존재하지 않는 상식 지식이 필요한 경우가 많음</li>
+            <li><strong>데이터 부족:</strong> 약 2K개의 학습 데이터는 CNN이나 어텐션 기반 RNN과 같은 복잡한 신경망 모델을 처음부터 학습하기에 턱없이 부족</li>
+        </ul>
         <div class="highlight-box">
-            <p><strong>핵심 과제:</strong> 학습 데이터가 제한적(~2K 인스턴스)이어서 복잡한 신경망 모델을 처음부터 학습하기 어렵습니다. 본 논문은 대규모 기계번역 데이터셋에서의 전이학습이 모델 구조를 단순하게 유지하면서도 데이터 부족을 보완할 수 있다고 가정합니다.</p>
+            <p><strong>핵심 아이디어:</strong> 복잡한 아키텍처를 설계하는 대신, 저자들은 <em>전이학습(transfer learning)</em>이 데이터 부족 문제를 해결할 수 있다고 가정합니다. 대규모 기계번역(MT) 데이터로 사전학습된 Bi-LSTM 인코더를 활용함으로써, 2K개의 데이터만으로는 달성할 수 없는 의미 있는 맥락화된 문장 표현을 얻습니다. 이를 통해 모델 구조는 의도적으로 단순하게 유지하면서도, 수백만 개의 MT 문장 쌍에서 전이된 지식의 혜택을 받습니다.</p>
         </div>
     </div>
 
     <div class="section">
         <h2>제안 방법: SECOVARC</h2>
-        <p>SECOVARC(Sentence Encoder with COnextualized Vectors for Argument Reasoning Comprehension)는 3개 레이어 구조입니다:</p>
+        <p>SECOVARC(Sentence Encoder with COnextualized Vectors for Argument Reasoning Comprehension)는 주장, 이유, 보증 세 문장을 입력으로 받아 0과 1 사이의 점수를 출력하며, 이는 <em>이유와 보증에 기반하여 주장이 얼마나 합리적인지</em>를 나타냅니다. 아키텍처는 3개 레이어로 구성됩니다:</p>
+
+        <h3>핵심 설계 결정</h3>
+        <p>모델 설계에는 두 가지 중요한 결정이 반영되었습니다. 첫째, 모델은 한 번에 <strong>하나의 보증만</strong> 입력으로 받습니다. 이는 두 보증 사이에서 단순히 <em>선택</em>하는 것이 아니라, (주장, 이유, 보증) 세 쌍이 타당한지 <em>판단</em>하는 것을 학습해야 한다는 직관에 기반합니다. 둘째, 제한된 학습 데이터에서의 과적합을 방지하기 위해 어텐션 메커니즘 없이 가능한 한 단순한 구조를 유지하며, 대신 전이학습에 의존하여 표현력을 확보합니다.</p>
+
         <div class="method-steps">
             <div class="method-step">
                 <div class="step-num">1</div>
                 <div class="step-title">인코딩 레이어</div>
-                <div class="step-desc">대규모 MT 데이터셋에서 사전학습된 2층 Bi-LSTM인 CoVe와 GloVe 임베딩을 사용하여 주장, 이유, 보증을 맥스풀링 또는 마지막 상태 풀링을 통해 고정 길이 문장 표현으로 인코딩</div>
+                <div class="step-desc">인코딩 레이어는 각 입력 문장을 고정 길이 표현으로 변환합니다. 각 단어 w<sub>i</sub>는 GloVe 임베딩 행렬(840B, 300차원)을 통해 단어 벡터 x<sub>i</sub>로 매핑됩니다. 단어 벡터 시퀀스 x = [x<sub>1</sub>, ..., x<sub>n</sub>]은 대규모 MT 데이터에서 사전학습된 2층 Bi-LSTM인 CoVe(McCann et al., 2017)를 통과합니다. 동일한 파라미터 공유 인코더가 세 입력 모두를 처리합니다: s<sub>c</sub> = Pooling(CoVe(x<sub>c</sub>)), s<sub>r</sub> = Pooling(CoVe(x<sub>r</sub>)), s<sub>w</sub> = Pooling(CoVe(x<sub>w</sub>)). 두 가지 풀링 변형을 탐색합니다: <strong>맥스풀링</strong>(SECOVARC-max)은 각 차원의 최대값을, <strong>마지막 상태 풀링</strong>(SECOVARC-last)은 최종 은닉 상태를 사용합니다.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">2</div>
                 <div class="step-title">위치화 레이어</div>
-                <div class="step-desc">3개의 별도 완전연결 레이어가 각 문장 표현을 자체 의미 공간으로 투영하여, 주장, 이유, 보증 각각의 역할별 정보를 유지</div>
+                <div class="step-desc">모든 입력이 동일한 인코더를 공유하지만, 각 문장은 서로 다른 역할(주장, 이유, 보증)을 수행합니다. 위치화 레이어는 tanh 활성화를 가진 3개의 별도 완전연결 레이어를 통해 각 문장 표현을 고유한 의미 공간으로 투영합니다: v<sub>c</sub> = tanh(W<sub>c</sub>s<sub>c</sub> + b<sub>c</sub>), v<sub>r</sub> = tanh(W<sub>r</sub>s<sub>r</sub> + b<sub>r</sub>), v<sub>w</sub> = tanh(W<sub>w</sub>s<sub>w</sub> + b<sub>w</sub>). 이를 통해 각 역할별 표현이 주장, 이유, 보증의 고유한 기능을 포착하도록 "위치화"됩니다.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">3</div>
                 <div class="step-title">출력 레이어</div>
-                <div class="step-desc">주장, 이유, 보증, 요소별 차이, 요소별 곱 등 5개 특징 벡터를 결합하여 로지스틱 회귀를 통해 0~1 사이의 타당성 점수 산출</div>
+                <div class="step-desc">출력 레이어는 모든 특징을 수집하여 최종 점수를 계산합니다. 자연어 추론의 휴리스틱 방법(Mou et al., 2015)에서 영감을 받아, 다섯 가지 구성요소를 연결하여 특징 벡터 v<sub>f</sub>를 구성합니다: [v<sub>c</sub>; v<sub>r</sub>; v<sub>w</sub>; |v<sub>w</sub> &minus; v<sub>r</sub> &minus; v<sub>c</sub>|; v<sub>w</sub> &odot; v<sub>r</sub> &odot; v<sub>c</sub>]. 요소별 차이와 곱은 세 문장 역할 간의 상호작용 패턴을 포착합니다. 로지스틱 회귀로 최종 타당성 점수를 산출합니다: y = &sigma;(W<sub>f</sub>v<sub>f</sub> + b<sub>f</sub>).</div>
             </div>
+        </div>
+
+        <h3>데이터 처리 및 추론</h3>
+        <p>모델이 한 번에 하나의 보증만 받으므로, 학습 데이터는 올바른 보증에 1점, 잘못된 보증에 0점을 부여하도록 전처리되어 학습 데이터가 실질적으로 두 배로 늘어납니다. 테스트 시에는 두 보증을 독립적으로 평가하여 -- y<sub>1</sub> = SECOVARC(c, r, w<sub>1</sub>), y<sub>2</sub> = SECOVARC(c, r, w<sub>2</sub>) -- 더 높은 점수의 보증을 선택합니다.</p>
+
+        <h3>학습 세부사항</h3>
+        <div class="highlight-box">
+            <p><strong>하이퍼파라미터:</strong> 단어 임베딩 차원 d<sub>e</sub> = 300 (840B GloVe), 문장 표현 차원 d<sub>s</sub> = 600, 위치화 차원 d<sub>f</sub> = 300. 옵티마이저: Adam (학습률 0.001). 배치 크기: 64. 최대 에폭: 10 (개발 셋 정확도 기준 최적 모델 선택). 정규화: L2 가중치 감쇠 (1e-5) + 드롭아웃 (p = 0.1). 단어 벡터 포함 모든 파라미터를 파인튜닝. CoVe 외 가중치는 Uniform(-0.005, 0.005)로 초기화, 편향은 0으로 초기화.</p>
         </div>
     </div>
 
     <div class="section">
         <h2>실험 결과</h2>
-        <p>SemEval-2018 Task 12 데이터셋(~2K 크라우드소싱 인스턴스)에서 평가하였습니다. 결과는 20회 실행의 평균과 표준편차로 보고됩니다.</p>
+        <p>SemEval-2018 Task 12 데이터셋(~2K 크라우드소싱 인스턴스)에서 평가하였습니다. 무작위 초기화로 인한 결과 불안정성 때문에, 동일한 하이퍼파라미터로 20회 실험한 평균과 표준편차로 보고합니다.</p>
 
+        <h3>주요 결과: SECOVARC vs. 베이스라인</h3>
         <table class="results-table">
             <thead>
-                <tr><th>모델</th><th>개발 정확도</th><th>테스트 정확도</th></tr>
+                <tr><th>모델</th><th>개발 정확도 (&plusmn;)</th><th>테스트 정확도 (&plusmn;)</th></tr>
             </thead>
             <tbody>
-                <tr><td>무작위 베이스라인</td><td>0.473</td><td>0.491</td></tr>
-                <tr><td>Intra-warrant attention w/ context</td><td>0.637</td><td>0.560</td></tr>
+                <tr><td>인간 평균</td><td>-</td><td>0.798 (&plusmn;0.162)</td></tr>
+                <tr><td>인간 (추론 훈련 후)</td><td>-</td><td>0.909 (&plusmn;0.114)</td></tr>
+                <tr><td>무작위 베이스라인</td><td>0.473 (&plusmn;0.039)</td><td>0.491 (&plusmn;0.031)</td></tr>
+                <tr><td>언어 모델</td><td>0.617</td><td>0.500</td></tr>
+                <tr><td>Attention</td><td>0.488 (&plusmn;0.006)</td><td>0.513 (&plusmn;0.012)</td></tr>
+                <tr><td>Attention w/ context</td><td>0.502 (&plusmn;0.031)</td><td>0.512 (&plusmn;0.014)</td></tr>
+                <tr><td>Intra-warrant attention</td><td>0.638 (&plusmn;0.024)</td><td>0.556 (&plusmn;0.016)</td></tr>
+                <tr><td>Intra-warrant attention w/ context</td><td>0.637 (&plusmn;0.040)</td><td>0.560 (&plusmn;0.055)</td></tr>
                 <tr><td>SECOVARC (공식 제출)</td><td>0.731</td><td>0.565</td></tr>
-                <tr><td>SECOVARC-last (휴리스틱 포함)</td><td>0.706</td><td>0.554</td></tr>
-                <tr><td class="highlight-cell">SECOVARC-max (휴리스틱 포함)</td><td class="highlight-cell">0.684</td><td class="highlight-cell">0.592</td></tr>
+                <tr><td>SECOVARC-last (휴리스틱 미포함)</td><td>0.701 (&plusmn;0.011)</td><td>0.559 (&plusmn;0.019)</td></tr>
+                <tr><td>SECOVARC-last (휴리스틱 포함)</td><td>0.706 (&plusmn;0.014)</td><td>0.554 (&plusmn;0.015)</td></tr>
+                <tr><td>SECOVARC-max (휴리스틱 미포함)</td><td>0.680 (&plusmn;0.007)</td><td>0.591 (&plusmn;0.016)</td></tr>
+                <tr><td class="highlight-cell">SECOVARC-max (휴리스틱 포함)</td><td class="highlight-cell">0.684 (&plusmn;0.008)</td><td class="highlight-cell">0.592 (&plusmn;0.016)</td></tr>
+            </tbody>
+        </table>
+
+        <h3>전이학습 효과 검증</h3>
+        <p>사전학습된 CoVe 인코더가 실질적으로 성능 향상에 기여하는지 검증하기 위해, 동일한 구조이지만 Bi-LSTM을 무작위 초기화한 비전이 모델과 비교 실험을 수행하였습니다:</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>모델</th><th>개발 정확도 (&plusmn;)</th><th>테스트 정확도 (&plusmn;)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>BoW (단어 벡터 평균)</td><td>0.677 (&plusmn;0.006)</td><td>0.502 (&plusmn;0.014)</td></tr>
+                <tr><td>Bi-LSTM-last (무작위 초기화)</td><td>0.678 (&plusmn;0.010)</td><td>0.554 (&plusmn;0.024)</td></tr>
+                <tr><td>Bi-LSTM-max (무작위 초기화)</td><td>0.670 (&plusmn;0.011)</td><td>0.543 (&plusmn;0.027)</td></tr>
+                <tr><td><strong>SECOVARC-last (CoVe)</strong></td><td><strong>0.706</strong> (&plusmn;0.014)</td><td>0.554 (&plusmn;0.015)</td></tr>
+                <tr><td class="highlight-cell"><strong>SECOVARC-max (CoVe)</strong></td><td class="highlight-cell"><strong>0.684</strong> (&plusmn;0.008)</td><td class="highlight-cell"><strong>0.592</strong> (&plusmn;0.016)</td></tr>
             </tbody>
         </table>
 
         <ul class="key-points">
-            <li><strong>최고 테스트 성능:</strong> 휴리스틱이 포함된 SECOVARC-max가 59.2% 테스트 정확도를 달성하여 모든 베이스라인과 비전이 모델을 능가</li>
-            <li><strong>전이학습 효과:</strong> SECOVARC가 처음부터 학습된 Bi-LSTM 변형(BoW: 50.2%, Bi-LSTM-max: 54.3%)을 일관되게 능가하여 사전학습 맥락화 벡터의 이점 확인</li>
-            <li><strong>작은 편차:</strong> SECOVARC 모델이 비전이 모델보다 작은 표준편차를 보여, 전이학습을 통한 더 안정적이고 성공적인 학습 시사</li>
-            <li><strong>인간 성능 격차:</strong> 인간 정확도는 79.8%(추론 훈련 후 90.9%)로, 모델 개선의 여지가 상당함</li>
+            <li><strong>최고 테스트 성능:</strong> 휴리스틱이 포함된 SECOVARC-max가 59.2% 테스트 정확도를 달성하여, 과제 주최자의 intra-warrant attention 모델을 포함한 모든 베이스라인을 능가</li>
+            <li><strong>전이학습 효과 확인:</strong> SECOVARC가 동일 구조의 비전이 Bi-LSTM 변형(BoW: 50.2%, Bi-LSTM-max: 54.3%)을 일관되게 능가하여, 아키텍처가 아닌 CoVe 사전학습이 성능 향상의 핵심 요인임을 직접적으로 확인</li>
+            <li><strong>작은 편차:</strong> SECOVARC 모델이 20회 실행에서 비전이 모델보다 작은 표준편차를 보여, 전이학습이 더 안정적이고 신뢰할 수 있는 학습으로 이어짐을 입증</li>
+            <li><strong>휴리스틱 특징의 효과:</strong> 요소별 차이(|v<sub>w</sub> &minus; v<sub>r</sub> &minus; v<sub>c</sub>|)와 곱(v<sub>w</sub> &odot; v<sub>r</sub> &odot; v<sub>c</sub>) 특징이 전반적으로 테스트 정확도를 향상시켰으며, SECOVARC-max에서 가장 뚜렷한 효과를 보임</li>
+            <li><strong>개발-테스트 성능 격차:</strong> 개발과 테스트 정확도 간의 뚜렷한 격차(예: 공식 제출에서 73.1% vs. 56.5%)는 이 과제가 본질적으로 과적합 기반 개선에 저항적이며, 일반화가 핵심 과제임을 시사</li>
+            <li><strong>인간 성능 격차:</strong> 인간 정확도는 79.8%(추론 훈련 후 90.9%)로, SECOVARC의 성과를 넘어서도 상당한 모델 개선의 여지가 존재</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>의의</h2>
-        <p>본 연구는 <strong>기계번역에서의 전이학습</strong>이 제한된 학습 데이터를 가진 추론 과제에서 성능을 크게 향상시킬 수 있음을 보여주는 초기 연구입니다. 단순하지만 효과적인 SECOVARC 구조는 사전학습된 맥락화 표현(BERT/ELMo 이전)이 논리적 추론을 요구하는 자연어 이해 과제의 핵심 요소임을 입증하였습니다.</p>
+        <p>본 연구는 <strong>기계번역에서의 전이학습</strong>이 제한된 학습 데이터를 가진 추론 과제에서 성능을 크게 향상시킬 수 있음을 보여주는 초기이자 영향력 있는 연구입니다. NAACL-HLT 2018과 공동 개최된 SemEval 2018에서 발표된 본 논문은 ELMo(Peters et al., 2018)와 BERT가 분야를 변혁시키기 직전의 중요한 시점에 등장하여, 사전학습된 맥락화 표현이 논리적 추론을 요구하는 자연어 이해 과제에 필수적이라는 구체적인 증거를 제시하였습니다.</p>
+        <p>SECOVARC 아키텍처의 의도적인 단순함은 중요한 교훈을 담고 있습니다: 학습 데이터가 부족할 때, 아키텍처의 복잡성을 높이는 것보다 (전이학습을 통한) 더 나은 표현에 투자하는 것이 더 효과적입니다. 이 원칙은 이후 현대 NLP를 지배하는 사전학습-미세조정(pre-train-then-fine-tune) 패러다임에서 대규모로 검증되었습니다.</p>
+        <div class="highlight-box">
+            <p><strong>향후 연구 방향 (논문에서 제시):</strong> 저자들은 CoVe 대신 Subramanian et al. (2018)이나 ELMo(Peters et al., 2018)와 같은 더 강력한 범용 문장 인코더를 적용할 것을 제안하며, 정교한 규칙이나 휴리스틱을 통해 제한된 학습 세트를 더욱 확장하는 데이터 증강 방법도 고려할 수 있다고 언급합니다.</p>
+        </div>
     </div>
 
     <div class="section">

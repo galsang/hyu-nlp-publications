@@ -22,40 +22,118 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A comprehensive survey reviewing the landscape of machine unlearning techniques for large language models, categorizing existing methods by approach, analyzing their effectiveness and limitations, and identifying open challenges for future research.</p>
+        <p>A comprehensive survey that systematically categorizes machine unlearning techniques for large language models into three paradigms &mdash; parameter-level, gradient-based, and input-level methods &mdash; and critically analyzes their effectiveness, limitations, and evaluation gaps, while charting concrete open challenges including the locality assumption, scalability barriers, and the forgetting-retention trade-off.</p>
     </div>
 
     <div class="section">
         <h2>Background &amp; Motivation</h2>
         <p>Large language models (LLMs) memorize vast amounts of information during training, including personal data, copyrighted content, and potentially harmful knowledge. Growing regulatory requirements such as the EU's GDPR "right to be forgotten" and concerns about AI safety have made the ability to selectively remove specific knowledge from trained models &mdash; known as <strong>machine unlearning</strong> &mdash; a pressing research problem.</p>
-        <p style="margin-top: 12px;">Unlike traditional machine learning models, LLMs present unique challenges for unlearning: their enormous scale makes full retraining impractical, knowledge is distributed across billions of parameters in complex ways, and removing one piece of knowledge without degrading overall model capabilities remains fundamentally difficult. This survey provides a systematic overview of the rapidly evolving field to help researchers navigate these challenges.</p>
+        <div class="highlight-box">
+            <p><strong>Why Machine Unlearning for LLMs Is Uniquely Challenging:</strong></p>
+            <ul>
+                <li><strong>Scale prohibits retraining:</strong> With billions of parameters and training corpora containing trillions of tokens, full retraining from scratch to exclude specific data is computationally prohibitive, often costing millions of dollars and weeks of GPU time.</li>
+                <li><strong>Distributed knowledge representation:</strong> Unlike traditional databases where records can be deleted individually, knowledge in LLMs is encoded across millions of parameters in a distributed and entangled manner, making surgical removal extremely difficult.</li>
+                <li><strong>Catastrophic forgetting risk:</strong> Naively modifying parameters to remove target knowledge often degrades the model's general capabilities &mdash; a phenomenon analogous to catastrophic forgetting in continual learning.</li>
+                <li><strong>Verification difficulty:</strong> Even after applying unlearning, it is hard to verify that knowledge has been truly removed rather than merely suppressed, as adversarial prompting can often recover "unlearned" information.</li>
+            </ul>
+        </div>
+        <p style="margin-top: 12px;">These challenges have spawned a rapidly growing body of research, with dozens of new methods proposed in 2023&ndash;2025 alone. However, the field lacks a unified taxonomy and systematic comparison. This survey addresses that gap by providing the Korean research community with a structured overview of the machine unlearning landscape for LLMs, organizing the literature by method type, unlearning target, and evaluation approach.</p>
     </div>
 
     <div class="section">
-        <h2>Method / Approach</h2>
-        <p>The survey organizes the machine unlearning literature for LLMs along several dimensions:</p>
+        <h2>Survey Structure: A Three-Paradigm Taxonomy</h2>
+        <p>The survey organizes the machine unlearning literature for LLMs into three major paradigms, each with distinct mechanisms, strengths, and limitations:</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Parameter-Level Methods</div>
+                <div class="step-desc">These methods attempt to <strong>localize</strong> specific knowledge within the model's parameters and then directly modify or erase those parameters. Techniques include knowledge neuron identification (using attribution methods to find neurons that activate for specific facts), rank-one model editing (ROME, MEMIT), and targeted weight masking. While conceptually elegant, these methods rest on the assumption that knowledge is stored locally &mdash; an assumption increasingly challenged by empirical evidence showing that factual knowledge is distributed across layers and attention heads.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Gradient-Based Methods</div>
+                <div class="step-desc">These methods use optimization-based strategies to "reverse" the learning of target knowledge. The most common approach is <strong>gradient ascent</strong> on the forget set (maximizing loss on data to be forgotten), often combined with gradient descent on a retain set to preserve general capabilities. Variants include influence function-based approaches that estimate which training examples most affect specific predictions, and KL-divergence-based regularization that constrains the unlearned model to remain close to the original on non-target data. These methods are more flexible than parameter-level approaches but face challenges with training stability and hyperparameter sensitivity.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Input-Level Methods</div>
+                <div class="step-desc">Rather than modifying model parameters, these methods operate at the input or inference stage. Approaches include <strong>prompt-based suppression</strong> (crafting system prompts or in-context instructions that direct the model to refuse or avoid generating certain knowledge), retrieval-augmented filtering (intercepting and filtering outputs at generation time), and representation engineering (steering internal activations away from target knowledge during inference). These methods are lightweight and reversible but generally offer weaker unlearning guarantees, as the underlying knowledge remains encoded in the model's parameters.</div>
+            </div>
+        </div>
+
+        <h3>Comparative Analysis of the Three Paradigms</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Aspect</th><th>Parameter-Level</th><th>Gradient-Based</th><th>Input-Level</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Mechanism</strong></td><td>Localize &amp; edit specific parameters</td><td>Optimize to reverse learned knowledge</td><td>Filter/steer at inference time</td></tr>
+                <tr><td><strong>Model Modification</strong></td><td>Targeted weight changes</td><td>Global weight updates via fine-tuning</td><td>No weight changes</td></tr>
+                <tr><td><strong>Forgetting Strength</strong></td><td>High for localized facts</td><td>High but variable</td><td>Low (superficial suppression)</td></tr>
+                <tr><td><strong>Utility Preservation</strong></td><td>Good if locality holds</td><td>Moderate (risk of collateral damage)</td><td>Excellent (model unchanged)</td></tr>
+                <tr><td><strong>Adversarial Robustness</strong></td><td>Weak (indirect probing recovers info)</td><td>Moderate</td><td>Weak (knowledge still in weights)</td></tr>
+                <tr><td><strong>Scalability</strong></td><td>Challenging for distributed knowledge</td><td>Computationally expensive at scale</td><td>Lightweight and scalable</td></tr>
+                <tr><td><strong>Reversibility</strong></td><td>Irreversible</td><td>Irreversible</td><td>Fully reversible</td></tr>
+                <tr><td><strong>Representative Methods</strong></td><td>ROME, MEMIT, Knowledge Neurons</td><td>Gradient Ascent, Influence Functions, KL-Reg</td><td>Prompt Engineering, Representation Engineering</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Unlearning Targets</h3>
+        <p>The survey further distinguishes methods by what they aim to remove:</p>
         <ul class="key-points">
-            <li><strong>Taxonomy of Unlearning Methods:</strong> Categorizes approaches into parameter-level methods (locating and modifying specific weights), gradient-based methods (using gradient ascent or influence functions), and input-level methods (prompt-based or in-context approaches)</li>
-            <li><strong>Unlearning Targets:</strong> Distinguishes between factual knowledge removal, privacy-sensitive data deletion, harmful content suppression, and copyright-infringing material elimination</li>
-            <li><strong>Evaluation Frameworks:</strong> Reviews existing benchmarks and metrics for assessing unlearning effectiveness, including measures of knowledge retention, model utility preservation, and resistance to adversarial extraction</li>
-            <li><strong>Locality vs. Distributed Knowledge:</strong> Examines the critical question of whether knowledge in LLMs is stored locally in specific parameters or distributed across the network &mdash; a distinction with major implications for unlearning strategy design</li>
+            <li><strong>Factual knowledge removal:</strong> Deleting specific facts (e.g., "Person X was born in City Y") while retaining related but non-target knowledge &mdash; the most commonly studied setting in current benchmarks like TOFU and CounterFact.</li>
+            <li><strong>Privacy-sensitive data deletion:</strong> Removing personally identifiable information (PII) such as names, addresses, and phone numbers that the model may have memorized verbatim from training data, motivated by GDPR Article 17 compliance.</li>
+            <li><strong>Harmful content suppression:</strong> Eliminating the model's ability to generate dangerous content including bioweapon synthesis instructions, cyberattack code, or detailed instructions for illegal activities &mdash; a key focus of AI safety research.</li>
+            <li><strong>Copyright-infringing material elimination:</strong> Removing memorized copyrighted text such as book passages, song lyrics, or proprietary code that the model can reproduce verbatim, addressing growing legal concerns around generative AI.</li>
         </ul>
+
+        <h3>Evaluation Dimensions</h3>
+        <p>The survey identifies three critical dimensions for evaluating unlearning methods:</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Dimension</th><th>What It Measures</th><th>Common Metrics</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Forgetting efficacy</strong></td><td>How completely the target knowledge has been removed</td><td>Forget set accuracy, membership inference attack resistance, extraction likelihood</td></tr>
+                <tr><td><strong>Utility preservation</strong></td><td>How well the model retains its general capabilities after unlearning</td><td>Retain set accuracy, downstream task performance (MMLU, TruthfulQA), perplexity</td></tr>
+                <tr><td><strong>Adversarial robustness</strong></td><td>Whether the "forgotten" knowledge can be recovered through adversarial means</td><td>Jailbreak success rate, paraphrased query accuracy, multi-turn extraction attacks</td></tr>
+            </tbody>
+        </table>
     </div>
 
     <div class="section">
         <h2>Key Findings</h2>
         <ul class="key-points">
-            <li><strong>No Silver Bullet:</strong> No single unlearning method consistently achieves complete knowledge removal while preserving general model capabilities across all settings</li>
-            <li><strong>Locality Assumption Under Scrutiny:</strong> Methods that assume knowledge is localized in specific parameters often fail to achieve robust unlearning, as knowledge in LLMs tends to be distributed across layers and components</li>
-            <li><strong>Evaluation Gaps:</strong> Current evaluation protocols are insufficient &mdash; models may appear to have "forgotten" knowledge under standard probing but can still reveal it under adversarial prompting or reformulated queries</li>
-            <li><strong>Scale-Dependent Challenges:</strong> Unlearning difficulty increases with model scale, and methods effective for smaller models do not always transfer to larger ones</li>
-            <li><strong>Trade-off Between Forgetting and Retaining:</strong> A persistent tension exists between thoroughly removing target knowledge and maintaining the model's broader language understanding and generation abilities</li>
+            <li><strong>No Silver Bullet:</strong> No single unlearning method consistently achieves complete knowledge removal while preserving general model capabilities across all settings. Parameter-level methods excel at targeted removal but suffer from incomplete erasure of distributed knowledge; gradient-based methods offer broader coverage but risk destabilizing the model; input-level methods are non-destructive but provide only superficial suppression.</li>
+            <li><strong>Locality Assumption Under Scrutiny:</strong> Methods that assume knowledge is localized in specific parameters often fail to achieve robust unlearning, as knowledge in LLMs tends to be distributed across layers and components. Empirical studies show that even after "erasing" identified knowledge neurons, the target information can often be recovered through indirect prompting or by probing different layers &mdash; a finding corroborated by our lab's own research (see "Does Localization Inform Unlearning?", EMNLP 2025).</li>
+            <li><strong>Evaluation Gaps Are Severe:</strong> Current evaluation protocols are insufficient &mdash; models may appear to have "forgotten" knowledge under standard probing but can still reveal it under adversarial prompting, reformulated queries, or multi-turn conversations. Many published methods report success on narrow benchmarks but fail under more rigorous evaluation that includes paraphrased queries, indirect reasoning chains, and red-teaming attacks.</li>
+            <li><strong>Scale-Dependent Challenges:</strong> Unlearning difficulty increases with model scale, and methods effective for smaller models (e.g., 7B parameters) do not always transfer to larger ones (e.g., 70B+). Larger models exhibit greater knowledge redundancy, meaning the same fact may be encoded through multiple pathways, making complete removal harder.</li>
+            <li><strong>Trade-off Between Forgetting and Retaining:</strong> A persistent tension exists between thoroughly removing target knowledge and maintaining the model's broader language understanding and generation abilities. Aggressive unlearning (e.g., high learning rates for gradient ascent) achieves better forgetting but causes greater collateral damage to unrelated capabilities, while conservative approaches preserve utility but leave target knowledge partially intact.</li>
+            <li><strong>Temporal and Sequential Challenges:</strong> Most methods are evaluated on single-shot unlearning (removing one batch of knowledge), but real-world deployment requires <strong>sequential unlearning</strong> &mdash; handling multiple removal requests over time. The cumulative effect of repeated unlearning operations on model quality remains poorly understood.</li>
         </ul>
+
+        <div class="highlight-box">
+            <p><strong>Open Research Directions Identified by the Survey:</strong></p>
+            <ul>
+                <li><strong>Hybrid approaches:</strong> Combining parameter-level precision with gradient-based coverage and input-level safety nets to achieve robust multi-layered unlearning.</li>
+                <li><strong>Unlearning-aware pretraining:</strong> Designing model architectures and training procedures that facilitate future knowledge removal, such as modular knowledge storage or factored representations.</li>
+                <li><strong>Formal verification:</strong> Developing mathematical guarantees that target knowledge has been provably removed, analogous to differential privacy guarantees but for knowledge erasure.</li>
+                <li><strong>Continual unlearning benchmarks:</strong> Creating evaluation protocols that test sequential removal of multiple knowledge units over time, measuring cumulative degradation and interaction effects.</li>
+                <li><strong>Cross-lingual unlearning:</strong> Addressing the challenge that knowledge expressed in one language may persist through translation or multilingual representations, requiring unlearning across all linguistic manifestations.</li>
+            </ul>
+        </div>
     </div>
 
     <div class="section">
-        <h2>Significance</h2>
-        <p>As LLMs are deployed at scale in commercial and public-sector applications, the ability to remove specific knowledge becomes critical for regulatory compliance, user privacy, and AI safety. This survey provides the Korean research community with a structured entry point into the machine unlearning field, highlighting both the promise and the fundamental open problems. It complements our lab's empirical work on the same topic (see <a href="unlearning.html">"Does Localization Inform Unlearning?"</a>, EMNLP 2025) by situating that work within the broader landscape of unlearning research.</p>
+        <h2>Why It Matters</h2>
+        <p>As LLMs are deployed at scale in commercial and public-sector applications, the ability to remove specific knowledge becomes critical for regulatory compliance, user privacy, and AI safety. This survey makes several important contributions:</p>
+        <ul>
+            <li><strong>Structured entry point for researchers:</strong> By providing a clear three-paradigm taxonomy (parameter-level, gradient-based, input-level) and systematic comparison of methods, this survey enables researchers &mdash; especially those in the Korean NLP community &mdash; to quickly understand the landscape and identify promising research directions.</li>
+            <li><strong>Critical analysis of the locality assumption:</strong> The survey highlights that the widespread assumption underlying many unlearning methods (that knowledge is locally stored) is empirically questionable, redirecting research attention toward methods that account for distributed knowledge representations.</li>
+            <li><strong>Identification of evaluation blind spots:</strong> By cataloging the gaps in current evaluation protocols, the survey motivates the development of more rigorous and adversarially robust benchmarks for assessing unlearning effectiveness.</li>
+            <li><strong>Bridge to empirical research:</strong> This survey complements our lab's empirical work on the same topic (see <a href="unlearning.html">"Does Localization Inform Unlearning?"</a>, EMNLP 2025), which provides controlled experimental evidence that parameter locality does not reliably inform effective unlearning &mdash; situating that finding within the broader theoretical and methodological landscape reviewed here.</li>
+        </ul>
     </div>
 
     <div class="paper-tags" style="margin-top:24px;">

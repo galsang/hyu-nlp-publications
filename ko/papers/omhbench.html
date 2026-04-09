@@ -25,7 +25,7 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>텍스트, 이미지, 오디오 세 가지 모달리티에 걸친 멀티홉 추론을 6,144개의 질문으로 체계적이고 균형 있게 평가하는 벤치마크입니다.</p>
+        <p>텍스트, 이미지, 음성 세 모달리티에 걸친 3-hop 추론을 6,144개의 질문으로 균형 있게 평가하는 벤치마크로, 최첨단 모델조차 음성 모달리티로의 정보 전이에서 <em>비대칭적 옴니모달 그라운딩</em> 문제를 보임을 밝혔습니다.</p>
     </div>
 
     <figure class="paper-figure">
@@ -35,18 +35,20 @@
 
     <div class="section">
         <h2>배경 및 동기</h2>
-        <p>최신 AI 모델들이 텍스트, 이미지, 오디오를 동시에 처리할 수 있다고 주장하지만, <strong>모달리티 간 추론 능력</strong>은 제대로 검증되지 않았습니다. 기존 벤치마크를 분석한 결과 두 가지 심각한 문제가 발견되었습니다:</p>
+        <p>멀티모달 대형 언어 모델(MLLM)이 텍스트, 이미지, 오디오를 동시에 처리할 수 있다고 주장하지만, 두 가지 근본적인 질문이 남아 있습니다: (1) 옴니모달 이해(OMU) 벤치마크가 각 모달리티 없이도 풀 수 있다면, 진정으로 세 모달리티를 모두 평가하는 것인가? (2) 교차 모달 추론(CMR) 벤치마크가 단일 추론 경로에 편향되어 있다면, 추론 능력을 신뢰성 있게 측정할 수 있는가?</p>
+        <p>기존 평가 프레임워크를 체계적으로 분석한 결과, 두 가지 심각한 결함이 발견되었습니다:</p>
         <div class="highlight-box">
-            <p><strong>문제 1 (OMU 벤치마크):</strong> 시각 또는 오디오 입력 없이도 70-80%의 질문을 풀 수 있는 "모달리티 지름길"이 존재</p>
+            <p><strong>문제 1 — OMU 벤치마크의 모달리티 지름길:</strong> 기존 OMU 벤치마크의 약 70-80%의 문항이 특정 모달리티(시각 또는 오디오) <em>없이도</em> 풀 수 있어, 모델이 진정한 옴니모달 이해를 우회하는 지름길을 사용할 수 있었습니다.</p>
         </div>
         <div class="highlight-box">
-            <p><strong>문제 2 (CMR 벤치마크):</strong> 추론 경로를 균형화하면 성능이 최대 18%까지 하락하여, 기존 결과가 과대평가되었음을 시사</p>
+            <p><strong>문제 2 — CMR 벤치마크의 경로 불균형:</strong> 기존 교차 모달 추론 데이터셋은 추론 경로가 심하게 편향되어 있습니다 (예: MuMuQA는 Image-to-Text 인스턴스만 포함, MMQA는 ~2:1로 Image-to-Text에 편중). 경로를 강제로 균형화하면 일부 모델의 정확도가 최대 18%까지 하락하여, 기존 결과가 경로 편향으로 인해 과대평가되었음을 보여줍니다.</p>
         </div>
+        <p>이러한 발견을 바탕으로 OMHBench는 OMU와 CMR 패러다임을 통합하면서 세 가지 요건을 충족합니다: (1) 멀티홉 추론을 강제하여 지름길 방지, (2) 텍스트, 이미지, 음성 세 모달리티 모두 포함, (3) 추론 경로를 명시적으로 제어하여 편향 없는 평가 보장.</p>
     </div>
 
     <figure class="paper-figure">
         <img src="https://arxiv.org/html/2508.16198v2/x2.png" alt="태스크 구성 예시">
-        <figcaption><strong>Figure 2.</strong> OMHBench 태스크 예시: 이미지→텍스트, 이미지→텍스트→오디오 등 다양한 추론 경로를 통해 답을 도출해야 합니다. 속성은 각 모달리티에 고유하지만, 엔티티는 공유됩니다.</figcaption>
+        <figcaption><strong>Figure 2.</strong> OMHBench 태스크 예시: 이미지&#8594;텍스트, 이미지&#8594;텍스트&#8594;오디오 등 다양한 추론 경로를 통해 답을 도출해야 합니다. 속성은 각 모달리티에 고유하지만, 엔티티는 세 테이블 모두에서 공유됩니다.</figcaption>
     </figure>
 
     <div class="section">
@@ -54,64 +56,89 @@
 
         <figure class="paper-figure">
             <img src="https://arxiv.org/html/2508.16198v2/x5.png" alt="OMHBench 구축 파이프라인">
-            <figcaption><strong>Figure 5.</strong> OMHBench 구축 파이프라인: 4단계 과정을 통해 균형 잡힌 벤치마크를 생성합니다.</figcaption>
+            <figcaption><strong>Figure 5.</strong> OMHBench 구축 파이프라인: 구조화된 테이블 트리플렛에서 완전히 다양화된 옴니모달 질문까지, 4단계 과정을 통해 균형 잡힌 벤치마크를 생성합니다.</figcaption>
         </figure>
 
         <div class="method-steps">
             <div class="method-step">
                 <div class="step-num">1</div>
-                <div class="step-title">테이블 구성</div>
-                <div class="step-desc">공유 엔티티를 포함한 10개 엔티티 x 3개 속성의 테이블 3개 구성</div>
+                <div class="step-title">테이블 트리플렛 구성</div>
+                <div class="step-desc">동일한 엔티티를 공유하되 서로 다른 속성을 가진 3개의 테이블(10개 엔티티 x 3개 속성)로 트리플렛을 구성합니다. 4개의 실세계 도메인을 활용합니다: <strong>금융</strong>(23개 기업, 15개 재무 속성), <strong>경제</strong>(18개 국가, 세계은행 18개 경제 지표), <strong>기후</strong>(20개 도시, 12개 기상 속성), <strong>영양</strong>(24개 식품, 19개 영양 속성). 안정적인 시각화를 위해 값 비율을 제한합니다(최대/최소 &le; 30).</div>
             </div>
             <div class="method-step">
                 <div class="step-num">2</div>
                 <div class="step-title">멀티홉 QA 생성</div>
-                <div class="step-desc">Lookup, Ranking, Comparison 등 8가지 연산 유형을 조합하여 3-hop 질문 생성</div>
+                <div class="step-desc">8가지 결정적 연산을 사용하여 3-hop 추론 체인을 생성합니다: <strong>Lookup</strong>(속성값 조회), <strong>Comparison</strong>(부등식 필터링), <strong>Ranking</strong>(상위/하위 엔티티 선택), <strong>Range</strong>(값 구간 선택), <strong>Proximity</strong>(참조값에 가장 가까운 엔티티 탐색), <strong>Retrieval</strong>(최종값 추출), <strong>Summation</strong>, <strong>Mean</strong>. 33개의 유효한 연산 조합이 도출되며, 두 하위 집합으로 나뉩니다: <em>OMHBench-Connect</em>(3,072개, 엔티티 선택 중심)와 <em>OMHBench-Reasoning</em>(3,072개, 집계 연산 중심). 생성 AI 없이 완전 자동화된 구축 방식을 사용합니다.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">3</div>
-                <div class="step-title">옴니모달 변환</div>
-                <div class="step-desc">텍스트(LLM), 이미지(matplotlib/seaborn), 오디오(Kokoro TTS)</div>
+                <div class="step-title">옴니모달 컨텍스트 생성</div>
+                <div class="step-desc">각 테이블을 세 모달리티 중 하나로 변환합니다. <strong>이미지:</strong> Matplotlib/Seaborn으로 10가지 차트 유형, 20가지 폰트, 20가지 색상 팔레트 사용. <strong>텍스트:</strong> 도메인 특화 시나리오(애널리스트 보고서, 뉴스 기사, 회의록)를 3개 LLM(GPT-5.1, Grok-4, Claude Sonnet 4.5)으로 생성하여 언어적 다양성 확보. <strong>음성:</strong> Kokoro-82M TTS로 22가지 음성 유형, 27가지 음성 변형, 다화자 대화 형식 적용.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">4</div>
-                <div class="step-title">추론 다양화</div>
-                <div class="step-desc">6가지 모달리티 순서(T-V-S, V-S-T 등)에 걸쳐 균등 분배</div>
+                <div class="step-title">추론 경로 다양화</div>
+                <div class="step-desc">3개 테이블에 대한 모달리티 할당을 순열하여 각 질문을 3! = 6가지 추론 경로(S-I-T, S-T-I, I-S-T, T-S-I, I-T-S, T-I-S)로 생성합니다. 경로당 1,024개의 인스턴스가 균등 분배되며, 동일한 질문-답변 쌍을 유지하면서 모달리티 순서만 변경하여 경로 민감도를 체계적으로 분석할 수 있습니다.</div>
             </div>
         </div>
 
-        <p style="margin-top: 16px;">품질 보증: 엔티티 익명화, QA 기반 일관성 검증, 3개 LLM을 활용한 질문 재구성, TTS 검증 (WER: 0.03, STOI: 99.2)</p>
+        <p style="margin-top: 16px;"><strong>품질 보증:</strong> 엔티티명을 알파벳 코드로 익명화하여 파라메트릭 지식 활용을 방지합니다. QA 기반 검증과 LLM 기반 테이블 재구성으로 100% 일관성을 달성했습니다. 다수 LLM을 활용한 질문 재구성은 PAWS 데이터셋보다 높은 어휘 편차를 달성합니다(0.32 vs. 0.13). TTS 품질은 WER: 0.03, CER: 0.02, STOI: 99.2, SI-SDR: 21.0으로 검증되었습니다.</p>
     </div>
 
     <div class="section">
         <h2>실험 결과</h2>
+        <p>13개 최첨단 모델을 평가했습니다: 상용 6개(Gemini 계열), 오픈소스 7개(Qwen3-Omni, Phi-4 Multimodal, Qwen2.5-Omni, OmniVinci, MiniCPM-o, Omni-AutoThink). 본 논문은 모델이 <em>6가지 경로 변형 모두</em>에서 정답을 맞출 때만 정답으로 인정하는 <strong>경로 균형 점수(PBS)</strong>를 새로 제안합니다.</p>
+
+        <h3>OMHBench-Connect (엔티티 선택)</h3>
         <table class="results-table">
             <thead>
-                <tr><th>모델</th><th>유형</th><th>평균 정확도</th><th>PBS (균형 점수)</th></tr>
+                <tr><th>모델</th><th>유형</th><th>평균 정확도</th><th>PBS</th><th>경로별 범위</th></tr>
             </thead>
             <tbody>
-                <tr><td>Gemini 3 Flash</td><td>상용</td><td class="highlight-cell">78.3%</td><td>-</td></tr>
-                <tr><td>Qwen3-Omni 30B</td><td>오픈소스 (최고)</td><td>46.8%</td><td>낮음</td></tr>
-                <tr><td>대부분의 오픈소스 모델</td><td>오픈소스</td><td>~0%</td><td>거의 0</td></tr>
+                <tr><td>Gemini 3 Flash</td><td>상용</td><td class="highlight-cell">78.3%</td><td>32.2</td><td>60.2% - 98.4%</td></tr>
+                <tr><td>Gemini 2.5 Pro</td><td>상용</td><td>72.5%</td><td>25.0</td><td>50.8% - 96.9%</td></tr>
+                <tr><td>Gemini 2.5 Flash</td><td>상용</td><td>53.6%</td><td>4.7</td><td>21.9% - 85.9%</td></tr>
+                <tr><td>Qwen3-Omni 30B</td><td>오픈소스</td><td>46.8%</td><td>2.3</td><td>16.0% - 77.0%</td></tr>
+                <tr><td>기타 오픈소스 모델</td><td>오픈소스</td><td>&lt; 5%</td><td>~0</td><td>-</td></tr>
+            </tbody>
+        </table>
+
+        <h3>OMHBench-Reasoning (집계 연산)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>모델</th><th>유형</th><th>평균 정확도</th><th>PBS</th><th>경로별 범위</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Gemini 3 Flash</td><td>상용</td><td class="highlight-cell">49.4%</td><td>8.6</td><td>40.0% - 58.8%</td></tr>
+                <tr><td>Gemini 2.5 Pro</td><td>상용</td><td>48.8%</td><td>10.9</td><td>41.4% - 53.9%</td></tr>
+                <tr><td>Qwen3-Omni 30B</td><td>오픈소스</td><td>15.0%</td><td>0.0</td><td>2.7% - 28.5%</td></tr>
+                <tr><td>기타 오픈소스 모델</td><td>오픈소스</td><td>~0%</td><td>0</td><td>-</td></tr>
             </tbody>
         </table>
 
         <figure class="paper-figure">
             <img src="https://arxiv.org/html/2508.16198v2/x6.png" alt="주요 경향">
-            <figcaption><strong>Figure 6.</strong> 주요 경향: 상용 모델과 오픈소스 모델 간의 큰 성능 격차, 오디오 모달리티의 어려움, 추론 경로 변화에 대한 민감성이 확인됩니다.</figcaption>
+            <figcaption><strong>Figure 6.</strong> 주요 경향: 상용 모델과 오픈소스 모델 간의 큰 성능 격차, 음성 모달리티의 어려움, 추론 경로 변화에 대한 높은 민감성이 모든 평가 모델에서 확인됩니다.</figcaption>
         </figure>
 
         <ul class="key-points">
-            <li><strong>상용 vs 오픈소스:</strong> 상용 모델(Gemini 78.3%)과 오픈소스 모델(Qwen 46.8%) 간 큰 격차</li>
-            <li><strong>오디오의 어려움:</strong> 추론 경로에서 오디오가 뒤에 등장할수록 성능이 크게 저하</li>
-            <li><strong>교차 도메인 격차:</strong> 경제학과 영양학 도메인 간 최대 21.8%의 성능 차이</li>
-            <li><strong>경로 균형 점수:</strong> 대부분의 모델이 낮은 PBS를 보여 추론 경로 변화에 대한 강건성이 부족</li>
+            <li><strong>상용 vs. 오픈소스 격차:</strong> Gemini 3 Flash(78.3%)가 최고 오픈소스 모델인 Qwen3-Omni 30B(46.8%)를 Connect에서 크게 앞서며, Reasoning에서는 격차가 더 벌어집니다(49.4% vs. 15.0%)</li>
+            <li><strong>비대칭적 음성 그라운딩:</strong> 음성 <em>으로의</em> 전이(I&#8594;S, T&#8594;S)가 특히 어려운 반면, 음성 <em>으로부터의</em> 전이는 비교적 안정적입니다. 예를 들어 Qwen3-Omni는 S-T-I에서 77.0%이지만 I-T-S에서는 16.0%에 불과합니다</li>
+            <li><strong>경로 민감도:</strong> 경로 간 정확도 차이가 매우 큽니다 — Qwen3-Omni의 Connect에서 최대 38%, Gemini 3 Flash의 Reasoning에서 25.8% — 이는 단일 경로 평가가 모델 능력을 신뢰성 있게 반영하지 못함을 보여줍니다</li>
+            <li><strong>연산 난이도:</strong> 성능이 점진적으로 하락합니다: Ranking(가장 쉬움) &gt; Comparison &gt; Proximity &gt; Range(가장 어려움). 순위 비교는 잘 수행하지만 구간 제약에는 취약합니다</li>
+            <li><strong>교차 도메인 격차:</strong> Gemini 3 Flash에서 경제학과 영양학 도메인 간 최대 21.8%의 성능 차이가 나타나, 도메인 일반화가 불완전함을 시사합니다</li>
+            <li><strong>프롬프팅 전략의 한계:</strong> Self-Ask, Least-to-Most, Plan-and-Solve 등 고급 프롬프팅 전략이 표준 chain-of-thought 대비 일관된 개선을 보이지 않아, 비대칭 그라운딩이 프롬프팅이 아닌 근본적인 모델 한계임을 시사합니다</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>왜 중요한가?</h2>
-        <p>진정한 "옴니모달" AI를 구축하려면 각 모달리티를 독립적으로 처리하는 것 이상이 필요합니다. OMHBench는 기존 벤치마크의 <strong>모달리티 지름길</strong>과 <strong>경로 불균형</strong> 문제를 해결하여 진정한 교차 모달 추론 능력을 평가합니다. 오디오 모달리티의 약점을 정확히 파악함으로써 차세대 멀티모달 AI 개발 방향을 제시합니다.</p>
+        <p>OMHBench는 텍스트, 이미지, 음성 간 균형 잡힌 추론을 강제하면서 모달리티 지름길을 제거한 최초의 벤치마크입니다. 핵심 기여는 세 가지입니다:</p>
+        <ul class="key-points">
+            <li><strong>신뢰할 수 있는 평가:</strong> 동일한 Q&A 쌍으로 6가지 추론 경로를 모두 제어함으로써, 기존 벤치마크에서 최대 18%까지 결과를 부풀렸던 경로 편향을 방지합니다</li>
+            <li><strong>비대칭 그라운딩 진단:</strong> 모델이 음성 모달리티 <em>로의</em> 정보 그라운딩에서 체계적으로 취약하며, 때로는 음성 입력이 아예 없는 것처럼 동작하는 현상을 발견했습니다. 이러한 "비대칭 옴니모달 그라운딩"은 프롬프팅 문제가 아닌 근본적인 한계입니다</li>
+            <li><strong>실행 가능한 개발 방향:</strong> 단계별 실패 분석과 연산 수준 성능 분석을 통해 모델이 정확히 어디에서 실패하는지(약한 모델은 초기 추론 단계, 강한 모델은 교차 모달 속성 그라운딩) 파악하여, 차세대 멀티모달 AI 개발의 구체적인 방향을 제시합니다</li>
+        </ul>
     </div>
 
     <div class="section">

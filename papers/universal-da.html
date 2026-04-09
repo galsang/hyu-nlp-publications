@@ -22,37 +22,109 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A universal domain adaptation framework that jointly handles covariate shift and label shift in NLP by learning domain-invariant representations and detecting out-of-domain samples.</p>
+        <p>A comprehensive NLP benchmark and systematic evaluation of Universal Domain Adaptation (UniDA) methods that must simultaneously adapt to unfamiliar domains and detect anomalous inputs, revealing that UniDA techniques from computer vision can be effectively transferred to natural language tasks while also uncovering that adaptation difficulty -- governed by domain gap and label-space mismatch -- is the decisive factor in model performance.</p>
         <figure class="paper-figure">
             <img src="../images/universal-da/figure1.png" alt="Paper overview">
-            <figcaption><strong>Figure 1.</strong> Overview of universal domain adaptation, which must handle both shared-label and private-label classes across source and target domains under distributional shift.</figcaption>
+            <figcaption><strong>Figure 1.</strong> Overview of universal domain adaptation. Unlike standard domain adaptation (which assumes identical label spaces), UniDA must handle both shared-label and private-label classes across source and target domains under distributional shift. The model must classify shared-class samples correctly while rejecting target-private samples as "unknown."</figcaption>
         </figure>
     </div>
+
     <div class="section">
-        <h2>Background</h2>
-        <p>Domain adaptation in NLP typically assumes that the source and target domains share the same label space, only differing in input distribution (covariate shift). In practice, however, the target domain may contain novel classes absent from the source (label shift), or some source classes may be irrelevant to the target. <em>Universal domain adaptation</em> (UniDA) tackles the most general setting where the label spaces can overlap partially, requiring the model to (1) classify shared-class samples correctly and (2) detect target-private samples as unknown. Prior UniDA work has largely focused on vision; adapting these ideas to NLP, where representations and domain gaps behave differently, remains underexplored.</p>
+        <h2>Background & Motivation</h2>
+        <p>When deploying machine learning systems in the wild, it is highly desirable for them to effectively leverage prior knowledge to the unfamiliar domain while also firing alarms to anomalous inputs. Standard domain adaptation in NLP assumes source and target domains share the same label space, differing only in input distribution (covariate shift). However, real-world scenarios are far more complex -- the target domain may introduce entirely new categories, or some source categories may disappear.</p>
+        <div class="highlight-box">
+            <p><strong>Key Gaps in Existing Research:</strong></p>
+            <ul>
+                <li><strong>Label space mismatch ignored:</strong> Most NLP domain adaptation methods assume identical label sets across domains, but in practice the target domain may contain novel classes (open-set) or lack some source classes (partial). For example, a sentiment classifier trained on electronics reviews may encounter entirely new product categories when deployed on fashion reviews.</li>
+                <li><strong>UniDA underexplored in NLP:</strong> Universal Domain Adaptation -- which handles the most general setting where label spaces overlap only partially -- has been studied extensively in computer vision (with methods like UAN, CMU, OVANet, and UniOT), but remains largely untested for natural language tasks where features are discrete and domain gaps manifest differently.</li>
+                <li><strong>No comprehensive NLP benchmark:</strong> Prior work lacks a systematic benchmark that evaluates both generalizability (adapting to new domains) and robustness (detecting unknown classes) across diverse NLP tasks with varying difficulty levels. Existing studies test on individual datasets without controlled comparison across scenarios.</li>
+                <li><strong>Temporal shifts neglected:</strong> Existing benchmarks rarely incorporate temporal distribution shifts, where the target data comes from a different time period than the source data. In real applications, language use evolves over time, making temporal robustness crucial.</li>
+            </ul>
+        </div>
+        <p><em>Universal domain adaptation</em> (UniDA) addresses the most general and realistic scenario, requiring models to (1) correctly classify samples from shared classes, (2) detect and reject target-private samples as unknown, and (3) handle both covariate shift and label shift simultaneously. This paper bridges the gap by creating a thorough NLP benchmark spanning multiple tasks and difficulty levels, and systematically validating whether UniDA methods originally designed for images can work for text.</p>
     </div>
+
     <div class="section">
-        <h2>Method</h2>
+        <h2>Proposed Method: NLP-UniDA Benchmark & Evaluation Framework</h2>
+        <p>Rather than proposing a single new model, this work contributes a <strong>comprehensive benchmark</strong> that provides thorough viewpoints of a model's generalizability and robustness, along with a systematic evaluation of existing UniDA and NLP domain adaptation methods. The benchmark is designed with careful attention to <em>adaptation difficulty</em> -- the key variable that determines whether methods succeed or fail.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Benchmark Construction</div>
+                <div class="step-desc">The benchmark encompasses multiple NLP datasets spanning diverse tasks: <strong>Amazon Reviews</strong> (sentiment classification across product categories like books, DVDs, electronics, and kitchen appliances), <strong>MNLI</strong> (multi-genre natural language inference across fiction, government, telephone, travel, and slate domains), and datasets incorporating <strong>temporal distribution shifts</strong> where source and target data originate from different time periods. These datasets are deliberately chosen to provide varying levels of domain gap -- from mild topical shifts to severe temporal divergences -- enabling fine-grained diagnosis of when and why adaptation succeeds or fails.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">UniDA Scenario Design</div>
+                <div class="step-desc">Four canonical UniDA scenarios are systematically constructed by controlling which classes are shared and which are private: <strong>Closed-Set</strong> (all classes shared, no unknowns), <strong>Partial</strong> (target labels are a strict subset of source, requiring the model to ignore irrelevant source knowledge), <strong>Open-Set</strong> (target contains novel classes absent from source, requiring unknown detection), and <strong>Open-Partial</strong> (both source-private and target-private classes exist simultaneously -- the most realistic and challenging case). For each dataset, class subsets are carefully selected to create these scenarios with controlled numbers of shared vs. private classes.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Method Adaptation & Validation</div>
+                <div class="step-desc">Four prominent UniDA methods from computer vision are adapted to text: <strong>UAN</strong> (Universal Adaptation Network -- uses domain-specific sample weighting to down-weight target-private samples), <strong>CMU</strong> (uses contrastive learning with memory banks to separate shared and private classes), <strong>OVANet</strong> (trains one-vs-all classifiers that explicitly model per-class acceptance boundaries for unknown detection), and <strong>UniOT</strong> (applies optimal transport theory to align source-target distributions while accounting for partial label overlap). All methods share the same pre-trained language model backbone (e.g., BERT) for fair comparison, isolating the contribution of each adaptation strategy from the underlying representation quality.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Evaluation Protocol</div>
+                <div class="step-desc">Models are evaluated using the <strong>H-score</strong>, defined as: H = 2 &times; ACC<sub>shared</sub> &times; ACC<sub>unknown</sub> / (ACC<sub>shared</sub> + ACC<sub>unknown</sub>). This harmonic mean equally penalizes failures in both shared-class classification and unknown detection, preventing models from trivially achieving high scores by excelling at only one sub-task. A model that perfectly classifies shared classes but ignores unknowns (or vice versa) receives a low H-score, ensuring balanced assessment of overall UniDA competence.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <p>The evaluation spans multiple NLP tasks under all four UniDA scenarios, using H-score as the primary metric. Key comparisons include four vision-originated UniDA methods adapted to NLP, standard NLP domain adaptation baselines, and source-only models (no adaptation). The results reveal a nuanced picture of cross-modality transferability.</p>
+
+        <h3>UniDA Scenarios Evaluated</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Scenario</th><th>Source-Private Classes</th><th>Target-Private Classes</th><th>Shared Classes</th><th>Difficulty</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Closed-Set</td><td>None</td><td>None</td><td>All</td><td>Easiest</td></tr>
+                <tr><td>Partial</td><td>Yes</td><td>None</td><td>Subset</td><td>Moderate</td></tr>
+                <tr><td>Open-Set</td><td>None</td><td>Yes</td><td>Subset</td><td>Moderate</td></tr>
+                <tr><td class="highlight-cell"><strong>Open-Partial</strong></td><td class="highlight-cell"><strong>Yes</strong></td><td class="highlight-cell"><strong>Yes</strong></td><td class="highlight-cell"><strong>Subset</strong></td><td class="highlight-cell"><strong>Hardest</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>Methods Compared</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Category</th><th>Methods</th><th>Key Mechanism</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>UniDA (Vision)</td><td>UAN</td><td>Domain-specific sample weighting to down-weight private classes</td></tr>
+                <tr><td>UniDA (Vision)</td><td>CMU</td><td>Contrastive learning with memory banks for class separation</td></tr>
+                <tr><td>UniDA (Vision)</td><td>OVANet</td><td>One-vs-all classifiers with per-class acceptance boundaries</td></tr>
+                <tr><td>UniDA (Vision)</td><td>UniOT</td><td>Optimal transport for distribution alignment with partial overlap</td></tr>
+                <tr><td>NLP DA</td><td>Standard NLP baselines</td><td>Domain-adversarial training, feature alignment</td></tr>
+                <tr><td>Baseline</td><td>Source-Only</td><td>No adaptation (direct transfer)</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Key Findings Across Scenarios</h3>
         <ul class="key-points">
-            <li><strong>Domain-invariant representation learning.</strong> The model learns representations that are aligned across source and target domains so that shared-class samples cluster together regardless of domain origin.</li>
-            <li><strong>Sample-level transferability scoring.</strong> A calibrated scoring mechanism estimates how likely each target sample belongs to a shared class versus a target-private (unknown) class, enabling selective adaptation.</li>
-            <li><strong>Unknown-class detection.</strong> Samples with low transferability scores are flagged as out-of-distribution, preventing negative transfer from classes that have no counterpart in the source domain.</li>
-            <li><strong>End-to-end training.</strong> Representation alignment, transferability scoring, and classification are optimized jointly, avoiding error propagation from separate pipeline stages.</li>
+            <li><strong>Vision UniDA methods transfer to NLP:</strong> UniDA methods originally designed for image inputs can be effectively transferred to the natural language domain. When adapted to use pre-trained language model encoders instead of CNN backbones, methods like OVANet and UniOT achieve meaningful improvements over source-only baselines, validating the cross-modality applicability of the UniDA paradigm.</li>
+            <li><strong>Adaptation difficulty is the decisive factor:</strong> Performance varies dramatically across datasets depending on the inherent domain gap. On datasets with mild distributional shifts (e.g., between similar product categories in Amazon Reviews), UniDA methods achieve strong H-scores. On datasets with large domain gaps or temporal shifts, even the best methods struggle considerably, with H-score drops of 5-15 percentage points.</li>
+            <li><strong>Open-Partial is consistently the hardest scenario:</strong> The most general UniDA setting, where both source-private and target-private classes exist, consistently yields the lowest H-scores across all methods and datasets. This highlights the compounding challenge of simultaneously filtering out irrelevant source knowledge while detecting novel target categories.</li>
+            <li><strong>Temporal shifts compound the challenge:</strong> Datasets with temporal distribution shifts -- where source and target data come from different time periods -- present challenges beyond standard topical domain gaps. Language evolution, topic drift, and shifting class distributions over time cause further performance degradation that existing methods are not well-equipped to handle.</li>
+            <li><strong>Unknown detection is the primary bottleneck:</strong> Decomposing the H-score reveals that shared-class classification accuracy (ACC<sub>shared</sub>) is often reasonable, but accurately detecting target-private unknown samples (ACC<sub>unknown</sub>) remains the critical bottleneck. Most methods either over-reject (misclassifying shared samples as unknown) or under-reject (failing to flag truly novel inputs).</li>
+            <li><strong>No single method dominates:</strong> No single approach consistently outperforms all others across every dataset-scenario combination. UniOT and OVANet tend to perform well on datasets with clear class structure, while UAN shows advantages when domain gaps are moderate. This suggests that the NLP UniDA problem requires more specialized, task-aware solutions rather than simple transfers from vision.</li>
+            <li><strong>NLP-specific challenges emerge:</strong> Compared to vision, NLP domain adaptation exhibits unique difficulties: (1) textual domain gaps are often more subtle and harder to measure than visual domain gaps, (2) pre-trained language models already provide strong cross-domain representations that reduce the marginal benefit of adaptation, and (3) class boundaries in text are often more ambiguous, complicating unknown detection.</li>
         </ul>
     </div>
-    <div class="section">
-        <h2>Results</h2>
-        <ul class="key-points">
-            <li>Achieves consistent improvements over prior domain adaptation baselines across multiple NLP benchmarks covering sentiment analysis and natural language inference.</li>
-            <li>Demonstrates robustness under varying degrees of label-space mismatch, including open-set, partial, and fully open-partial scenarios.</li>
-            <li>The transferability scoring mechanism effectively separates known from unknown target samples, yielding high unknown-class detection accuracy.</li>
-            <li>Ablation studies confirm that each component (representation alignment, transferability scoring, unknown detection) contributes meaningfully to overall performance.</li>
-        </ul>
-    </div>
+
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>Real-world NLP deployments rarely enjoy the luxury of matching label spaces between training and deployment domains. This work provides a principled framework that handles the most general form of domain shift, making NLP models more reliable when applied to new domains with potentially unseen categories. The approach is especially relevant for safety-critical applications where silently misclassifying out-of-domain inputs can be costly.</p>
+        <p>This work makes three important contributions that advance the reliability of NLP systems in real-world deployment scenarios:</p>
+        <ul>
+            <li><strong>First comprehensive NLP UniDA benchmark:</strong> By constructing a systematic benchmark with multiple datasets (Amazon Reviews, MNLI, temporal-shift datasets), four canonical UniDA scenarios, and controlled difficulty levels, this work provides the community with a much-needed testbed for evaluating robust domain adaptation in NLP. Prior to this, no unified benchmark existed that systematically tested both generalizability and robustness under label-space mismatch.</li>
+            <li><strong>Cross-modality validation of UniDA:</strong> The finding that vision-based UniDA methods (UAN, CMU, OVANet, UniOT) can effectively transfer to NLP is significant -- it means the NLP community can build upon a rich body of existing UniDA research from computer vision rather than starting from scratch. At the same time, the results identify where NLP-specific challenges (subtle domain gaps, strong pre-trained representations, ambiguous class boundaries) require new solutions beyond what vision methods provide.</li>
+            <li><strong>Adaptation difficulty as a unifying principle:</strong> The detailed analysis reveals that <em>adaptation difficulty</em> -- determined by the magnitude of domain gap, severity of label-space mismatch, and presence of temporal shifts -- is the single most important factor governing model performance. This insight provides actionable guidance: practitioners should assess the difficulty of their specific deployment scenario before selecting an adaptation strategy, and future research should focus on methods that can dynamically adjust to varying difficulty levels.</li>
+            <li><strong>Roadmap for future research:</strong> By identifying unknown detection as the primary bottleneck and temporal shifts as an underexplored challenge, the paper provides concrete directions for advancing NLP UniDA. The benchmark itself serves as a standardized platform for evaluating progress on these open problems.</li>
+        </ul>
     </div>
     <div class="section">
         <h2>Links</h2>

@@ -22,75 +22,93 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A training-free decoding method that enables LLMs to generate responses when knowledge is available and abstain when it isn't, by adaptively weighting parametric and contextual knowledge sources.</p>
+        <p>A training-free contrastive decoding method that dynamically blends parametric, contextual, and abstention distributions so that LLMs answer when they have relevant knowledge and gracefully abstain when they do not.</p>
     </div>
+
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2412.12527v2/x1.png" alt="Four scenarios based on parametric and contextual knowledge availability">
+        <figcaption><strong>Figure 1.</strong> Four knowledge-access scenarios: depending on whether parametric knowledge (from pre-training) and contextual knowledge (from retrieval) are available, the model should answer or abstain.</figcaption>
+    </figure>
+
     <div class="section">
-        <h2>Overview</h2>
-        <figure style="margin:24px 0;">
-            <img src="https://arxiv.org/html/2412.12527v2/x1.png" alt="Four scenarios based on parametric and contextual knowledge availability" style="max-width:100%;">
-            <figcaption style="margin-top:8px;color:#666;font-size:0.95em;">Figure 1: Four scenarios based on parametric and contextual knowledge availability.</figcaption>
+        <h2>Background & Motivation</h2>
+        <p>LLMs acquire broad parametric knowledge during pre-training, yet inevitably lack information about underrepresented or rapidly-evolving topics. Retrieval-Augmented Generation (RAG) supplements this with external contextual knowledge, but sometimes <strong>neither source contains the answer</strong>. Forcing the model to respond in such cases leads to confident-sounding hallucinations, which is especially dangerous in high-stakes domains.</p>
+        <div class="highlight-box">
+            <p><strong>The Missing Scenario:</strong> Prior work on contrastive decoding (e.g., Context-Aware Decoding, Adaptive Contrastive Decoding) only handles cases where at least one knowledge source is relevant. None of them address the critical fourth scenario&mdash;where <em>both</em> parametric and contextual knowledge are absent&mdash;and therefore these methods <strong>never abstain</strong>, achieving near-zero F1<sub>abs</sub> scores.</p>
+        </div>
+        <p>The authors identify four distinct scenarios: (1) only parametric knowledge available, (2) only contextual knowledge available, (3) both available, and (4) <strong>neither available</strong>. They first construct a controlled testbed that explicitly labels each scenario, then propose <strong>Contrastive Decoding with Abstention (CDA)</strong>&mdash;a training-free method that robustly handles all four.</p>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method: Contrastive Decoding with Abstention (CDA)</h2>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2412.12527v2/x2.png" alt="Testbed construction pipeline">
+            <figcaption><strong>Figure 2.</strong> Testbed construction pipeline: from MRQA datasets, parametric and contextual knowledge availability is assessed to create balanced evaluation sets across all four scenarios.</figcaption>
         </figure>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Three-Way Distribution Blending</div>
+                <div class="step-desc">Extends standard two-way contrastive decoding (parametric + contextual) to a three-way formulation: d<sub>o</sub> = w<sub>p</sub>&middot;d<sub>p</sub> + w<sub>c</sub>&middot;d<sub>c</sub> + (1 &minus; w<sub>p</sub> &minus; w<sub>c</sub>)&middot;d<sub>a</sub>, where d<sub>a</sub> is an explicit abstention distribution obtained by prompting the model to decline answering.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Calibrated Uncertainty Estimation</div>
+                <div class="step-desc">Raw entropy values are not directly comparable across different prompts. CDA computes "content-free" null distributions using placeholder inputs, then calibrates confidence as the relative entropy reduction: r<sub>p</sub> = max(H<sub>p</sub> &minus; H&#772;<sub>p</sub>, 0) / H&#772;<sub>p</sub>. This ensures fair comparison between parametric and contextual knowledge signals.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Dynamic Weight Normalization</div>
+                <div class="step-desc">Calibrated confidence ratios are normalized so that w<sub>p</sub> + w<sub>c</sub> &le; 1. When both confidences are low, the residual weight (1 &minus; w<sub>p</sub> &minus; w<sub>c</sub>) naturally flows to the abstention distribution, triggering the model to decline.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Momentum Stabilization (CDA-m)</div>
+                <div class="step-desc">Previously decoded tokens can unintentionally steer the model. CDA-m applies exponential moving average to the weights: w<sub>t</sub> &larr; &alpha;&middot;w<sub>t&minus;1</sub> + (1&minus;&alpha;)&middot;w<sub>t</sub>, smoothing abrupt fluctuations across decoding steps.</div>
+            </div>
+        </div>
     </div>
+
     <div class="section">
-        <h2>Background</h2>
-        <p>LLMs sometimes generate confident but wrong answers when they lack knowledge. CDA (Contrastive Decoding with Abstention) addresses this by assessing whether the model has relevant knowledge before answering.</p>
-    </div>
-    <div class="section">
-        <h2>Method: CDA Framework</h2>
-        <figure style="margin:24px 0;">
-            <img src="https://arxiv.org/html/2412.12527v2/x2.png" alt="Dataset construction process" style="max-width:100%;">
-            <figcaption style="margin-top:8px;color:#666;font-size:0.95em;">Figure 2: Dataset construction process.</figcaption>
-        </figure>
-        <ul class="key-points">
-            <li><strong>Knowledge Assessment:</strong> Evaluate availability of parametric and contextual knowledge</li>
-            <li><strong>Adaptive Weighting:</strong> Entropy-based calibration to fairly compare knowledge sources</li>
-            <li><strong>Momentum Decoding:</strong> Stabilize weights via momentum: w<sub>t</sub> &larr; &alpha;&middot;w<sub>t-1</sub> + (1-&alpha;)&middot;w<sub>t</sub></li>
-        </ul>
-    </div>
-    <div class="section">
-        <h2>Results</h2>
-        <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+        <h2>Experimental Results</h2>
+        <p>Evaluated on three QA benchmarks (Natural Questions, HotpotQA, TriviaQA) with four LLMs (Llama3-8B, Llama2-7B/13B, Mistral-7B). Metrics: F1<sub>ans</sub> (answerable accuracy), F1<sub>abs</sub> (abstention accuracy), and Reliability Score (RS).</p>
+
+        <table class="results-table">
             <thead>
-                <tr style="border-bottom:2px solid #333;">
-                    <th style="text-align:left;padding:8px;">Dataset</th>
-                    <th style="text-align:left;padding:8px;">Method</th>
-                    <th style="text-align:right;padding:8px;">F1<sub>ans</sub></th>
-                    <th style="text-align:right;padding:8px;">F1<sub>abs</sub></th>
-                    <th style="text-align:right;padding:8px;">RS</th>
-                </tr>
+                <tr><th>Dataset</th><th>Method</th><th>F1<sub>ans</sub></th><th>F1<sub>abs</sub></th><th>RS</th></tr>
             </thead>
             <tbody>
-                <tr style="border-bottom:1px solid #ddd;">
-                    <td style="padding:8px;">NQ</td>
-                    <td style="padding:8px;">CDA-m</td>
-                    <td style="text-align:right;padding:8px;">73.15</td>
-                    <td style="text-align:right;padding:8px;">55.47</td>
-                    <td style="text-align:right;padding:8px;">63.72</td>
-                </tr>
-                <tr style="border-bottom:1px solid #ddd;">
-                    <td style="padding:8px;">HotpotQA</td>
-                    <td style="padding:8px;">CDA-m</td>
-                    <td style="text-align:right;padding:8px;">79.32</td>
-                    <td style="text-align:right;padding:8px;">62.59</td>
-                    <td style="text-align:right;padding:8px;">70.64</td>
-                </tr>
-                <tr style="border-bottom:1px solid #ddd;">
-                    <td style="padding:8px;">TriviaQA</td>
-                    <td style="padding:8px;">CDA-m</td>
-                    <td style="text-align:right;padding:8px;">80.93</td>
-                    <td style="text-align:right;padding:8px;">65.66</td>
-                    <td style="text-align:right;padding:8px;">72.74</td>
-                </tr>
+                <tr><td>NQ</td><td>FSB (best baseline)</td><td>69.27</td><td>54.94</td><td>59.64</td></tr>
+                <tr><td>NQ</td><td>CDA</td><td>72.06</td><td>55.49</td><td>62.95</td></tr>
+                <tr><td class="highlight-cell">NQ</td><td class="highlight-cell">CDA-m</td><td class="highlight-cell">73.15</td><td class="highlight-cell">55.47</td><td class="highlight-cell">63.72</td></tr>
+                <tr><td>HotpotQA</td><td>FSB (best baseline)</td><td>74.89</td><td>58.51</td><td>66.21</td></tr>
+                <tr><td>HotpotQA</td><td>CDA</td><td>78.71</td><td>62.50</td><td>70.20</td></tr>
+                <tr><td class="highlight-cell">HotpotQA</td><td class="highlight-cell">CDA-m</td><td class="highlight-cell">79.32</td><td class="highlight-cell">62.59</td><td class="highlight-cell">70.64</td></tr>
+                <tr><td>TriviaQA</td><td>FSB (best baseline)</td><td>77.02</td><td>59.84</td><td>68.55</td></tr>
+                <tr><td>TriviaQA</td><td>CDA</td><td>80.39</td><td>65.67</td><td>72.35</td></tr>
+                <tr><td class="highlight-cell">TriviaQA</td><td class="highlight-cell">CDA-m</td><td class="highlight-cell">80.93</td><td class="highlight-cell">65.66</td><td class="highlight-cell">72.74</td></tr>
             </tbody>
         </table>
-        <figure style="margin:24px 0;">
-            <img src="https://arxiv.org/html/2412.12527v2/x7.png" alt="Reliability scores in RAG settings" style="max-width:100%;">
-            <figcaption style="margin-top:8px;color:#666;font-size:0.95em;">Reliability scores in RAG settings.</figcaption>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2412.12527v2/x7.png" alt="Reliability scores in RAG settings">
+            <figcaption><strong>Figure 7.</strong> Reliability scores in a practical RAG setting using Contriever-msmarco retriever with Wikipedia. CDA-m achieves the highest RS (~68.7) across all baselines.</figcaption>
         </figure>
+
+        <ul class="key-points">
+            <li><strong>Baselines without abstention fail:</strong> Context-only, CAD, and ACD methods achieve near-zero F1<sub>abs</sub> because they never decline to answer, regardless of knowledge availability.</li>
+            <li><strong>Consistent gains across datasets:</strong> CDA-m outperforms the strongest baseline (FSB) by +3.88 F1<sub>ans</sub> on NQ, +4.43 on HotpotQA, and +3.91 on TriviaQA.</li>
+            <li><strong>Calibration is critical:</strong> Removing uncertainty calibration degrades RS by 15.06 points on NQ and 13.78 points on HotpotQA, confirming that raw entropy comparison is unreliable.</li>
+            <li><strong>Beats supervised training:</strong> CDA-m (training-free) outperforms instruction-tuned models even in-domain (+2.60 RS on NQ) and especially out-of-domain (+10.60 RS on TriviaQA), demonstrating superior generalization.</li>
+            <li><strong>Works in real RAG:</strong> With a practical Contriever retriever on Wikipedia, CDA-m achieves the best reliability score, confirming applicability beyond controlled testbeds.</li>
+        </ul>
     </div>
+
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>For trustworthy AI, knowing when NOT to answer is as important as giving correct answers. CDA achieves this without any additional training.</p>
+        <p>For trustworthy AI deployment, knowing <strong>when not to answer</strong> is just as important as answering correctly. CDA is the first training-free decoding approach that integrates abstention directly into the contrastive decoding framework, handling all four knowledge-access scenarios without any parameter updates. Its calibrated uncertainty estimation ensures robust performance across diverse models and datasets, while momentum stabilization prevents error propagation during autoregressive generation. The method is immediately applicable to any instruction-tuned LLM with RAG, making it a practical step toward more reliable question-answering systems.</p>
     </div>
     <div class="section">
         <h2>Links</h2>

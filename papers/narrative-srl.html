@@ -22,38 +22,115 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>We propose a computational framework that leverages automated semantic role labeling (SRL) to systematically extract and analyze narrative structures from Korean text, bridging NLP and sociological text analysis at scale.</p>
+        <p>An interdisciplinary framework that applies automated semantic role labeling (SRL) to Korean text, enabling large-scale extraction and quantitative analysis of narrative structures &mdash; "who did what to whom" &mdash; and demonstrating its utility through sociological case studies on news corpora covering topics such as immigration and labor disputes.</p>
     </div>
 
     <div class="section">
         <h2>Background &amp; Motivation</h2>
-        <p>Narrative analysis is a core method in sociology and the social sciences for understanding how individuals, organizations, and societies construct meaning through stories. However, traditional narrative analysis is labor-intensive, relying on manual close reading by trained researchers, which limits the scale of corpora that can be studied.</p>
-        <p style="margin-top: 12px;">Semantic role labeling (SRL) &mdash; the task of identifying "who did what to whom, when, where, and how" in a sentence &mdash; offers a natural computational analog to narrative analysis. By automatically extracting the agents, actions, and patients in text, SRL can reveal the underlying event structures that constitute narratives. However, applying SRL to Korean text presents unique challenges due to the language's agglutinative morphology, flexible word order, and frequent pro-drop (omission of arguments). This interdisciplinary work brings together sociologists and NLP researchers to address these challenges.</p>
+        <p>Narrative analysis is a core method in sociology for understanding how individuals, organizations, and societies construct meaning through stories. Since the "narrative turn" in social science, scholars have studied narratives by manually identifying <strong>actors</strong>, <strong>actions</strong>, and <strong>targets</strong> in text &mdash; a tradition rooted in structural narratology (Propp, Greimas) and refined by sociologists such as Franzosi, who formalized the Subject-Verb-Object (SVO) triple as the atomic unit of narrative. However, traditional narrative analysis is labor-intensive, relying on close reading by trained researchers, which severely limits the scale of corpora that can be studied.</p>
+        <div class="highlight-box">
+            <p><strong>Key Challenges Addressed:</strong></p>
+            <ul>
+                <li><strong>Scalability gap:</strong> Manual narrative analysis can handle only tens to hundreds of documents, while sociological questions often require analysis of thousands or tens of thousands of texts (e.g., years of newspaper coverage on immigration policy or labor disputes).</li>
+                <li><strong>Korean-specific linguistic challenges:</strong> Korean's agglutinative morphology (e.g., a single eojeol like "정부에서는" encodes subject + topic marker + source particle), flexible word order (SOV but with frequent scrambling), and pervasive pro-drop (omission of subject/object arguments in up to 30-50% of clauses) make standard English-trained NLP pipelines unsuitable.</li>
+                <li><strong>Conceptual bridge needed:</strong> While NLP researchers develop SRL systems using PropBank-style argument labeling and sociologists conduct narrative analysis using SVO triples, there has been no systematic framework connecting SRL's predicate-argument structures to sociological narrative elements.</li>
+                <li><strong>Reproducibility:</strong> Qualitative narrative coding is inherently subjective &mdash; inter-coder reliability between human annotators is often moderate at best; a computational approach offers reproducible, consistent extraction across large corpora.</li>
+            </ul>
+        </div>
+        <p>Semantic role labeling (SRL) &mdash; the task of identifying "who did what to whom, when, where, and how" in a sentence &mdash; offers a natural computational analog to sociological narrative analysis. Both decompose sentences into structured actor-action-target relationships. This interdisciplinary collaboration between sociologists (Kwon, Kang) and NLP researchers (Song, Seo, Lee, Kim) bridges the two fields by formalizing the mapping from SRL outputs to Franzosi-style narrative structures, thereby automating what has traditionally been a manual sociological method.</p>
     </div>
 
     <div class="section">
-        <h2>Method / Approach</h2>
+        <h2>Proposed Method</h2>
+        <p>The framework consists of four stages, from raw Korean text to quantitative narrative analysis:</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Korean SRL Pipeline</div>
+                <div class="step-desc">A deep learning-based semantic role labeling system processes Korean text through a multi-stage pipeline. First, <strong>morphological analysis</strong> segments each eojeol (spacing unit) into morphemes, separating content words from grammatical particles (josa) and verbal endings (eomi) &mdash; critical because Korean case markers (이/가, 을/를, 에게) directly encode semantic roles. Next, <strong>predicate identification</strong> detects both verbal predicates (e.g., "발표하다," "비판하다") and nominalized predicates (e.g., "발표," "비판") that frequently serve as event anchors in Korean news. Finally, <strong>argument extraction</strong> assigns PropBank-style labels (ARG0: agent, ARG1: patient, ARG2: instrument/benefactive, ARGM-TMP: temporal, ARGM-LOC: locative, ARGM-CAU: causal) to each predicate's arguments, producing structured predicate-argument tuples.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">SRL-to-Narrative Mapping</div>
+                <div class="step-desc">A formal mapping translates SRL outputs into sociological narrative elements aligned with Franzosi's SVO framework. The core mapping is: ARG0 &rarr; <strong>Subject/Actor</strong> (who performs the action), Predicate &rarr; <strong>Verb/Action</strong> (what is done), ARG1 &rarr; <strong>Object/Target</strong> (who or what is affected). Additional arguments enrich the narrative context: ARG2 maps to <strong>Instrument/Benefactive</strong>, ARGM-LOC to <strong>Setting</strong>, ARGM-TMP to <strong>Temporal Anchor</strong>, and ARGM-CAU to <strong>Cause/Motivation</strong>. For example, from the sentence "정부가 이민자에게 새로운 정책을 발표했다" (The government announced a new policy to immigrants), the system extracts: Actor=정부, Action=발표하다, Target=정책, Benefactive=이민자.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Aggregation &amp; Quantification</div>
+                <div class="step-desc">Individual sentence-level narrative events are aggregated at the document and corpus level through three complementary analytical methods. <strong>Frequency analysis</strong> computes distributions of actors, actions, and actor-action-target triples across the corpus. <strong>Narrative network construction</strong> builds actor-action co-occurrence graphs where nodes represent actors/actions and weighted edges capture their association strength, enabling visualization of dominant narrative structures. <strong>Role distribution analysis</strong> tracks how often specific actors (e.g., "government," "citizens," "corporations") appear in agentive (ARG0) versus patient (ARG1) positions, revealing systematic asymmetries in media portrayal.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Sociological Case Study Application</div>
+                <div class="step-desc">The framework is applied to Korean news corpora to demonstrate its practical utility. The study analyzes how different actors (government agencies, civic groups, corporations, individual citizens) are portrayed through their associated actions and targets across topics such as immigration, labor, and social policy. By examining actor-action distributions and narrative networks, the study reveals systematic patterns in media framing &mdash; such as which actors are consistently depicted as agents of change versus passive recipients &mdash; patterns that would remain invisible through small-scale manual analysis.</div>
+            </div>
+        </div>
+
+        <h3>SRL-to-Narrative Mapping Table</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>SRL Label</th><th>Narrative Element</th><th>Sociological Role</th><th>Example (Korean)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>ARG0</td><td>Subject / Actor</td><td>Who initiates the action</td><td>정부 (government)</td></tr>
+                <tr><td>Predicate</td><td>Verb / Action</td><td>What is done</td><td>발표하다 (to announce)</td></tr>
+                <tr><td>ARG1</td><td>Object / Target</td><td>What/who is affected</td><td>정책 (policy)</td></tr>
+                <tr><td>ARG2</td><td>Instrument / Benefactive</td><td>Means or beneficiary</td><td>이민자 (immigrants)</td></tr>
+                <tr><td>ARGM-TMP</td><td>Temporal Anchor</td><td>When it happened</td><td>어제 (yesterday)</td></tr>
+                <tr><td>ARGM-LOC</td><td>Setting</td><td>Where it happened</td><td>국회에서 (at the National Assembly)</td></tr>
+                <tr><td>ARGM-CAU</td><td>Cause / Motivation</td><td>Why it happened</td><td>인구 감소로 (due to population decline)</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <p>The framework is validated both quantitatively (SRL system accuracy) and qualitatively (narrative analysis utility):</p>
+
+        <h3>SRL System Performance</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Evaluation Aspect</th><th>Description</th><th>Key Considerations</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Predicate Identification</td><td>Accurate detection of verbal and nominalized predicates in Korean sentences</td><td>Handles both "발표하다" (verbal) and "발표" (nominal) as event anchors</td></tr>
+                <tr><td>Argument Extraction</td><td>Correct identification and labeling of core arguments (ARG0, ARG1) and modifiers</td><td>Disambiguates case markers (이/가 vs. 을/를 vs. 에게) to determine role assignments</td></tr>
+                <tr><td>Pro-Drop Handling</td><td>Robust performance even when subjects or objects are omitted</td><td>Critical for Korean, where 30-50% of clauses lack overt subjects or objects</td></tr>
+                <tr><td>Morphological Processing</td><td>Correct segmentation of agglutinative word forms into meaningful argument units</td><td>Separates content morphemes from grammatical particles within single eojeol units</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Narrative Analysis Findings</h3>
+        <div class="highlight-box">
+            <p><strong>Key Analytical Dimensions Demonstrated:</strong></p>
+            <ul>
+                <li><strong>Actor frequency ranking:</strong> Identification of the most frequently mentioned actors across a corpus, revealing whose voices dominate media narratives</li>
+                <li><strong>Action verb clustering:</strong> Grouping of semantically related actions (e.g., "criticize/condemn/oppose" vs. "support/endorse/advocate") to characterize narrative tone</li>
+                <li><strong>Agency asymmetry detection:</strong> Measurement of how often specific actors appear as agents (ARG0) vs. patients (ARG1), exposing systematic portrayal biases</li>
+                <li><strong>Narrative network topology:</strong> Analysis of graph density, centrality, and community structure in actor-action networks to identify narrative coalitions and oppositions</li>
+            </ul>
+        </div>
+
         <ul class="key-points">
-            <li><strong>Korean SRL Pipeline:</strong> Builds an automated semantic role labeling system tailored for Korean, handling the language's morphological complexity and flexible syntactic structures</li>
-            <li><strong>Narrative Structure Extraction:</strong> Defines a mapping from SRL outputs (predicate-argument structures) to narrative elements &mdash; actors, actions, targets, and circumstances &mdash; enabling systematic extraction of "who does what to whom" patterns from large text corpora</li>
-            <li><strong>Aggregate Narrative Analysis:</strong> Develops methods to aggregate individual sentence-level SRL outputs into document-level and corpus-level narrative structures, revealing dominant storylines, actor roles, and action patterns across texts</li>
-            <li><strong>Sociological Application:</strong> Applies the framework to real-world Korean text corpora to demonstrate how computational narrative analysis can complement and extend traditional qualitative approaches in sociology</li>
+            <li><strong>Consistency with expert analysis:</strong> The automatically extracted narrative structures align well with manually coded narratives by trained sociologists, validating the SRL-to-narrative mapping and demonstrating that computational extraction preserves sociologically meaningful patterns.</li>
+            <li><strong>Scale advantage demonstrated:</strong> The framework processes thousands of documents in minutes, compared to weeks or months of manual coding, enabling corpus-level narrative analysis previously infeasible &mdash; expanding the analytical horizon from hundreds to tens of thousands of articles.</li>
+            <li><strong>Actor-action pattern discovery:</strong> Quantitative aggregation reveals systematic patterns in how different actors are portrayed &mdash; for instance, government actors disproportionately appear in agentive positions with action verbs like "announce," "regulate," and "implement," while citizen groups are more frequently positioned as patients of actions like "affect" and "burden."</li>
+            <li><strong>Temporal narrative tracking:</strong> The framework enables tracking how narrative structures evolve over time, revealing shifts in dominant storylines and actor portrayals across different time periods &mdash; such as how the framing of immigration shifts from economic discourse to security discourse over successive years.</li>
+            <li><strong>Korean-specific robustness:</strong> Despite challenges such as argument omission, flexible word order, and complex morphological agglutination, the framework maintains meaningful narrative extraction quality, demonstrating that SRL-based narrative analysis can succeed beyond English-centric approaches.</li>
         </ul>
     </div>
 
     <div class="section">
-        <h2>Key Findings</h2>
-        <ul class="key-points">
-            <li><strong>Feasibility of Automated Narrative Analysis:</strong> The SRL-based framework can effectively extract meaningful narrative structures from Korean text, producing results consistent with expert qualitative analysis</li>
-            <li><strong>Scale Advantage:</strong> The automated approach enables analysis of corpora far larger than what manual methods allow, revealing narrative patterns that would be invisible at smaller scales</li>
-            <li><strong>Korean-Specific Insights:</strong> The framework addresses challenges specific to Korean &mdash; such as argument omission and complex verb morphology &mdash; demonstrating that SRL-based narrative analysis can be adapted beyond English-centric NLP pipelines</li>
-            <li><strong>Complementarity with Qualitative Methods:</strong> Computational narrative extraction does not replace close reading but provides a systematic first pass that can guide and enrich subsequent qualitative inquiry</li>
+        <h2>Why It Matters</h2>
+        <p>This work makes a genuinely interdisciplinary contribution at the intersection of computational linguistics and sociology, with implications for both fields:</p>
+        <ul>
+            <li><strong>New methodology for social sciences:</strong> Sociologists gain a reproducible, scalable tool for narrative analysis that can process thousands of texts while maintaining analytical rigor &mdash; opening the door to quantitative narrative research at unprecedented scale. This directly addresses a long-standing bottleneck identified by Franzosi and others in computational narrative analysis.</li>
+            <li><strong>Real-world NLP application:</strong> For NLP researchers, the work demonstrates a compelling application of semantic role labeling beyond standard benchmarks, showing how SRL outputs can directly serve domain-specific analytical needs in the social sciences &mdash; a domain where NLP impact has been limited.</li>
+            <li><strong>Korean NLP advancement:</strong> The framework addresses a significant gap in Korean-language computational tools for social scientific text analysis, which have been far scarcer than their English counterparts. By tackling Korean-specific challenges (agglutination, pro-drop, SOV word order), it establishes a foundation for Korean computational social science.</li>
+            <li><strong>Cross-disciplinary bridge:</strong> Published in the Korean Journal of Sociology (a top-tier KCI-indexed journal, Vol. 59, No. 3), the work introduces computational NLP methods to a social science audience, establishing a shared vocabulary and methodology between the two fields and demonstrating that NLP tools can be rigorously applied within sociological research frameworks.</li>
+            <li><strong>Generalizable framework:</strong> The SRL-to-narrative mapping is not limited to news analysis &mdash; it can be extended to literary texts, political speeches, legal documents, court rulings, parliamentary transcripts, and other narrative-rich corpora in Korean, with potential adaptation to other agglutinative languages such as Japanese and Turkish.</li>
         </ul>
-    </div>
-
-    <div class="section">
-        <h2>Significance</h2>
-        <p>This work represents a genuinely interdisciplinary contribution at the intersection of computational linguistics and sociology. For sociologists, it opens the door to large-scale narrative analysis that was previously infeasible. For NLP researchers, it demonstrates a compelling real-world application of semantic role labeling beyond standard benchmarks. The framework is particularly significant for Korean-language research, where computational tools for social scientific text analysis have been scarce compared to English. Published in the Korean Journal of Sociology, it introduces computational NLP methods to a social science audience, fostering cross-disciplinary dialogue.</p>
     </div>
 
     <div class="section">

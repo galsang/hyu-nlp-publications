@@ -22,28 +22,102 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>An empirical investigation into the linguistic and typological features that most strongly influence the success of cross-lingual transfer to Korean, providing guidance for selecting optimal source languages and configurations.</p>
+        <p>Through regression analysis on diverse linguistic features across multiple NLP tasks, this study identifies which characteristics of source languages most effectively predict cross-lingual transfer performance to Korean, revealing that structural properties like word order and morphological type outweigh genealogical relatedness, and proposes improved source-language selection strategies over existing methods such as LANGRANK.</p>
     </div>
+
     <div class="section">
-        <h2>Background</h2>
-        <p>Cross-lingual transfer using multilingual pretrained models has become a standard approach for building NLP systems in low-resource languages. However, transfer performance varies dramatically depending on the source language -- some languages transfer much better to Korean than others. Understanding which features drive this variation is crucial for designing effective cross-lingual systems. Previous work has examined cross-lingual transfer features broadly, but a focused study on Korean as the target language -- with its unique agglutinative morphology, SOV word order, and topic-prominent structure -- has been lacking.</p>
+        <h2>Background & Motivation</h2>
+        <p>Cross-lingual transfer learning leverages multilingual pretrained language models (e.g., mBERT, XLM-R) to build NLP systems for low-resource languages by training on data-rich source languages. However, transfer performance to Korean varies significantly depending on the choice of source language, raising a fundamental question: <strong>what characteristics make a source language effective for cross-lingual transfer to Korean?</strong></p>
+        <div class="highlight-box">
+            <p><strong>Why Korean Presents Unique Challenges:</strong></p>
+            <ul>
+                <li><strong>Agglutinative morphology:</strong> Korean attaches multiple grammatical markers as suffixes (e.g., "학교에서부터" = school + from + starting), creating complex word forms that differ fundamentally from analytic languages like English or Chinese. This complicates subword tokenization and cross-lingual alignment in multilingual models.</li>
+                <li><strong>SOV word order:</strong> Korean follows Subject-Object-Verb order, shared by only a subset of world languages (e.g., Japanese, Turkish), making word-order alignment with SVO languages like English problematic. Since syntactic structure influences how multilingual models align representations, this mismatch directly affects transfer quality.</li>
+                <li><strong>Topic-prominent structure:</strong> Korean marks discourse topics explicitly with particles like "은/는," a feature absent in many Indo-European languages, affecting how information is structured in text and complicating cross-lingual sentence alignment.</li>
+                <li><strong>Unique script:</strong> Korean uses Hangul, a featural alphabet that encodes phonological information systematically. While this provides internal consistency, it limits character-level overlap with most other languages, making subword vocabulary overlap a particularly important factor.</li>
+                <li><strong>Limited prior work:</strong> While cross-lingual transfer features have been studied broadly (e.g., Lin et al., 2019; Lauscher et al., 2020), no prior work had conducted a focused, systematic analysis with Korean specifically as the target language, despite Korean being one of the most widely spoken languages with growing NLP demand.</li>
+            </ul>
+        </div>
+        <p>Understanding which linguistic and typological features drive transfer success is essential for practitioners who need to select optimal source languages and configurations when building Korean NLP systems, rather than defaulting to English -- a choice that may be significantly suboptimal given the substantial typological distance between English and Korean.</p>
     </div>
+
     <div class="section">
-        <h2>Method</h2>
+        <h2>Proposed Method</h2>
+        <p>The study employs a systematic regression-based framework to quantify the relationship between source-language features and cross-lingual transfer performance to Korean, using multilingual pretrained models across multiple NLP tasks. By treating source-language selection as a feature prediction problem, the approach moves beyond heuristic language choice toward data-driven, quantitative guidance.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Feature Extraction</div>
+                <div class="step-desc">A comprehensive set of linguistic features is extracted for each candidate source language, spanning multiple dimensions: (a) <strong>typological features</strong> from WALS (World Atlas of Language Structures) -- including word order (SVO/SOV/VSO), morphological type (analytic/agglutinative/fusional), case marking system, and agreement patterns; (b) <strong>subword vocabulary overlap</strong> computed between each source language and Korean using the tokenizer vocabulary of multilingual models; (c) <strong>lexical similarity</strong> measures based on cognate overlap and loanword frequency; (d) <strong>geographic and genetic distance</strong> -- physical distance between language communities and language-family tree distance; and (e) <strong>dataset-level statistics</strong> such as training set size and label distribution.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Cross-Lingual Transfer Experiments</div>
+                <div class="step-desc">Controlled zero-shot cross-lingual transfer experiments are conducted from multiple source languages to Korean using multilingual pretrained models (mBERT, XLM-R). Each experiment isolates the effect of individual features by keeping other variables (model architecture, hyperparameters, data size) constant across languages. Multiple downstream NLP tasks are evaluated: Named Entity Recognition (NER), Part-of-Speech (POS) tagging, and text classification, chosen to span different levels of linguistic analysis from token-level to document-level.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Regression Analysis</div>
+                <div class="step-desc">Statistical regression models are fitted to quantify the predictive power of each feature on transfer performance. Both simple linear regression (per-feature) and multiple regression (combined features) are used. Correlation coefficients, R-squared values, and feature importance scores are computed to rank which characteristics are most indicative of successful transfer to Korean. This analysis reveals not just which features matter, but their relative contribution and potential interactions.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Source Language Selection Comparison</div>
+                <div class="step-desc">Existing automated methodologies for selecting optimal source languages -- including LANGRANK (a learned ranking model) and other feature-based selection approaches from the literature -- are compared against the regression-based findings. The study evaluates whether these existing methods accurately identify the best source languages for Korean, and proposes improved selection strategies that better account for Korean-specific linguistic properties such as agglutinative morphology and SOV word order.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <p>The study systematically evaluates which features best predict transfer performance to Korean and compares source-language selection strategies across multiple NLP tasks, providing quantitative evidence for principled source-language selection.</p>
+
+        <h3>Feature Predictiveness for Transfer to Korean</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Feature Category</th><th>Predictive Strength</th><th>Key Observation</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Subword Vocabulary Overlap</td><td>High</td><td>Strong positive correlation with transfer performance across all tasks; most universally predictive single feature</td></tr>
+                <tr><td>Word Order Similarity (SOV)</td><td>High</td><td>Especially predictive for syntactic tasks (POS tagging); SOV languages consistently outperform SVO/VSO sources</td></tr>
+                <tr><td>Morphological Type</td><td>Moderate-High</td><td>Agglutinative languages (Japanese, Turkish, Finnish) transfer better than analytic or fusional ones</td></tr>
+                <tr><td>Language Family</td><td>Low-Moderate</td><td>Surprisingly weak predictor when isolated from structural features; genetic relatedness is confounded with typological similarity</td></tr>
+                <tr><td>Geographic Distance</td><td>Low</td><td>Proximate languages benefit mainly through shared structural features and cultural borrowing, not proximity itself</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Key Findings by Task</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Task</th><th>Most Important Feature</th><th>Observation</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>NER</td><td>Subword Overlap</td><td>Entity recognition benefits most from shared subword vocabulary, as named entities often share surface forms across languages</td></tr>
+                <tr><td>POS Tagging</td><td>Word Order</td><td>Syntactic tasks highly sensitive to structural alignment; SOV source languages yield significantly higher accuracy</td></tr>
+                <tr><td>Text Classification</td><td>Subword Overlap</td><td>Semantic tasks rely more on representation-level similarity, with subword overlap serving as a proxy for embedding alignment</td></tr>
+            </tbody>
+        </table>
+
         <ul class="key-points">
-            <li><strong>Feature analysis framework:</strong> A comprehensive set of linguistic features is examined, including typological features (word order, morphological type), lexical overlap, subword vocabulary overlap, and language family membership.</li>
-            <li><strong>Controlled transfer experiments:</strong> Cross-lingual transfer experiments are conducted from multiple source languages to Korean under controlled settings, isolating the effect of each feature.</li>
-            <li><strong>Multi-task evaluation:</strong> The analysis spans multiple NLP tasks (e.g., NER, POS tagging, text classification) to determine whether feature importance varies across tasks.</li>
-            <li><strong>Correlation analysis:</strong> Statistical correlation between each feature and transfer performance is computed to identify the most predictive indicators.</li>
+            <li><strong>Structural similarity > genealogical relatedness:</strong> Language family membership alone is not a strong predictor; languages that share structural properties with Korean (agglutinative morphology, SOV order) transfer better regardless of genetic distance. This finding challenges the intuitive assumption that related languages always transfer best.</li>
+            <li><strong>Japanese and Turkish as top source languages:</strong> These languages consistently rank among the best sources for Korean across all evaluated tasks, owing to shared SOV word order and agglutinative morphology. Japanese additionally benefits from significant lexical borrowing (Sino-Japanese vocabulary), while Turkish demonstrates that typological similarity alone -- without geographic proximity or shared vocabulary -- can drive strong transfer.</li>
+            <li><strong>Task-dependent feature importance:</strong> Syntactic tasks (POS tagging) are most sensitive to word order similarity, while semantic tasks (NER, classification) depend more on subword vocabulary overlap. This means there is no single "best" source language across all tasks.</li>
+            <li><strong>English is not optimal:</strong> Despite being the most common source language in practice, English (SVO, analytic morphology) is suboptimal for transfer to Korean compared to typologically closer alternatives. This finding has direct practical implications, as many multilingual NLP pipelines default to English as the training language.</li>
+            <li><strong>Improved source selection:</strong> The proposed regression-based approach identifies better source languages than existing automated selection methods like LANGRANK, particularly for Korean-specific transfer scenarios where the unique combination of SOV order and agglutinative morphology is underweighted by general-purpose selection tools.</li>
+            <li><strong>Feature interactions matter:</strong> Combining multiple features in a regression model yields better predictions than any single feature alone, suggesting that effective source-language selection requires considering a holistic profile of typological properties rather than relying on any one dimension.</li>
         </ul>
     </div>
+
     <div class="section">
-        <h2>Results</h2>
-        <p>The study finds that subword vocabulary overlap and typological similarity (particularly word order and morphological type) are among the strongest predictors of transfer success to Korean. Surprisingly, language family membership alone is not as predictive as expected, suggesting that structural similarity matters more than genealogical relatedness. The relative importance of features also varies by task, with syntactic tasks being more sensitive to word order similarity.</p>
-    </div>
-    <div class="section">
-        <h2>Significance</h2>
-        <p>This work provides practical guidance for practitioners building Korean NLP systems through cross-lingual transfer: rather than defaulting to English as the source language, one should consider typologically similar languages (e.g., Japanese, Turkish) that share structural features with Korean. The findings also contribute to the broader understanding of what makes cross-lingual transfer work, with implications beyond Korean.</p>
+        <h2>Why It Matters</h2>
+        <p>This work provides actionable insights for building better Korean NLP systems through cross-lingual transfer, with broader implications for multilingual NLP methodology:</p>
+        <ul>
+            <li><strong>Practical source language guidance:</strong> Rather than defaulting to English, practitioners should prioritize typologically similar languages like Japanese and Turkish that share Korean's SOV word order and agglutinative morphology, leading to measurably better transfer performance. This is immediately applicable to any team building Korean NLP tools in low-resource scenarios.</li>
+            <li><strong>Task-aware selection:</strong> The finding that feature importance varies by task type means that the optimal source language may differ depending on whether one is building a NER system (prioritize subword overlap), a POS tagger (prioritize word order), or a text classifier -- one size does not fit all, and task-specific source selection can yield meaningful gains.</li>
+            <li><strong>Beyond language families:</strong> The demonstration that structural similarity outweighs genealogical relatedness challenges the common assumption that closely related languages are always the best transfer sources. Since Korean is a language isolate (or controversially linked to Altaic languages), this finding is especially relevant -- it shows that structural "neighbors" like Turkish can be more useful than any purported genetic relative.</li>
+            <li><strong>Methodological contribution:</strong> The regression-based analysis framework can be adapted to study cross-lingual transfer to other target languages, providing a reusable methodology for the multilingual NLP community to identify optimal source languages in a principled, data-driven manner.</li>
+        </ul>
     </div>
     <div class="section">
         <h2>Links</h2>

@@ -22,32 +22,179 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>구조 인식 대조 학습으로 지식그래프 완성을 위한 언어 모델 훈련 방법</p>
+        <p>FLAME은 동결된 LLM의 중간 레이어에서 맥락 인식 은닉 상태를 추출하고 경량 분류기를 학습하여, 서브그래프 기반 엔티티 설명과 슬라이스 상호정보량 분석을 통해 파인튜닝 수준의 지식그래프 완성 성능을 188배의 메모리 효율과 26배의 속도 향상으로 달성합니다.</p>
     </div>
+
     <figure class="paper-figure">
-        <img src="https://arxiv.org/html/2408.06787v1/x1.png" alt="지식그래프 완성을 위한 트리플 분류 프로빙 방법의 전체 아키텍처">
-        <figcaption><strong>Figure 1.</strong> 트리플 분류를 위한 프로빙 방법의 전체 아키텍처. 양성 및 음성 샘플 쌍을 구성한 후, 언어 모델의 중간 레이어를 활용하여 KGC 태스크를 위한 은닉 상태를 획득함. 엔티티 설명은 서브그래프 엔티티 설명 생성기에 의해 생성됨. 전체 아키텍처에서 훈련이 필요한 유일한 구성 요소는 은닉 상태를 분류하는 데이터 효율적 분류기임.</figcaption>
+        <img src="https://arxiv.org/html/2408.06787v1/x1.png" alt="FLAME의 전체 아키텍처: 동결된 LLM을 활용한 트리플 분류 프로빙 방법">
+        <figcaption><strong>Figure 1.</strong> FLAME의 트리플 분류 전체 아키텍처. 양성 및 음성 샘플 쌍을 구성한 후, 동결된 언어 모델의 중간 레이어를 프로빙하여 KGC 태스크를 위한 은닉 상태를 획득합니다. 엔티티 설명은 서브그래프 엔티티 설명 생성기에 의해 생성되며, 전체 아키텍처에서 훈련이 필요한 유일한 구성 요소는 은닉 상태를 분류하는 데이터 효율적 분류기입니다.</figcaption>
     </figure>
+
     <div class="section">
         <h2>배경 및 동기</h2>
-        <p>지식그래프 완성(KGC) -- 지식그래프에서 누락된 링크를 예측하는 과제 -- 은 전통적으로 구조적 임베딩 방법에 의존하지만, 희소한 엔티티에서 어려움을 겪습니다. 최근 대규모 언어 모델(LLM)의 풍부한 의미 이해 능력을 활용하려는 시도가 있지만, LLM의 파인튜닝은 계산 비용이 매우 높습니다. 본 연구는 동결된 LLM에서 언어 표현과 그래프 구조 간의 격차를 해소하여 유용한 KGC 신호를 추출할 수 있는지를 탐구합니다.</p>
+        <p>지식그래프 완성(KGC) -- 지식그래프에서 누락된 링크를 예측하는 과제 -- 은 Freebase, WordNet, UMLS와 같은 대규모 지식 베이스를 유지하고 확장하는 데 필수적입니다. 전통적인 구조적 임베딩 방법(예: TransE, DistMult, ComplEx, RotatE)은 엔티티와 관계의 벡터 표현을 학습하지만, 그래프 토폴로지에만 의존하기 때문에 연결이 적은 <strong>희소 엔티티</strong>에서 어려움을 겪습니다. 최근 대규모 언어 모델(LLM)의 풍부한 의미 이해 능력과 백과사전적 세계 지식(Wikipedia, CommonCrawl 등에서의 사전학습을 통해 습득)을 활용하려는 시도가 있지만, 이는 근본적인 트레이드오프를 야기합니다.</p>
+        <div class="highlight-box">
+            <p><strong>LLM 기반 KGC의 핵심 딜레마:</strong></p>
+            <ul>
+                <li><strong>파인튜닝은 효과적이지만 비용이 높음:</strong> KG-LLAMA와 같은 방법은 우수한 KGC 성능을 달성하지만, 14.68 GB의 GPU 메모리와 83시간의 학습 시간이 필요하여 많은 연구 그룹과 실제 배포 환경에서 감당하기 어렵습니다.</li>
+                <li><strong>파인튜닝 없는 접근은 저렴하지만 성능이 매우 낮음:</strong> 동결된 LLM에 직접 프롬프팅하면 놀랍도록 저조한 결과를 보입니다 -- 동결된 LLaMA-7B는 FB13 트리플 분류에서 9.1%의 정확도(사실상 무작위 수준)를 기록하며, 인컨텍스트 학습(ICL)을 적용해도 50.1%에 그쳐 파인튜닝된 KG-LLAMA의 89.2%에 크게 못 미칩니다.</li>
+                <li><strong>LLM과 KG 간의 의미적 격차:</strong> 구조화된 트리플(예: <code>(아인슈타인, 출생지, 울름)</code>)은 LLM이 사전학습된 자연어 분포와 크게 벗어나며, 원시 트리플을 직접 연결하면 오히려 성능이 하락할 수 있습니다.</li>
+                <li><strong>과제 지식이 어디에 있는지 불명확:</strong> 동결된 LLM의 어떤 중간 레이어가 KGC에 가장 관련된 정보를 인코딩하는지 알려져 있지 않습니다. 상위 레이어는 환각 효과로 성능이 저하되고, 하위 레이어는 추상화 수준이 부족하여, 원리적 선택 기준 없이는 특징 추출이 추측에 의존하게 됩니다.</li>
+            </ul>
+        </div>
+        <p>FLAME은 이 네 가지 문제를 모두 해결합니다: (1) 로컬 서브그래프 이웃 정보로부터 자연어 엔티티 설명을 생성하여 의미적 격차를 해소하고, (2) 동결된 LLM의 중간 레이어를 프로빙하여 KGC 관련 표현을 추출하며, (3) 슬라이스 상호정보량을 사용하여 최적의 레이어를 식별하고, (4) 경량 분류기만 학습하여 LLM을 완전히 동결된 상태로 유지합니다. 핵심 통찰은 동결된 LLM이 이미 일반적인 지식그래프에 대한 KGC에 충분한 백과사전적 지식을 보유하고 있으며, 문제는 비용이 큰 파라미터 업데이트가 아닌 적절한 표현 추출을 통해 이 지식을 <em>해제</em>하는 것이라는 점입니다.</p>
     </div>
+
     <div class="section">
-        <h2>방법론</h2>
-        <ul class="key-points">
-            <li><strong>서브그래프 엔티티 설명:</strong> 생성기가 로컬 서브그래프 이웃 정보를 기반으로 엔티티의 텍스트 설명을 생성하여, LLM 표현과 KG 구조 간의 의미적 격차를 해소합니다.</li>
-            <li><strong>동결 LLM 프로빙:</strong> 파인튜닝 대신, 양성 및 음성 트리플 쌍을 사용하여 동결된 LLM의 중간 레이어에서 맥락 인식 은닉 상태를 추출하여 계산 효율성을 유지합니다.</li>
-            <li><strong>구조 인식 대조 학습:</strong> 추출된 은닉 상태에 대해 데이터 효율적 분류기를 훈련하여 트리플 분류를 수행하고, 서브그래프 구조를 인식하면서 유효한 트리플과 무효한 트리플을 구별하도록 학습합니다.</li>
-            <li><strong>슬라이스 상호정보량(SMI):</strong> SMI를 사용하여 어떤 은닉 레이어가 가장 과제 관련 정보를 포함하는지 정량화하여, 목표 지향적 특징 추출이 가능합니다.</li>
-        </ul>
+        <h2>제안 방법: FLAME 프레임워크</h2>
+        <p>FLAME (Frozen LLM Approach for KGC with Model-Friendly Entity Descriptions)은 기본 모델의 파라미터 업데이트 없이 동결된 언어 모델에서 지식그래프 완성 능력을 추출하는 세 가지 핵심 구성 요소로 이루어져 있습니다.</p>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2408.06787v1/x2.png" alt="FLAME에서 사용되는 트리플 분류 프롬프트 템플릿">
+            <figcaption><strong>Figure 2.</strong> 트리플 분류를 위한 프롬프트 템플릿. 양성 및 음성 트리플 쌍을 엔티티 설명과 함께 구조화하여 동결된 LLM의 내부 분류 메커니즘을 활성화합니다.</figcaption>
+        </figure>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">서브그래프 엔티티 설명 생성기</div>
+                <div class="step-desc">각 트리플의 엔티티 <em>e</em>에 대해 두 가지 방식으로 텍스트 설명 D(<em>e</em>)를 생성합니다. <strong>구조적 언어화(Tri)</strong>는 로컬 서브그래프의 1-홉 트리플을 직접 텍스트로 연결합니다(예: "아인슈타인은 울름에서 태어났다. 아인슈타인은 프린스턴에서 근무했다."). 그러나 이 원시 트리플 형식은 사전학습 분포와 괴리가 있어 오히려 모델을 오도할 수 있습니다. <strong>모델 친화적 서사(GPT)</strong>는 GPT-3.5-turbo를 활용한 인컨텍스트 학습으로 이러한 구조적 트리플을 유창한 자연어로 변환하여 LLM의 사전학습 코퍼스와 의미적으로 정렬된 설명을 생성합니다. 이 연결 단계가 매우 중요합니다: Tri 접근법은 FB13에서 0.847(설명 없는 기준선 0.851보다 오히려 낮음)인 반면, GPT 생성 서사는 0.890으로 6.7% 향상됩니다. 다만 UMLS 생의학 데이터셋은 예외적으로, 도메인 특화 엔티티 이름이 이미 LLM의 내부 표현과 잘 정렬되어 있어 생성된 설명이 불필요합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">SMI 기반 레이어 선택을 통한 동결 LLM 프로빙</div>
+                <div class="step-desc">파인튜닝 대신, 양성 및 음성 트리플 쌍으로 구성된 과제 특화 프롬프트를 사용하여 동결된 LLM의 중간 레이어에서 <strong>마지막 토큰 위치</strong>의 맥락 인식 은닉 상태를 추출합니다. 핵심 질문은: 어떤 레이어를 프로빙할 것인가? 슬라이스 상호정보량(SMI) -- 레이블과 표현의 무작위 1차원 투영 간 상호정보량의 기댓값 -- 이 원리적 답을 제시합니다. SMI 분석 결과, <strong>중간 레이어(LLaMA-7B의 경우 약 16번째 레이어)가 최적</strong>이며, 상위 레이어는 환각 효과로 성능이 저하되고 하위 레이어는 추상화 수준이 부족한 것으로 나타났습니다. 모델 친화적 설명이 SMI 값을 34.1% 향상시켜 효과적인 의미 정렬을 이론적으로 확인합니다. 이 패턴은 LLaMA, Mistral, Gemma 등 다양한 모델 아키텍처에서 일관되게 나타납니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">데이터 효율적 KGC 분류기</div>
+                <div class="step-desc">경량 분류기가 추출된 은닉 상태 표현에 대해 학습되어 트리플 분류를 수행하며, 유효한 트리플과 무효한 트리플을 구별합니다. 본 논문에서는 <strong>로지스틱 회귀, SVM, MLP</strong>의 세 가지 분류기 아키텍처를 평가하며, MLP가 가장 우수한 성능(FB13: 0.851, WN11: 0.874, FB15K-237N: 0.679)을 달성합니다. 분류기만 학습되므로(LLM은 학습되지 않음) 최소한의 연산만 필요합니다 -- 파인튜닝의 14.68 GB 대비 0.078 GB의 GPU 메모리만 사용합니다. 이 방법은 Mistral, Gemma, Qwen2.5를 포함한 다양한 LLM 아키텍처에 걸쳐 일반화됩니다.</div>
+            </div>
+        </div>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2408.06787v1/x5.png" alt="GPT-3.5-turbo를 활용한 엔티티 설명 생성 프롬프트 템플릿">
+            <figcaption><strong>Figure 3.</strong> GPT-3.5-turbo를 활용한 모델 친화적 엔티티 설명 생성 프롬프트 템플릿. 1-홉 서브그래프 트리플을 인컨텍스트 학습을 통해 유창한 자연어 서사로 변환합니다.</figcaption>
+        </figure>
     </div>
+
     <div class="section">
         <h2>실험 결과</h2>
-        <p>파인튜닝 없는 LLM 기준선 대비 최대 47%의 성능 향상을 달성하면서, 완전히 파인튜닝된 모델의 성능에 필적합니다. 특히, 파인튜닝 방식 대비 188배 적은 메모리와 26배의 속도 향상을 제공하여, 고비용 GPU 자원 없이도 고품질 KGC를 가능하게 합니다.</p>
+        <p>FLAME은 트리플 분류, 관계 예측, 엔티티 예측 과제를 포괄하는 6개의 벤치마크 데이터셋에서 평가되었습니다. 데이터셋은 FB13, WN11, FB15K-237N, WN18RR(Freebase 및 WordNet 기반), UMLS(생의학 도메인), YAGO3-10(100만 개 이상의 학습 트리플을 가진 대규모 데이터)을 포함합니다. 기준선은 구조적 방법(TransE, DistMult, ComplEx, RotatE)과 LLM 기반 접근법(KG-BERT, KG-T5, KG-LLAMA 및 다양한 프롬프팅 전략의 동결 모델)을 모두 포함합니다.</p>
+
+        <h3>트리플 분류 정확도</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>방법</th><th>FB13</th><th>WN11</th><th>FB15K-237N</th><th>WN18RR</th><th>UMLS</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>LLaMA-7B (동결, 프롬프트 없음)</td><td>0.091</td><td>--</td><td>--</td><td>--</td><td>--</td></tr>
+                <tr><td>LLaMA-7B-ICL (동결, 인컨텍스트)</td><td>0.501</td><td>--</td><td>--</td><td>--</td><td>--</td></tr>
+                <tr><td>KG-LLAMA-7B (파인튜닝, 전체 데이터)</td><td>0.892</td><td>0.955</td><td>0.748</td><td>0.921</td><td>0.858</td></tr>
+                <tr><td>FLAME w/ MLP만 (설명 없음)</td><td>0.851</td><td>0.874</td><td>0.679</td><td>--</td><td>--</td></tr>
+                <tr><td>FLAME w/ 비생성 설명 (3k 샘플)</td><td>0.901</td><td>--</td><td>0.738</td><td>0.934</td><td>0.862</td></tr>
+                <tr><td>FLAME w/ GPT 설명 (3k 샘플)</td><td>0.912</td><td>0.917</td><td>0.726</td><td>0.924</td><td>0.860</td></tr>
+                <tr><td class="highlight-cell"><strong>FLAME w/ GPT 설명 (전체 데이터)</strong></td><td class="highlight-cell"><strong>0.925</strong></td><td class="highlight-cell"><strong>0.937</strong></td><td class="highlight-cell"><strong>0.744</strong></td><td class="highlight-cell"><strong>0.938</strong></td><td class="highlight-cell"><strong>0.866</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>효율성 비교 (WN11, 전체 데이터셋)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>지표</th><th>KG-LLAMA (파인튜닝)</th><th>FLAME (동결)</th><th>개선폭</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>학습 GPU 메모리</td><td>14.68 GB</td><td>0.078 GB</td><td class="highlight-cell"><strong>188배 감소</strong></td></tr>
+                <tr><td>학습 시간</td><td>83시간</td><td>33분</td><td class="highlight-cell"><strong>150배 단축</strong></td></tr>
+                <tr><td>총 소요 시간 (추론 포함)</td><td>85시간 50분</td><td>2시간 44분 + 15초</td><td class="highlight-cell"><strong>26.11배 가속</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>관계 및 엔티티 예측 (Hits@1)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>과제</th><th>방법</th><th>Hits@1</th><th>학습 데이터</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>관계 예측</td><td>ChatGLM-6B (동결)</td><td>0.0658</td><td>--</td></tr>
+                <tr><td>관계 예측</td><td>KG-LLAMA-7B</td><td>0.7028</td><td>전체 (1.08M)</td></tr>
+                <tr><td>관계 예측</td><td>FLAME w/ GPT</td><td>0.7015</td><td>6,996 (0.6%)</td></tr>
+                <tr><td>엔티티 예측</td><td>KG-LLAMA-7B</td><td>0.2415</td><td>전체</td></tr>
+                <tr><td>엔티티 예측</td><td>FLAME w/ GPT</td><td>0.2495</td><td>10k</td></tr>
+            </tbody>
+        </table>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2408.06787v1/x3.png" alt="LLaMA 및 Mistral 모델에서의 레이어별 성능 분석">
+            <figcaption><strong>Figure 4.</strong> LLaMA 및 Mistral 모델에서의 레이어별 성능 분석. 중간 레이어(약 16번째)가 일관되게 얕은 레이어와 깊은 레이어 모두를 능가합니다. 상위 레이어는 환각 효과로 성능이 저하되고, 하위 레이어는 KGC 과제를 위한 추상화 수준이 부족합니다.</figcaption>
+        </figure>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2408.06787v1/x4.png" alt="학습 데이터셋 크기가 KGC 성능에 미치는 영향">
+            <figcaption><strong>Figure 5.</strong> 데이터 효율성 분석: 학습 데이터 크기가 트리플 분류 정확도에 미치는 영향. FLAME은 FB13에서 학습 데이터의 0.06%만으로 전체 성능의 98.3%, FB15K-237N에서 0.57%로 99.6%, WN18RR에서 0.46%로 98.8%를 달성합니다.</figcaption>
+        </figure>
+
+        <h3>분류기 아키텍처 비교 (Ablation)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>분류기</th><th>FB13</th><th>WN11</th><th>FB15K-237N</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>로지스틱 회귀</td><td>0.837</td><td>0.857</td><td>0.665</td></tr>
+                <tr><td>SVM</td><td>0.842</td><td>0.862</td><td>0.671</td></tr>
+                <tr><td class="highlight-cell"><strong>MLP</strong></td><td class="highlight-cell"><strong>0.851</strong></td><td class="highlight-cell"><strong>0.874</strong></td><td class="highlight-cell"><strong>0.679</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>모델 간 범용성 분석 (7B 모델, Ablation)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>모델</th><th>설명 유형</th><th>FB13</th><th>WN11</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>LLaMA-7B</td><td>GPT 서사</td><td>0.890</td><td>0.892</td></tr>
+                <tr><td>Mistral-7B</td><td>GPT 서사</td><td>0.875</td><td>0.912</td></tr>
+                <tr><td>Gemma-7B</td><td>GPT 서사</td><td>--</td><td>--</td></tr>
+            </tbody>
+        </table>
+        <p>엔티티 설명은 모든 테스트된 아키텍처에서 일관되게 4.5-6.2%의 향상을 제공하여, LLaMA에 특화된 것이 아닌 모델에 구애받지 않는 접근법임을 확인합니다.</p>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2408.06787v1/x8.png" alt="은닉 상태의 PCA 시각화: 클래스 분리 가능성 확인">
+            <figcaption><strong>Figure 6.</strong> FB13 테스트셋에서 GPT 설명을 사용한 FLAME의 16번째 레이어 은닉 상태의 PCA 시각화(3D 투영). 양성(유효) 트리플과 음성(무효) 트리플이 표현 공간에서 명확하게 분리되는 클러스터를 형성하여, 프로빙된 은닉 상태가 KGC에 유의미한 구조적 정보를 인코딩함을 보여줍니다.</figcaption>
+        </figure>
+
+        <ul class="key-points">
+            <li><strong>파인튜닝 없이 파인튜닝 수준 달성:</strong> FLAME은 전체 데이터로 FB13에서 0.925, WN18RR에서 0.938을 달성하여 KG-LLAMA(0.892, 0.921)를 능가하면서 LLM을 완전히 동결 상태로 유지합니다.</li>
+            <li><strong>극단적 데이터 효율성:</strong> 학습 데이터의 0.6%(108만 개 중 6,996개 샘플)만으로 관계 예측에서 전체 파인튜닝 성능의 97%를 유지합니다. 트리플 분류에서는 500개 샘플(데이터의 0.079%)만으로 FB13에서 97.2%, FB15K-237N에서 98.3%, WN18RR에서 98.8%의 성능을 달성합니다.</li>
+            <li><strong>188배 메모리 감소:</strong> FLAME은 파인튜닝의 14.68 GB 대비 0.078 GB의 GPU 메모리만 필요하여, 일반 소비자용 하드웨어에서도 고품질 KGC가 가능합니다.</li>
+            <li><strong>엔티티 설명이 핵심 -- 단, 형식이 중요:</strong> 원시 트리플 연결(Tri)은 오히려 성능을 <em>하락</em>시키지만(FB13에서 0.847, 기준선 0.851 미만), GPT 생성 자연어 서사는 0.890으로 향상시킵니다. 사전학습 분포와의 의미적 정렬이 필수적입니다.</li>
+            <li><strong>아키텍처 간 일반화:</strong> 엔티티 설명은 Mistral, Gemma, Qwen2.5 모델 전반에 걸쳐 일관되게 4.5-6.2%의 성능 향상을 제공하여, 특정 아키텍처에 종속되지 않음을 확인합니다.</li>
+            <li><strong>SMI가 접근법을 검증:</strong> 모델 친화적 설명이 SMI 값을 34.1% 향상시켜, LLM 표현과 KG 구조를 효과적으로 정렬한다는 이론적 근거를 제공합니다.</li>
+            <li><strong>레이어 선택이 중요:</strong> 중간 레이어(약 16/32번째)가 최적이며, 상위 레이어는 환각 효과로 성능이 저하됩니다. 이 패턴은 LLaMA와 Mistral에서 일관되게 나타나, 원리적 SMI 기반 선택의 필요성을 확인합니다.</li>
+            <li><strong>사례 연구의 통찰:</strong> "parsnip type-of herb" 트리플에 대해 FLAME은 올바르게 유효로 분류하지만, 프로빙 없는 동결 기준선은 실패합니다 -- 동결된 LLM 내에 지식이 존재하지만 이를 해제하기 위한 적절한 추출 메커니즘이 필요함을 보여줍니다.</li>
+        </ul>
     </div>
+
     <div class="section">
         <h2>의의</h2>
-        <p>본 연구는 동결된 LLM이 구조 인식 설명으로 적절히 프로빙될 때 KGC 과제에 충분한 지식을 인코딩하고 있음을 보여줍니다. 계산 예산이 제한된 실제 환경에서 LLM을 지식그래프 과제에 적용하기 위한 실용적이고 자원 효율적인 경로를 제시합니다.</p>
+        <p>FLAME은 동결된 LLM이 구조 인식 설명으로 적절히 프로빙될 때 KGC 과제에 충분한 지식을 이미 인코딩하고 있음을 보여주며, 파인튜닝이 필수적이라는 가정에 근본적으로 도전합니다. 본 논문은 실용적, 이론적 기여를 모두 제공하며 분야에 광범위한 함의를 가집니다.</p>
+        <div class="highlight-box">
+            <p><strong>핵심 기여:</strong> FLAME은 동결된 LLM과 파인튜닝된 LLM 간의 KGC 성능 격차가 지식 부재가 아닌 <em>표현 정렬 문제</em>임을 확립합니다 -- 구조화된 KG 트리플이 LLM이 학습된 자연어 분포와 일치하지 않는 것이 원인입니다. 모델 친화적 엔티티 설명과 원리적 레이어 선택을 통해 이 정렬 문제를 해결함으로써, 동결된 LLM이 파인튜닝된 모델의 성능을 달성하거나 초월할 수 있습니다.</p>
+        </div>
+        <ul>
+            <li><strong>KGC 연구의 민주화:</strong> GPU 메모리 요구량을 14.68 GB에서 0.078 GB로, 학습 시간을 83시간에서 33분으로 줄임으로써, 고비용 GPU 인프라 없이도 고품질 지식그래프 완성 연구와 배포가 가능해집니다. 전체 훈련 가능 구성 요소(MLP 분류기)는 일반 노트북에서도 실행 가능합니다.</li>
+            <li><strong>LLM-KG 격차 해소:</strong> 서브그래프 엔티티 설명 생성기는 그래프 구조를 LLM이 이해하는 자연어 영역으로 변환하는 원리적 방법을 제공하며, SMI 분석은 이러한 연결이 효과적인 이유에 대한 이론적 근거를 제시합니다. 원시 트리플 형식이 오히려 성능을 저하시키는(Tri 접근법) 반면 자연어 서사가 향상시킨다는 발견은 형식 인식 표현 공학의 중요성을 부각시킵니다.</li>
+            <li><strong>실용적 배포 경로:</strong> 극단적 데이터 효율성(데이터의 0.6%로 97% 성능)과 아키텍처 비의존적 설계는 레이블된 데이터가 부족하고 모델 선택이 변경될 수 있는 실제 응용 환경에 FLAME을 적합하게 만듭니다. 조직은 전체 파이프라인을 재학습하지 않고도 백본 LLM을 교체할 수 있습니다.</li>
+            <li><strong>LLM 내부에 대한 이론적 이해:</strong> SMI 기반 레이어 선택은 LLM 레이어 내 다양한 유형의 지식이 어디에 인코딩되는지에 대한 정량적 근거를 제공합니다. 중간 레이어가 상위 레이어보다 우수하다는(환각 효과로 인해) 발견은 LLM 표현 기하학에 대한 폭넓은 이해에 기여하며, KGC를 넘어선 미래 프로빙 연구에도 시사점을 줍니다.</li>
+        </ul>
+
+        <h3>한계 및 향후 연구 방향</h3>
+        <ul>
+            <li>평가가 주로 백과사전적 지식그래프(Freebase, WordNet, UMLS)에 집중되어 있어, 고도로 도메인 특화되거나 독점적인 KG에 대한 일반화는 추가 검증이 필요합니다.</li>
+            <li>현재 아키텍처는 트리플 분류와 관계 예측을 대상으로 하며, 전체 링크 예측으로의 확장은 미해결 과제입니다.</li>
+            <li>GPT 생성 엔티티 설명에는 API 비용이 수반되며, 자기 지도 학습 또는 로컬 모델 기반 대안 개발이 도입 장벽을 더욱 낮출 수 있습니다.</li>
+        </ul>
     </div>
     <div class="section">
         <h2>링크</h2>

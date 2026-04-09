@@ -22,56 +22,95 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>사전학습 언어 모델의 셀프 어텐션 분포를 활용하여, 과제별 학습 없이도 시각 미디어 텍스트에서 강조해야 할 단어를 식별하는 제로샷 강조 선택 방법입니다.</p>
+        <p>사전학습 언어 모델(PLM)의 셀프 어텐션 분포를 활용하여, 과제별 학습 없이도 시각 미디어 텍스트에서 강조해야 할 단어를 식별하는 제로샷 강조 선택 방법으로, SemEval-2020 Task 10 검증 세트에서 Ranking Score 0.6898을 달성합니다.</p>
+        <figure class="paper-figure">
+            <img src="../../images/semeval2020-emphasis/figure1.png" alt="강조 선택을 위한 어텐션 맵">
+            <figcaption><strong>Figure 1.</strong> "In honor of the brave" 문장의 어텐션 맵 예시. 각 행은 해당 단어가 다른 단어들에 대해 보이는 어텐션 분포를 나타냅니다.</figcaption>
+        </figure>
     </div>
 
     <div class="section">
         <h2>배경 및 동기</h2>
-        <p>소셜 미디어 게시물, 포스터, 광고 등 시각적 커뮤니케이션에서 텍스트 강조는 저자의 의도를 전달하는 데 매우 중요합니다. 어떤 단어를 강조할지 추천하는 자동화 시스템은 시각 미디어 콘텐츠 제작을 가속화할 수 있습니다.</p>
+        <p>소셜 미디어 게시물, 포스터, 전단지, 광고 등 시각적 커뮤니케이션에서 텍스트 강조는 저자의 의도를 전달하고 독자의 이해를 돕는 데 매우 중요합니다. 시각 미디어를 디자인할 때 콘텐츠 제작자는 어떤 단어를 굵게, 기울임체로, 더 크게, 또는 다른 색상으로 표시할지 결정해야 하며, 이러한 선택은 메시지가 전달되는 방식에 큰 영향을 미칩니다. 어떤 단어를 강조할지 자동으로 추천하는 시스템은 시각 미디어 콘텐츠 제작을 가속화하고 비전문 디자이너들이 더 효과적인 자료를 제작하는 데 도움이 될 수 있습니다.</p>
+        <p>SemEval-2020 Task 10은 이를 <strong>강조 선택(emphasis selection)</strong> 문제로 공식화합니다: Adobe Spark에서 수집한 짧은 영어 문장(예: "In honor of the brave")이 주어지면, 9명의 주석자가 부여한 강조 빈도를 기반으로 단어의 올바른 순위를 예측하는 것입니다. 각 주석자는 시각적 맥락에서 강조할 단어를 최대 4개까지 독립적으로 선택하며, 단어의 강조 빈도는 해당 단어를 선택한 주석자의 비율로 정의됩니다. 따라서 이 과제는 본질적으로 주관적인 현상 &mdash; 인간들이 시각적 텍스트에서 집합적으로 무엇을 "중요하다"고 판단하는지 &mdash; 을 모델링해야 합니다.</p>
         <div class="highlight-box">
-            <p><strong>핵심 통찰:</strong> 기존 연구에서 BERT와 같은 PLM이 어텐션 패턴에 풍부한 언어적 지식을 포함하고 있음을 보여주었습니다. 본 논문은 PLM의 일부 어텐션 헤드가 자연적으로 <strong>강조 선택에 특화</strong>되어 있는지를 조사하여, 지도 학습 없이도 중요한 단어를 식별할 수 있는 가능성을 탐구합니다.</p>
+            <p><strong>핵심 통찰:</strong> 기존 연구에서 BERT와 같은 Transformer 기반 PLM이 셀프 어텐션 분포에 풍부한 언어적 지식을 인코딩하고 있음이 밝혀졌습니다. 예를 들어 특정 어텐션 헤드가 의존 구문 트리를 파싱하거나(Clark et al., 2019) 구성 구조를 유도할 수 있습니다(Kim et al., 2020). 본 논문은 <strong>일부 어텐션 헤드가 자연적으로 강조 선택에 특화</strong>되어 있어, 지도 학습이나 골드 표준 주석 없이도 완전한 제로샷 방식으로 중요한 단어를 식별할 수 있다고 가설을 세웁니다. 강조 선택이 본질적으로 주관적이라는 점에서 이는 특히 설득력이 있습니다: 잠재적으로 노이즈가 있는 레이블로부터 학습하는 대신, 사전학습 중 이미 포착된 분포 의미론을 활용합니다.</p>
         </div>
+        <p>키워드 추출이나 핵심구 생성에 대한 기존 접근법 &mdash; 통계적 방법(TF-IDF), 그래프 기반 알고리즘(TextRank), 지도 학습 신경망 모델 등 &mdash; 과 달리, 본 연구는 어텐션 가중치를 단어 중요도의 직접적 대리 변수로 활용하는 근본적으로 다른 경로를 택합니다. 이 연구를 이끄는 핵심 질문은 다음과 같습니다: <em>PLM이 언어 모델링 과정에서 단어에 내부적으로 "주의를 기울이는" 방식이 강조에 대한 인간의 판단과 상관관계가 있는가?</em></p>
     </div>
 
     <div class="section">
         <h2>제안 방법: 어텐션 기반 강조 선택</h2>
-        <p>PLM 어텐션 맵에서 각 단어의 강조 빈도(e_freq)를 세 가지 전략으로 유도합니다:</p>
+        <p>PLM 어텐션 맵에서 각 단어의 강조 빈도(e_freq)를 유도합니다. 문장이 PLM에 입력되면 i번째 레이어의 j번째 어텐션 헤드에 대한 어텐션 맵 g<sub>(i,j)</sub>가 추출됩니다. 대부분의 PLM이 서브워드 토큰화(예: BERT의 WordPiece)를 사용하므로, 같은 단어에 속하는 서브워드 토큰의 어텐션 가중치를 평균하여 서브워드 수준의 어텐션 맵을 단어 수준으로 변환합니다. 그런 다음 어텐션 맵을 강조 점수로 변환하는 세 가지 전략을 제안합니다:</p>
         <div class="method-steps">
             <div class="method-step">
                 <div class="step-num">1</div>
                 <div class="step-title">Words2Target</div>
-                <div class="step-desc">다른 단어들이 대상 단어에 기울이는 평균 어텐션 가중치를 계산하여, 해당 단어가 다른 단어의 표현 구축에 얼마나 영향력 있는지 측정</div>
+                <div class="step-desc">[CLS]와 [SEP]를 포함한 모든 단어가 대상 단어에 기울이는 평균 어텐션 가중치, 즉 어텐션 맵의 열 평균을 계산합니다. 이는 해당 단어가 다음 레이어에서 다른 단어의 은닉 표현을 구축할 때 얼마나 영향력이 있는지를 측정합니다. 직관적으로, 많은 다른 단어들이 강하게 주의를 기울이는 단어는 문장에서 의미적으로 핵심적인 역할을 할 가능성이 높습니다. 인코더(BERT)와 디코더(GPT-2) 모델 모두에 적용 가능한 가장 범용적인 방법입니다.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">2</div>
                 <div class="step-title">CLS2Target</div>
-                <div class="step-desc">[CLS] 토큰에서 대상 단어로의 어텐션 가중치를 사용하여, 해당 단어가 문장 표현에 얼마나 기여하는지 측정</div>
+                <div class="step-desc">[CLS] 토큰에서 대상 단어로의 어텐션 가중치를 사용합니다. [CLS]는 사전학습 중 다음 문장 예측(NSP)을 통해 문장 수준 표현을 인코딩하도록 설계되었으므로, 그 어텐션 분포를 문장 수준 이해를 위한 단어별 관련성 가중치로 해석할 수 있습니다. [CLS] 토큰이 없는 GPT-2에는 적용 불가합니다.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">3</div>
                 <div class="step-title">SEP2Target</div>
-                <div class="step-desc">[SEP] 토큰에서 대상 단어로의 어텐션 가중치를 대안적 문장 수준 신호로 사용</div>
+                <div class="step-desc">[SEP] 토큰에서 대상 단어로의 어텐션 가중치를 대안적 문장 수준 신호로 사용합니다. Clark et al. (2019)은 [SEP] 토큰이 종종 "무연산(no-op)" 어텐션 대상으로 기능한다고 관찰했지만, 이 방법은 반대 방향 &mdash; [SEP]가 내용어에 주의를 기울이는 것 &mdash; 이 의미 있는 중요도 신호를 전달하는지 검증합니다. GPT-2에는 적용 불가합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">전수 구성 탐색</div>
+                <div class="step-desc">각 PLM에 대해 가능한 모든 (레이어, 헤드, 방법) 구성을 전수 평가합니다 &mdash; 예를 들어 BERT-base는 12 &times; 12 &times; 3 = 432개, BERT-large는 24 &times; 16 &times; 3 = 1,152개의 구성을 탐색합니다. 검증 세트에서 가장 높은 Ranking Score를 달성하는 구성을 선택합니다. 데이터셋의 짧은 문장들에 대한 추론이 빠르고 그래디언트 계산이나 파라미터 업데이트가 필요 없어 이 전수 탐색은 계산적으로 실현 가능합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">5</div>
+                <div class="step-title">Top-K 앙상블</div>
+                <div class="step-desc">최종 예측은 성능 상위 5개 (모델, 레이어, 헤드, 방법) 구성을 앙상블하여 생성합니다. 각 구성의 e_freq 예측값을 평균하여 부드러운 강조 순위를 산출합니다. 이 단순한 평균 전략은 서로 다른 모델과 어텐션 헤드로부터 상호보완적인 신호를 결합하여 분산을 줄이고 전반적인 정확도를 향상시킵니다.</div>
             </div>
         </div>
-        <p>각 PLM에 대해 검증 세트의 Ranking Score 지표를 기반으로 최적의 (레이어, 헤드, 방법) 구성을 선택합니다.</p>
+        <p>핵심적인 구현 세부사항은 서브워드 집계 단계입니다: 하나의 단어가 여러 서브워드 토큰으로 분할될 때(예: "emphasize" &rarr; "em", "##pha", "##size"), 모든 서브워드 토큰의 어텐션 가중치를 평균하여 단일 단어 수준 점수를 생성합니다. 이를 통해 강조 주석의 세분성과 일치하는 단어 수준에서 방법이 작동하도록 보장합니다.</p>
     </div>
 
     <div class="section">
         <h2>실험 결과</h2>
-        <p>전단지, 포스터, 광고에서 추출된 짧은 영어 문장으로 구성되고 9명의 주석자가 강조를 표시한 SemEval-2020 Task 10 데이터셋에서 평가하였습니다.</p>
+        <p>전단지, 포스터, 광고, 동기부여 밈 등 Adobe Spark에서 추출한 짧은 영어 문장으로 구성되고 9명의 주석자가 강조를 표시한 SemEval-2020 Task 10 데이터셋에서 평가하였습니다. 데이터셋은 3,000개의 인스턴스로 구성되며 학습(70%), 검증(10%), 테스트(20%)로 분할됩니다. 성능은 Match<sub>m</sub>(예측과 골드 표준 간 상위 m개 강조 단어의 일치도)과 Ranking Score(Match<sub>1</sub>부터 Match<sub>4</sub>까지의 평균)로 측정됩니다. BERT-base-uncased, BERT-large-uncased, DistilBERT-base-uncased, DistilBERT-base-multilingual, RoBERTa-base, XLNet-base, GPT-2 등 6개 이상의 PLM이 평가되었습니다.</p>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>모델</th><th>방법</th><th>Match<sub>1</sub></th><th>Match<sub>2</sub></th><th>Match<sub>3</sub></th><th>Match<sub>4</sub></th><th>R (검증)</th><th>R (테스트)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Random</td><td>-</td><td>0.173</td><td>0.309</td><td>0.375</td><td>0.452</td><td>0.327</td><td>0.318</td></tr>
+                <tr><td>TF-IDF</td><td>-</td><td>0.306</td><td>0.462</td><td>0.615</td><td>0.676</td><td>0.515</td><td>0.518</td></tr>
+                <tr><td>BERT-base-uncased</td><td>Word2Target</td><td>0.431</td><td>0.625</td><td>0.725</td><td>0.765</td><td>0.637</td><td>0.625</td></tr>
+                <tr><td>BERT-large-uncased</td><td>Word2Target</td><td>0.449</td><td>0.623</td><td>0.736</td><td>0.760</td><td><strong>0.642</strong></td><td>0.629</td></tr>
+                <tr><td>DistilBERT-base-uncased</td><td>Word2Target</td><td>0.454</td><td>0.619</td><td>0.726</td><td>0.768</td><td><strong>0.642</strong></td><td>0.629</td></tr>
+                <tr><td>DistilBERT-base-multi.</td><td>Word2Target</td><td>0.436</td><td>0.626</td><td>0.714</td><td>0.761</td><td>0.634</td><td>0.620</td></tr>
+                <tr><td>RoBERTa-base</td><td>CLS2Target</td><td>0.441</td><td>0.589</td><td>0.688</td><td>0.715</td><td>0.608</td><td>-</td></tr>
+                <tr><td>GPT-2</td><td>Word2Target</td><td>0.225</td><td>0.435</td><td>0.569</td><td>0.625</td><td>0.463</td><td>-</td></tr>
+                <tr style="font-weight:bold;"><td>앙상블 (Top-5)</td><td>-</td><td>0.485</td><td>0.679</td><td>0.780</td><td>0.815</td><td>0.690</td><td>0.666</td></tr>
+                <tr style="color:#888;"><td>지도학습 베이스라인</td><td>-</td><td>0.592</td><td>0.752</td><td>0.804</td><td>0.822</td><td>0.742</td><td>0.750</td></tr>
+            </tbody>
+        </table>
 
         <ul class="key-points">
-            <li><strong>최고 단일 모델:</strong> BERT-large-uncased가 검증 세트에서 Ranking Score 0.6420을 달성하여 TF-IDF 베이스라인(0.5145)을 능가</li>
-            <li><strong>앙상블 성능:</strong> 상위 5개 PLM 구성의 앙상블이 검증 세트 0.6898, 테스트 세트 0.6656의 Ranking Score 달성</li>
-            <li><strong>제로샷 이점:</strong> 골드 표준 주석을 전혀 활용하지 않는 완전한 제로샷 방식으로 작동하여, 저자원 환경에서의 범용 적용 가능성을 시사</li>
-            <li><strong>특화된 어텐션 헤드:</strong> 분석을 통해 최고 성능 어텐션 헤드와 나머지 사이에 명확한 격차가 있음을 확인하여, 특정 헤드가 강조 선택에 특화되어 있음을 입증</li>
-            <li><strong>DistilBERT 효율성:</strong> DistilBERT 모델이 작은 크기에도 불구하고 높은 성능을 달성하여, 지식 증류가 강조 관련 어텐션 패턴을 보존함을 시사</li>
+            <li><strong>최고 단일 모델:</strong> BERT-large-uncased와 DistilBERT-base-uncased 모두 검증 세트에서 Ranking Score 0.642를 달성하여 TF-IDF 베이스라인(0.515)을 +0.127 차이로 크게 능가합니다. GPT-2를 제외한 모든 PLM 기반 방법이 TF-IDF를 능가하여, 어텐션 기반 강조 점수가 단어 빈도 통계보다 풍부한 정보를 담고 있음을 확인합니다.</li>
+            <li><strong>앙상블 성능:</strong> 상위 5개 PLM 구성의 e_freq 예측을 평균한 앙상블이 검증 세트 0.690, 테스트 세트 0.666의 Ranking Score를 달성하여, 서로 다른 어텐션 헤드가 상호보완적인 강조 신호를 제공함을 입증합니다.</li>
+            <li><strong>제로샷 vs. 지도학습 격차:</strong> 제로샷 앙상블이 지도학습 베이스라인 성능의 89.5%에 도달(검증 세트 기준 0.690 vs. 0.742)하여, 과제별 학습 데이터를 전혀 사용하지 않았음에도 놀라울 정도로 작은 격차를 보입니다. 이는 PLM이 이미 강조 선택에 필요한 대부분의 지식을 인코딩하고 있음을 시사합니다.</li>
+            <li><strong>Words2Target의 우세:</strong> Words2Target 방법이 대부분의 모델(BERT-base, BERT-large, DistilBERT, GPT-2)에서 최적의 구성을 산출하여, 모든 토큰으로부터 집계된 어텐션이 단일 특수 토큰의 어텐션보다 더 강건한 중요도 신호임을 나타냅니다.</li>
+            <li><strong>특화된 어텐션 헤드:</strong> 레이어별 분석을 통해 최고 성능 어텐션 헤드와 나머지 사이에 명확한 격차가 있음을 확인합니다(예: BERT-large-uncased에서 0.0445 격차). 이 "특화 격차"는 모델별로 다르며, BERT-large가 가장 큰 격차를 보여 추가적인 용량이 더 분화된 헤드 역할을 가능하게 함을 시사합니다.</li>
+            <li><strong>DistilBERT의 효율성:</strong> DistilBERT가 6개 레이어 vs. 24개 레이어, 약 2.5배 적은 파라미터에도 불구하고 BERT-large와 동등한 성능을 달성합니다. 지식 증류가 강조 관련 어텐션 패턴을 보존하며, 저자들은 DistilBERT의 압축된 헤드가 부모 모델의 여러 어텐션 행동을 집약하는 암묵적 앙상블로 기능할 수 있다고 가설을 세웁니다.</li>
+            <li><strong>아키텍처의 중요성:</strong> GPT-2는 인과적(왼쪽에서 오른쪽) 어텐션 마스크로 인해 낮은 성능(0.463)을 보이며, 후행 단어가 선행 단어에 주의를 기울이지 못해 첫 번째 단어 쪽으로 어텐션이 편향됩니다. XLNet도 순열 기반 어텐션이 내용어보다 구두점에 집중하는 경향으로 인해 차선의 결과를 보입니다. 이러한 결과는 강조 선택에 양방향 어텐션이 핵심적임을 강조합니다.</li>
+            <li><strong>다국어 전이:</strong> DistilBERT-base-multilingual이 104개 언어로 학습되었음에도 영어 강조 과제에서 0.634를 달성하여, 영어 전용 DistilBERT(0.642)보다 근소하게만 낮습니다. 이는 강조 관련 어텐션 패턴이 부분적으로 언어 보편적일 수 있음을 시사합니다.</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>의의</h2>
-        <p>본 연구는 사전학습 언어 모델이 어텐션 메커니즘을 통해 <strong>단어의 중요도를 암묵적으로 학습</strong>한다는 증거를 제시합니다. 이 실용적인 제로샷 접근법은 자동화된 시각 미디어 제작에 도움을 줄 수 있으며, 특화된 어텐션 헤드에 대한 분석은 PLM이 사전학습 중 어떤 언어적 지식을 인코딩하는지에 대한 이해에 기여합니다.</p>
+        <p>본 연구는 사전학습 언어 모델이 사전학습 과정에서 셀프 어텐션 메커니즘을 통해 <strong>단어의 중요도를 암묵적으로 학습</strong>한다는 구체적 증거를 제시합니다. 완전한 제로샷 접근법은 비용이 많이 드는 주관적 강조 주석의 필요성을 제거하여, 자동화된 시각 미디어 제작 도구에 실용적으로 적용될 수 있습니다 &mdash; 강조 판단이 본질적으로 주관적이고 대규모 수집이 어려운 실제 응용에서 특히 큰 장점입니다.</p>
+        <p>과학적 관점에서, 특화된 어텐션 헤드의 발견은 PLM이 어떤 언어적 지식을 인코딩하는지에 대한 이해를 심화합니다. 특정 헤드가 강조 데이터에 대해 명시적으로 학습된 적이 없음에도 강조 선택에 자연스럽게 "조율"되어 있다는 발견은, 언어 모델 사전학습 과정에서 화용적 지식이 어떻게 출현하는지에 대한 흥미로운 질문을 제기합니다. 이는 대규모 텍스트 코퍼스의 분포적 패턴이 통사적, 의미적 정보뿐만 아니라 소통적 중요도의 측면까지 인코딩한다는 것을 시사합니다.</p>
+        <p>실용적으로, 이 방법의 단순함(단일 순전파만 필요하고 그래디언트 계산 불필요)은 콘텐츠 제작 도구에서의 실시간 배포에 적합합니다. 앙상블 접근법은 약간의 지연 시간 증가를 허용할 수 있을 때 정확도를 향상시키는 체계적인 방법을 제공합니다. 또한 본 연구는 운율 강세 예측, 요약 핵심성 추정, 정보 구조 분석 등 다른 단어 수준 중요도 현상에 대해서도 동일한 어텐션 기반 프레임워크를 활용하여 PLM을 탐침(probing)할 수 있는 가능성을 열어줍니다.</p>
     </div>
 
     <div class="section">

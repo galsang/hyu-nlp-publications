@@ -22,45 +22,157 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>Semi-supervised text sequence matching using a cross-sentence latent variable model</p>
+        <p>A cross-sentence latent variable model (CS-LVM) that generates a target sentence conditioned on a source sentence and their relationship label, enabling principled semi-supervised training for natural language inference and paraphrase identification with novel semantic constraints for diverse and plausible generation.</p>
         <figure class="paper-figure">
             <img src="../images/cross-sentence/figure1.png" alt="Paper overview">
-            <figcaption><strong>Figure 1.</strong> Overview of the cross-sentence latent variable framework, showing the encoder q_φ, latent variable z_s, decoder p_θ, and semi-supervised recognition model q_ψ.</figcaption>
+            <figcaption><strong>Figure 1.</strong> Overview of the cross-sentence latent variable framework. The encoder q_&phi; maps a source sentence x_s to a latent variable z_s, which together with the label y is used by the decoder p_&theta; to generate the target sentence x_t. The discriminative classifier q_&psi; infers the relationship label. Blue dashed lines indicate semantic constraints applied during fine-tuning.</figcaption>
         </figure>
     </div>
     <div class="section">
         <h2>Background & Motivation</h2>
-        <p>Text sequence matching -- determining whether two text sequences are semantically related, entailing, or paraphrases of each other -- is a fundamental NLP task. Supervised models require large labeled datasets, which are expensive to obtain. Semi-supervised approaches can help, but most treat each sentence pair independently, ignoring useful structural dependencies across the dataset.</p>
+        <p>Text sequence matching &mdash; predicting the relationship between two text sequences such as entailment, contradiction, or paraphrase &mdash; is a fundamental NLP task that underpins answer sentence selection, text retrieval, and machine comprehension. While deep neural models have achieved remarkable results on these tasks, they require abundant labeled training data, which is time-consuming and labor-intensive to construct. Semi-supervised learning paradigms that leverage unlabeled data offer a promising solution, but prior VAE-based approaches for text pair modeling treat each sentence independently within the auto-encoding framework, limiting the interaction between the generative model and the discriminative classifier.</p>
         <div class="highlight-box">
-            <p><strong>Limitation:</strong> Existing semi-supervised matching models encode each sentence pair in isolation and fail to capture cross-instance latent patterns that could provide additional supervisory signal from unlabeled data.</p>
+            <p><strong>Limitation of Prior Work:</strong> Existing VAE-based semi-supervised matching models (e.g., LSTM-VAE, DeConv-VAE) encode and reconstruct each sentence in a pair <em>separately</em>. This means the generative modeling process is confined within a single sequence, and pair-wise information is only considered through the classifier network. In the unsupervised setting, only the reconstruction objective is used for training, so the classifier parameters are not updated and the interaction between the encoder and classifier is restricted. Each sentence is mapped to its own latent variable and decoded back to itself, so the generative model never learns about the <em>relationship</em> between two sentences.</p>
         </div>
         <div class="highlight-box">
-            <p><strong>Innovation:</strong> This work introduces cross-sentence latent variables that capture shared structure across sentence pairs, enabling the model to propagate information from labeled examples to unlabeled ones through a shared latent space.</p>
+            <p><strong>Key Insight:</strong> This work proposes <em>cross-sentence generation</em>: instead of reconstructing each sentence independently, the model generates a target sentence that has a given relationship with a source sentence. This mirrors the actual dataset construction process (e.g., in SNLI, annotators write hypotheses given a premise and a label), naturally integrating both sequences and the label within a single generative model and enabling stronger interaction between generation and classification.</p>
+        </div>
+        <h3>Problem Setting</h3>
+        <p>Given a dataset of sentence pairs {(x_1, x_2)} where some pairs have relationship labels y (e.g., entailment, neutral, contradiction for NLI; paraphrase or non-paraphrase for QQP) and others are unlabeled, the goal is to train a classifier that predicts y for unseen sentence pairs. The semi-supervised setting is realistic because obtaining large-scale labeled sentence pair datasets is expensive, while vast amounts of unlabeled text pairs can be collected cheaply. The challenge is to design a framework where the generative component (modeling unlabeled data) and the discriminative component (classifying relationships) reinforce each other through shared representations.</p>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method</h2>
+        <p>The Cross-Sentence Latent Variable Model (CS-LVM) is built on deep probabilistic generative models (VAEs) but fundamentally differs from prior approaches by generating text <em>across</em> sentence pairs rather than within individual sentences. The model uses a von Mises-Fisher (vMF) distribution instead of Gaussian for the latent space, which avoids the posterior collapse problem inherent to standard VAEs.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div>
+                    <div class="step-title">Cross-Sentence Generative Model</div>
+                    <div class="step-desc">Given a pair (x_1, x_2), one sentence is designated as the source x_s and the other as the target x_t (both orderings are used during training via a bidirectional approach). The source sentence x_s is encoded into a latent variable z_s via an LSTM encoder and a vMF-parameterized inference network q_&phi;(z_s|x_s). A label y determining the relationship is sampled from the prior p(y). The target sentence x_t is then generated word-by-word from the conditional distribution p_&theta;(x_t|y, z_s) using an LSTM decoder that takes concatenated word embeddings, label embeddings, and the latent representation as input at each time step. This cross-sentence formulation is the key distinction: unlike auto-encoding models that reconstruct x_s from z_s, this model generates an entirely different sentence x_t whose meaning relates to x_s in a way specified by y.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div>
+                    <div class="step-title">Von Mises-Fisher Latent Space</div>
+                    <div class="step-desc">Rather than using a Gaussian distribution for the latent variable z, CS-LVM adopts the von Mises-Fisher (vMF) distribution, which is defined on the unit hypersphere. The vMF distribution is parameterized by a mean direction &mu; (a unit vector on the hypersphere) and a concentration parameter &kappa; (a scalar controlling how tightly samples cluster around &mu;). A key advantage is that the KL divergence KL(vMF(&mu;, &kappa;) || vMF(0, 0)) has a closed-form solution and does not vanish during training, avoiding the notorious <em>posterior collapse</em> problem where the decoder learns to ignore the latent variable entirely. This ensures that z always carries meaningful information from the source sentence to the decoder.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div>
+                    <div class="step-title">Supervised &amp; Unsupervised Objectives</div>
+                    <div class="step-desc">In the supervised setting, the objective combines a generative loss (ELBO for cross-sentence generation) with a discriminative loss (log-likelihood of the classifier q_&psi;). In the unsupervised setting, the label y is treated as a hidden variable and marginalized out, yielding an entropy term over q_&psi; plus the expected generative loss. Crucially, the encoder weights are shared between the generative model and the classifier (g^enc = f^enc), which is the mechanism that enables unlabeled data to benefit the classifier: when the encoder is updated through the unsupervised generative objective, the classifier's input representations also improve. The total training objective is a weighted sum of supervised and unsupervised losses over the respective data subsets.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div>
+                    <div class="step-title">Semantic Constraints for Fine-Tuning</div>
+                    <div class="step-desc">After initial training, three novel semantic constraints are applied to regularize and refine the generator: (1) <strong>Label Consistency Constraint R^y</strong> enforces that generated sentences actually reflect the conditioned label by feeding the generated pair (x_s, x&#770;_t) back through the classifier and penalizing mismatches; (2) <strong>Latent Alignment Constraint R^z</strong> pushes the latent representation of the generated sentence to be close to the ground-truth target's representation, ensuring the generated sentence occupies a similar region in the semantic space; (3) <strong>Diversity Constraint R^&mu;</strong> encourages diversity by penalizing generated sentences within a mini-batch whose latent mean directions &mu; are too similar, preventing mode collapse in generation. The Gumbel-Softmax trick is used to make discrete word generation differentiable for backpropagation, and the three constraints are combined via homoscedastic uncertainty weighting (learned task-specific weights) to balance their contributions automatically.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <p><strong>Training Procedure:</strong> Training proceeds in two phases. <strong>Phase 1 (Pre-training)</strong>: The full model (encoder, decoder, classifier) is trained jointly with the combined supervised and unsupervised ELBO objectives until convergence. <strong>Phase 2 (Fine-tuning)</strong>: The semantic constraints R^y, R^z, and R^&mu; are added to the loss function and the model is fine-tuned further. This two-phase strategy is necessary because the semantic constraints rely on a reasonably well-trained generator and classifier to provide meaningful gradient signals.</p>
         </div>
     </div>
 
     <div class="section">
-        <h2>Method</h2>
-        <p>The proposed model augments a standard text matching architecture with a latent variable that spans across sentence pairs. Using variational inference, the model learns a shared latent space that captures dataset-level distributional patterns, allowing unlabeled data to contribute meaningful learning signal.</p>
-        <ul class="key-points">
-            <li><strong>Cross-Sentence Latent Variables:</strong> A latent variable model that captures dependencies not just within a sentence pair, but across multiple pairs in the dataset</li>
-            <li><strong>Variational Inference:</strong> An inference network approximates the posterior over latent variables, enabling end-to-end training with both labeled and unlabeled data</li>
-            <li><strong>Semi-Supervised Objective:</strong> Combines a supervised matching loss on labeled data with an unsupervised reconstruction/regularization loss on unlabeled data through the shared latent space</li>
-        </ul>
-    </div>
+        <h2>Experimental Results</h2>
+        <p>The model is evaluated on two semi-supervised tasks: natural language inference (SNLI, ~570k pairs, 3-way classification) and paraphrase identification (Quora Question Pairs, ~400k pairs, binary classification). Following prior work, experiments use limited labeled subsets with the remainder as unlabeled data, a vocabulary of 20,000 words, and no pre-trained embeddings. This controlled setting isolates the contribution of the semi-supervised framework from the effects of large-scale pre-trained representations.</p>
 
-    <div class="section">
-        <h2>Results</h2>
+        <h3>Semi-Supervised NLI (SNLI Dataset)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>28k</th><th>59k</th><th>120k</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>LSTM</td><td>57.9</td><td>62.5</td><td>65.9</td></tr>
+                <tr><td>CNN</td><td>58.7</td><td>62.7</td><td>65.6</td></tr>
+                <tr><td>LSTM-AE</td><td>59.9</td><td>64.6</td><td>68.5</td></tr>
+                <tr><td>LSTM-VAE</td><td>64.7</td><td>67.5</td><td>71.1</td></tr>
+                <tr><td>DeConv-VAE</td><td>67.2</td><td>69.3</td><td>72.2</td></tr>
+                <tr><td>LSTM-vMF-VAE (ours)</td><td>65.6</td><td>68.7</td><td>71.1</td></tr>
+                <tr><td><strong>CS-LVM (ours)</strong></td><td><strong>68.4</strong></td><td>73.5</td><td>76.9</td></tr>
+                <tr><td><strong>CS-LVM + all constraints</strong></td><td>69.6</td><td><strong>74.1</strong></td><td><strong>77.4</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>Semi-Supervised Paraphrase Identification (QQP Dataset)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>1k</th><th>5k</th><th>10k</th><th>25k</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>CNN</td><td>56.3</td><td>59.2</td><td>63.8</td><td>68.9</td></tr>
+                <tr><td>LSTM-AE</td><td>60.2</td><td>65.1</td><td>67.7</td><td>71.6</td></tr>
+                <tr><td>DeConv-VAE</td><td>65.1</td><td>69.4</td><td>70.5</td><td>73.7</td></tr>
+                <tr><td>LSTM-vMF-VAE (ours)</td><td>65.0</td><td>69.9</td><td>72.1</td><td>74.9</td></tr>
+                <tr><td><strong>CS-LVM (ours)</strong></td><td><strong>66.5</strong></td><td>71.1</td><td>74.6</td><td>76.9</td></tr>
+                <tr><td><strong>CS-LVM + all constraints</strong></td><td>66.3</td><td><strong>71.3</strong></td><td><strong>74.7</strong></td><td><strong>77.6</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>Ablation: Individual Constraint Effects (SNLI, 59k labels)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Configuration</th><th>Accuracy</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>CS-LVM (no constraints)</td><td>73.5</td></tr>
+                <tr><td>+ R^y only</td><td>73.8</td></tr>
+                <tr><td>+ R^z only</td><td>73.6</td></tr>
+                <tr><td>+ R^&mu; only</td><td>73.6</td></tr>
+                <tr><td>+ R^y + R^z</td><td>73.9</td></tr>
+                <tr><td><strong>+ R^y + R^z + R^&mu; (all)</strong></td><td><strong>74.1</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>Ablation: Architectural Choices (SNLI, 59k labels)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Variant</th><th>Accuracy</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>CS-LVM (full)</td><td>73.5</td></tr>
+                <tr><td>Without cross-sentence generation</td><td>68.7</td></tr>
+                <tr><td>Without encoder sharing</td><td>70.1</td></tr>
+                <tr><td>Gaussian instead of vMF</td><td>72.8</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Generation Quality Analysis</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>Artificial Acc.</th><th>Distinct-1</th><th>Distinct-2</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>CS-LVM (no constraints)</td><td>76.5%</td><td>0.042</td><td>0.170</td></tr>
+                <tr><td>+ R^y</td><td>81.9%</td><td>0.043</td><td>0.173</td></tr>
+                <tr><td><strong>+ R^y + R^z + R^&mu;</strong></td><td><strong>81.2%</strong></td><td><strong>0.048</strong></td><td><strong>0.202</strong></td></tr>
+            </tbody>
+        </table>
+        <p style="margin-top:8px;font-size:0.92em;color:#666;"><em>Artificial Acc.</em> measures whether a separately trained classifier correctly identifies the relationship label of generated pairs. <em>Distinct-1/2</em> measure the ratio of unique unigrams/bigrams to total tokens, indicating generation diversity.</p>
+
         <ul class="key-points">
-            <li><strong>Natural Language Inference:</strong> Consistent improvements on NLI benchmarks in semi-supervised settings, demonstrating the value of cross-sentence latent structure</li>
-            <li><strong>Paraphrase Detection:</strong> Enhanced matching accuracy when only a fraction of training data is labeled, outperforming standard semi-supervised baselines</li>
-            <li><strong>Label Efficiency:</strong> The latent variable approach shows the largest gains in low-label regimes, confirming its effectiveness at extracting information from unlabeled data</li>
+            <li><strong>State-of-the-Art on Both Tasks:</strong> CS-LVM substantially outperforms all prior auto-encoding-based models on both SNLI and QQP in every labeled data setting, with improvements of up to 5+ accuracy points over the previous best (DeConv-VAE). The gap is especially large in low-label regimes, confirming that cross-sentence generation is particularly effective when labeled data is scarce</li>
+            <li><strong>Cross-Sentence Generation is the Key Factor:</strong> The ablation study reveals that removing cross-sentence generation (reverting to within-sentence auto-encoding) causes the largest performance drop of ~4.8 points. Encoder weight sharing between the generative model and classifier is the second most critical factor (~3.4 point drop when removed)</li>
+            <li><strong>Semantic Constraints Add Further Gains:</strong> Fine-tuning with R^y, R^z, and R^&mu; provides additional performance boosts. R^y (label consistency) contributes the largest accuracy improvement by ensuring generated sentences faithfully reflect the conditioned relationship, while R^z and R^&mu; primarily enhance generation diversity as measured by distinct-1/distinct-2 metrics</li>
+            <li><strong>Full Supervision Benefit:</strong> Even with all ~550k SNLI labels, CS-LVM achieves 82.8% accuracy, surpassing supervised LSTM (81.5%), LSTM-AE (81.6%), and DeConv-VAE (80.9%), showing that the cross-sentence generative framework provides a better inductive bias even when unlabeled data is not needed</li>
+            <li><strong>vMF vs. Gaussian:</strong> Replacing vMF with Gaussian slightly hurts accuracy (73.5 vs. 72.8) and also requires careful KL cost annealing to avoid posterior collapse. The vMF distribution offers a simpler, more stable training procedure while maintaining strong performance</li>
+            <li><strong>Generation Quality:</strong> Generated sentences properly reflect conditioned labels. Fine-tuning with R^y increases artificial dataset classification accuracy from 76.5% to 81.9%, confirming that the label consistency constraint effectively teaches the generator to produce label-faithful outputs. R^z and R^&mu; further improve diversity (distinct-2 rises from 0.170 to 0.202)</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>This work demonstrated that modeling cross-instance dependencies through latent variables is a powerful strategy for semi-supervised text matching. By learning a shared latent space that captures dataset-level patterns, the model can transfer knowledge from labeled to unlabeled examples more effectively than approaches that treat each pair in isolation. This idea of leveraging structural dependencies across examples remains relevant in modern few-shot and low-resource NLP settings.</p>
+        <p>This work introduced the first cross-sentence generating latent variable model for semi-supervised text sequence matching, demonstrating that jointly modeling both sentences in a pair through generation leads to fundamentally stronger semi-supervised learning than treating sentences independently. The key architectural insight &mdash; that the generative process should mirror how datasets are actually constructed (generating a target given a source and a label) &mdash; enables much tighter integration between the generative model and the discriminative classifier, allowing unlabeled data to provide meaningful training signal to the classifier through shared encoder weights.</p>
+        <p>Beyond classification performance, the work also contributed novel semantic constraints (label consistency, latent alignment, diversity) that improve both the quality and diversity of generated text. These ideas of cross-sentence generation, vMF latent spaces to avoid posterior collapse, and semantic fine-tuning constraints remain relevant to modern generative approaches for data augmentation and controlled text generation in low-resource NLP settings.</p>
+        <p>From a broader perspective, this paper demonstrated an important principle for semi-supervised learning with structured outputs: the generative model should capture the <em>relational structure</em> of the data rather than modeling individual data points in isolation. This insight has since been echoed in later work on conditional text generation, data augmentation for NLU, and contrastive learning for sentence pairs, where explicitly modeling inter-sentence relationships leads to more effective representation learning. The work was published at ACL 2019, one of the top venues in natural language processing, and presented at the 57th Annual Meeting of the Association for Computational Linguistics in Florence, Italy.</p>
     </div>
 
     <div class="section">

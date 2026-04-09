@@ -25,72 +25,150 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>목적 지향 대화(TOD)와 일상 대화(chitchat) 간의 자연스러운 전환을 모델링하는 TACT 데이터셋과 새로운 평가 지표(Switch, Recovery)를 제안하여, 보다 유연하고 능동적인 대화형 AI를 가능하게 합니다.</p>
+        <p>TACT는 목적 지향 대화(TOD)와 일상 대화(chitchat) 간의 구조적으로 다양한 모드 전환을 포함하는 대규모 데이터셋(SLURP 기반 9,936개 + MultiWOZ 기반 7,109개 대화)으로, 새로운 Switch/Recovery 평가 지표와 DPO 기반 학습 프레임워크를 통해 75.74%의 joint mode-intent accuracy와 GPT-4o 대비 70.1%의 인간 평가 승률을 달성합니다.</p>
         <figure class="paper-figure">
             <img src="../../images/tact/figure2.png" alt="TACT 대화 시나리오">
-            <figcaption><strong>Figure 2.</strong> TACT로 학습된 에이전트가 일상 대화 후 다시 업무 대화로 자연스럽게 복귀하는 전환 인식 및 능동성을 보여주는 시나리오.</figcaption>
+            <figcaption><strong>Figure 2.</strong> TACT로 학습된 에이전트만이 경치 좋은 노선에 대한 일상 대화 후 원래의 기차 예약 업무로 성공적으로 복귀하는 전환 인식 및 능동성을 보여줍니다. FusedChat, InterfereChat으로 학습된 모델과 GPT-4o-mini는 모두 원래 맥락을 복구하지 못합니다.</figcaption>
         </figure>
     </div>
 
     <div class="section">
         <h2>배경 및 동기</h2>
-        <p>인간의 대화에서는 "항공편 예약해 주세요"(목적 지향)에서 "요즘 날씨가 좋네요"(일상 대화)로 자연스럽게 전환이 일어납니다. 그러나 기존 대화 AI 시스템은 <strong>둘 중 하나만</strong> 처리하도록 설계되어 있었습니다.</p>
+        <p>대화형 에이전트는 전통적으로 목적 지향 대화(TOD) 시스템 또는 개방형 일상 대화 중 하나만을 위해 개발되어 왔으며, 이 둘을 통합하는 데는 제한적인 진전만 있었습니다. 그러나 실제 대화에서는 이러한 모드 간의 유동적인 전환이 자연스럽게 발생합니다. 예를 들어, 기차표를 예약하던 사용자가 갑자기 경치 좋은 노선에 대해 이야기하다가 다시 예약 업무로 돌아오기를 기대할 수 있습니다.</p>
         <div class="highlight-box">
-            <p><strong>한계:</strong> 기존 시스템은 목적 지향 대화(TOD) 또는 일상 대화에 특화되어 있어, 실제 대화에서 자연스럽게 발생하는 모드 전환을 처리할 수 없습니다.</p>
+            <p><strong>기존 데이터셋의 문제:</strong> FusedChat, InterfereChat 등 기존 모드 전환 데이터셋은 TOD와 chitchat 간에 단 한 번의 전환(최대 1개 전환점)만 허용하며 구조적 다양성이 부족합니다. TOD 중심의 관점을 고수하여 고정된 지점에 일상 대화를 단일 교환으로 삽입하는 방식이므로, 실제 대화에서 발생하는 동적인 다중 턴 전환을 모델링하기에 부적합합니다.</p>
         </div>
         <div class="highlight-box">
-            <p><strong>혁신:</strong> TACT는 사용자뿐만 아니라 <strong>에이전트도 능동적으로</strong> 대화 모드를 전환할 수 있어야 한다는 점을 인식합니다.</p>
+            <p><strong>두 가지 핵심 능력의 부재:</strong> 현재 시스템에는 (1) <strong>전환 인식(transition-awareness)</strong> -- 모드 변화를 감지하고 적응하는 능력, 그리고 (2) <strong>능동성(proactivity)</strong> -- 적절한 시점에 대화 흐름을 주도적으로 이끄는 능력이 부족합니다. TACT는 에이전트가 다중 턴에 걸쳐 모드 전환을 개시하고 복구할 수 있어야 하는 최초의 데이터셋입니다.</p>
         </div>
     </div>
 
     <div class="section">
-        <h2>TACT 데이터셋</h2>
-        <ul class="key-points">
-            <li><strong>사용자 주도 전환:</strong> 사용자가 갑자기 일상 대화로 전환하거나 목적 지향 대화로 복귀하는 패턴</li>
-            <li><strong>에이전트 주도 전환:</strong> 에이전트가 능동적으로 대화 모드를 전환하는 패턴 — 기존 데이터셋에서 다루지 않은 시나리오</li>
-            <li><strong>구조적 다양성:</strong> 복잡한 대화 역학 모델링을 지원하는 다양한 전환 흐름 포함</li>
-        </ul>
-    </div>
+        <h2>제안 방법</h2>
 
-    <div class="section">
-        <h2>새로운 평가 지표</h2>
+        <h3>데이터셋 구축</h3>
+        <p>TACT(TOD-And-Chitchat Transition)는 두 개의 기존 TOD 코퍼스인 MultiWOZ 2.2와 SLURP를 구조적으로 다양한 일상 대화 전환으로 확장하여 구축됩니다. 두 가지 핵심 대화 흐름 유형이 정의됩니다:</p>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">TCT 흐름 (TOD → Chitchat → TOD)</div>
+                <div class="step-desc">MultiWOZ 2.2에서 4턴 이상의 업무 대화 세그먼트를 추출하고, 의도 간 자연스러운 경계에 일상 대화 블록을 삽입합니다. 일상 대화에서 잠시 벗어났다가 원래 목표로 복귀하는 패턴입니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">CTC 흐름 (Chitchat → TOD → Chitchat)</div>
+                <div class="step-desc">짧은 TOD 세그먼트(2-3턴)로 시작하여 업무 전후에 일상 대화를 붙이는 래핑 흐름입니다. 사교적 대화 중에 업무를 잠깐 처리하는 상황을 시뮬레이션합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">자동 검증</div>
+                <div class="step-desc">G-Eval의 인간 정렬 기준과 Active-Critic의 모델 기반 추론을 결합한 하이브리드 검증 파이프라인으로, 각 대화를 Intent Accuracy, Transition Quality, Dialogue Naturalness 기준으로 GPT-4o-mini가 평가합니다.</div>
+            </div>
+        </div>
+
+        <h3>데이터셋 통계</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>통계</th><th>TACT<sub>MultiWOZ</sub></th><th>TACT<sub>SLURP</sub></th></tr>
+            </thead>
+            <tbody>
+                <tr><td>의도(Intent) 수</td><td>11</td><td>50+</td></tr>
+                <tr><td>대화 수</td><td>7,109</td><td>9,936</td></tr>
+                <tr><td>평균 턴 수</td><td>15.04</td><td>16.42</td></tr>
+                <tr><td>평균 Switch 수</td><td>1.93</td><td>2.06</td></tr>
+                <tr><td>평균 Recovery 수</td><td>0.93</td><td>1.07</td></tr>
+                <tr><td>고유 흐름 유형 수</td><td>11</td><td>12</td></tr>
+                <tr><td>흐름 패턴</td><td colspan="2">TCT, CTC, TCTCT 등</td></tr>
+            </tbody>
+        </table>
+
+        <h3>학습 프레임워크</h3>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">FnCTOD 기반 SFT</div>
+                <div class="step-desc">LLaMA-3.1-8B-Instruct를 기반으로 FnCTOD 아키텍처를 사용한 지도 미세조정. 함수 호출(function-calling)을 구조화된 의도 표현으로 재해석하여, 각 턴마다 의도를 먼저 예측한 후 해당 의도에 조건화된 응답을 생성합니다. 이를 통해 단일 자기회귀 디코딩으로 의도 예측과 응답 생성을 통합합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">DPO (Direct Preference Optimization)</div>
+                <div class="step-desc">SFT 위에 적용하여 모델 출력을 인간 선호도에 정렬. FnCTOD와 GPT-4o-mini의 출력을 비교하여 선호도 쌍(3,009개 인스턴스)을 생성하고, Gemini-2.5-Pro가 sensibleness, specificity, interestingness, transition naturalness 기준으로 판정합니다. 구조화된 함수 호출과 TOD+chitchat을 결합한 통합 대화 생성 환경에서의 최초의 DPO 적용입니다.</div>
+            </div>
+        </div>
+
+        <h3>평가 지표: Switch & Recovery</h3>
         <div class="method-steps">
             <div class="method-step">
                 <div class="step-num">S</div>
                 <div class="step-title">Switch</div>
-                <div class="step-desc">모드 전환 시점을 정확히 감지하고 적절하게 응답하는 능력</div>
+                <div class="step-desc">에이전트가 한 모드에서 다른 모드로 전환할 때를 측정합니다 (예: TOD→Chitchat). <strong>Attempt</strong>(대화당 평균 에이전트 주도 모드 전환 수)와 <strong>Success</strong>(사용자가 수용한 평균 전환 수)로 보고됩니다. 사용자가 에이전트가 제안한 모드 전환을 수용해야만 성공으로 인정됩니다.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">R</div>
                 <div class="step-title">Recovery</div>
-                <div class="step-desc">전환 후 원래 모드로 자연스럽게 복귀하는 능력</div>
+                <div class="step-desc">에이전트가 이전에 중단된 모드로 복귀할 때를 측정합니다 (예: TCT, CTC). 마찬가지로 <strong>Attempt</strong>와 <strong>Success</strong>로 보고됩니다. 성공적인 복구의 약 34%만이 정확히 이전 의도로 돌아가고, 나머지는 올바른 모드 내에서 새로운 관련 의도를 시작하여, 현실적인 복구 행동을 보여줍니다.</div>
             </div>
         </div>
     </div>
 
     <div class="section">
         <h2>실험 결과</h2>
+        <p>모든 SFT 모델은 LLaMA-3.1-8B-Instruct로 초기화되고 학습률 1e-5, 배치 크기 256으로 3 에폭 학습됩니다. ICL(GPT-4o 기반 zero-shot/few-shot), SFT, SFT-DPO, 생성적 분류기 기반 Pipeline의 4가지 방법을 비교합니다.</p>
+
+        <h3>방법론 비교 (Table 4)</h3>
         <table class="results-table">
             <thead>
-                <tr><th>지표</th><th>성능</th></tr>
+                <tr><th>방법</th><th>모드 Acc.</th><th>모드 F1</th><th>의도 Acc./턴</th><th>Joint Acc./턴</th><th>Joint Acc./대화</th><th>Switch 시도</th><th>Switch 성공</th><th>복구 시도</th><th>복구 성공</th><th>Chitchat 승률</th></tr>
             </thead>
             <tbody>
-                <tr><td>Joint Mode-Intent Accuracy</td><td class="highlight-cell">75.74%</td></tr>
-                <tr><td>인간 평가 GPT-4o 대비 승률</td><td class="highlight-cell">70.1%</td></tr>
+                <tr><td>ICL-ZS</td><td>90.46</td><td>86.21</td><td>87.57</td><td>85.01</td><td>30.00</td><td>0.879</td><td>0.374</td><td>0.880</td><td>0.099</td><td>-</td></tr>
+                <tr><td>ICL-FS</td><td>91.45</td><td>88.98</td><td>84.09</td><td>86.89</td><td>36.76</td><td>1.577</td><td>0.865</td><td>1.571</td><td>0.652</td><td>-</td></tr>
+                <tr><td>SFT</td><td>98.95</td><td>98.50</td><td>96.35</td><td>96.41</td><td>75.59</td><td>1.322</td><td>1.300</td><td>0.977</td><td>0.856</td><td>23.16</td></tr>
+                <tr><td class="highlight-cell">SFT-DPO</td><td>98.82</td><td>98.32</td><td>96.03</td><td>96.21</td><td class="highlight-cell">75.74</td><td>1.343</td><td class="highlight-cell">1.322</td><td>0.977</td><td class="highlight-cell">0.859</td><td class="highlight-cell">40.86</td></tr>
+                <tr><td>Pipeline</td><td>98.95</td><td>98.50</td><td>96.35</td><td>96.41</td><td>75.59</td><td>1.322</td><td>1.300</td><td>0.977</td><td>0.856</td><td>24.32</td></tr>
+            </tbody>
+        </table>
+
+        <h3>인간 선호도 평가 (Figure 8)</h3>
+        <p>10명의 평가자가 DPO와 GPT-4o(few-shot)를 77개 대화에 대해 동점 없이 비교 평가:</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>기준</th><th>DPO 승률 %</th><th>DPO 패률 %</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Sensibleness (합리성)</td><td>71.4</td><td>28.6</td></tr>
+                <tr><td>Specificity (구체성)</td><td>77.9</td><td>22.1</td></tr>
+                <tr><td>Interestingness (흥미도)</td><td>71.4</td><td>28.6</td></tr>
+                <tr><td>Transition Naturalness (전환 자연성)</td><td class="highlight-cell">81.9</td><td>18.2</td></tr>
+                <tr><td><strong>종합</strong></td><td class="highlight-cell"><strong>70.1</strong></td><td>14.3</td></tr>
+            </tbody>
+        </table>
+
+        <h3>교차 데이터셋 비교 (Table 3)</h3>
+        <p>TACT로 학습된 에이전트만이 0이 아닌 전환 인식 점수를 달성합니다. FusedChat과 InterfereChat으로 학습된 모델은 다중 턴 전환 구조의 부재로 인해 switch/recovery 시도가 0입니다:</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>학습 데이터</th><th>평균 Joint Acc./턴</th><th>평균 Joint Acc./대화</th><th>Switch 시도</th><th>Switch 성공</th><th>복구 성공</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>FusedChat</td><td>92.25</td><td>56.13</td><td>0.000</td><td>0.000</td><td>-</td></tr>
+                <tr><td>InterfereChat</td><td>84.82</td><td>35.39</td><td>0.000</td><td>0.000</td><td>-</td></tr>
+                <tr><td class="highlight-cell">TACT<sub>MultiWOZ</sub></td><td class="highlight-cell">92.11</td><td class="highlight-cell">58.60</td><td class="highlight-cell">1.322</td><td class="highlight-cell">1.300</td><td class="highlight-cell">0.856</td></tr>
             </tbody>
         </table>
 
         <ul class="key-points">
-            <li><strong>DPO의 효과:</strong> TACT 데이터로 학습한 모델에 Direct Preference Optimization을 적용하면 성능이 추가로 향상</li>
-            <li><strong>의도 탐지:</strong> 의도 탐지와 모드 전환 처리 모두에서 기존 기준선을 능가</li>
-            <li><strong>인간 평가:</strong> GPT-4o 대비 70.1% 승률로, 응답 품질과 전환 제어 모두에서 높은 평가</li>
-            <li><strong>구조적 다양성 + DPO의 시너지:</strong> 데이터 다양성과 DPO 학습의 조합이 핵심 — 둘 중 하나만으로는 불충분</li>
+            <li><strong>TACT만이 전환을 가능하게 함:</strong> FusedChat과 InterfereChat으로 학습된 모델은 모든 테스트셋에서 switch/recovery 시도가 0인 반면, TACT 학습 모델은 대화당 평균 1.322회의 switch 시도와 0.977회의 recovery 시도를 지속적으로 수행</li>
+            <li><strong>DPO가 chitchat 품질을 2배로 향상:</strong> SFT-DPO는 GPT-4o 대비 40.86%의 chitchat 승률을 달성하여, SFT 단독의 23.16%를 거의 2배로 끌어올리면서도 경쟁력 있는 TOD 성능을 유지</li>
+            <li><strong>전환 자연성이 가장 큰 개선:</strong> 인간 평가에서 DPO는 Transition Naturalness에서 GPT-4o 대비 81.9% 승률을 달성, SFT의 11.3%와 비교하여 모든 기준 중 가장 큰 개선폭을 보임</li>
+            <li><strong>DPO가 최초로 Transition Naturalness에서 GPT-4o를 능가:</strong> LLM 기반 평가에서 33.7% 승률로 SFT의 11.3% 대비 처음으로 GPT-4o를 능가</li>
+            <li><strong>복구 분석:</strong> 성공적인 복구의 약 34%만이 정확히 이전 의도로 복귀하고, 나머지는 올바른 모드 내에서 새로운 관련 의도를 시작하여 현실적인 복구 행동을 보여줌</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>왜 중요한가?</h2>
-        <p>진정으로 자연스러운 대화 AI를 만들기 위해서는 목적 지향 대화와 일상 대화를 별개의 영역으로 보는 것을 넘어서야 합니다. TACT는 <strong>대화의 유동성</strong>을 모델링하는 최초의 데이터셋으로, AI 어시스턴트가 인간처럼 유연하게 대화 모드를 전환하면서도 원래 과제를 놓치지 않도록 학습할 수 있게 합니다.</p>
+        <p>실제 배포된 대화 시스템에서는 사용자가 단일 세션 내에서 업무 요청과 일상 대화를 오가는 경우가 빈번합니다. TACT는 구조적으로 다양한 다중 턴 전환과 복구 가능한 대화 구조로 <strong>대화의 유동성</strong>을 모델링하는 최초의 데이터셋입니다. TACT의 다양한 학습 데이터와 DPO를 통한 선호도 최적화를 결합함으로써, 결과 에이전트는 단순한 응답 정확도를 넘어 참여도, 흐름 연속성, 전환 부드러움과 같은 소프트 대화 기술을 학습합니다. 오픈소스 데이터셋(<a href="https://huggingface.co/datasets/HYU-NLP/TACT" target="_blank">HuggingFace</a>)과 코드(<a href="https://github.com/HYU-NLP/TACT" target="_blank">GitHub</a>)는 보다 자율적이고 예측적인 대화형 에이전트 구축의 길을 열어줍니다.</p>
     </div>
 
     <div class="section">

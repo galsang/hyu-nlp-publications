@@ -23,66 +23,105 @@
     <div class="section">
         <h2>One-Line Summary</h2>
         <p>An improved Sentence Rewriting framework for abstractive summarization that introduces summary-level ROUGE optimization through reinforcement learning and a BERT-based extractor, achieving state-of-the-art results on CNN/Daily Mail and New York Times datasets.</p>
+        <figure class="paper-figure">
+            <img src="../images/newsum2019-rewriting/figure1.png" alt="Extractor network architecture">
+            <figcaption><strong>Figure 1.</strong> Overview of the extractor network architecture with BERT and interval segment embeddings.</figcaption>
+        </figure>
     </div>
 
     <div class="section">
         <h2>Background &amp; Motivation</h2>
-        <p>Sentence Rewriting models combine extractive and abstractive summarization: an extractor selects salient sentences, then an abstractor paraphrases them into a summary. However, existing models suffer from a critical mismatch:</p>
+        <p>Abstractive summarization aims to produce concise, natural-language summaries of documents. The <strong>Sentence Rewriting</strong> paradigm (Chen &amp; Bansal, 2018) is a two-stage approach that bridges extractive and abstractive methods: first, an <em>extractor</em> selects the most salient sentences from the source document; then, an <em>abstractor</em> rewrites each extracted sentence into a more concise form. The final summary is the concatenation of these rewritten sentences.</p>
+        <p>While this decomposition is elegant, existing Sentence Rewriting models suffer from two critical limitations:</p>
         <div class="highlight-box">
-            <p><strong>Training-Evaluation Mismatch:</strong> Previous work trains the extractor with sentence-level ROUGE rewards, but the final model is evaluated with summary-level ROUGE scores. Sentences with the highest individual ROUGE scores do not necessarily lead to an optimal summary -- they may overlap or be redundant.</p>
+            <p><strong>Training-Evaluation Mismatch:</strong> The extractor is trained using sentence-level ROUGE rewards -- each sentence is independently matched to a reference sentence and rewarded based on its individual ROUGE score. However, the final model is evaluated using <em>summary-level</em> ROUGE, which compares the full generated summary against the full reference. Greedily selecting sentences with the highest individual scores can produce redundant summaries with overlapping information, leading to suboptimal summary-level performance.</p>
+        </div>
+        <div class="highlight-box">
+            <p><strong>Limited Contextual Understanding:</strong> Prior extractors (e.g., based on temporal convolutional networks) have limited capacity to capture long-range dependencies and rich semantic relationships across sentences, hindering their ability to identify truly salient content in the context of the entire document.</p>
         </div>
     </div>
 
     <div class="section">
         <h2>Proposed Method</h2>
-        <p>The model consists of two neural network modules -- an extractor and an abstractor -- with two key improvements:</p>
+        <p>The proposed model retains the two-module architecture -- an extractor and an abstractor -- but introduces substantial improvements to both components and the training procedure:</p>
         <div class="method-steps">
             <div class="method-step">
                 <div class="step-num">1</div>
-                <div class="step-title">BERT-based Extractor</div>
-                <div class="step-desc">BERT is adapted as the encoder, with [CLS] tokens inserted before each sentence and interval segment embeddings to handle multi-sentence documents. An LSTM pointer network serves as the decoder for sequential sentence selection.</div>
+                <div class="step-title">BERT-based Extractor Encoder</div>
+                <div class="step-desc">BERT is adapted as the document encoder. A [CLS] token is inserted before each sentence to serve as the sentence-level representation. To handle multi-sentence documents that exceed BERT's typical input format, <strong>interval segment embeddings</strong> are introduced: sentences are alternately assigned segment A and segment B embeddings (analogous to BERT's two-segment design), allowing the model to distinguish sentence boundaries while processing the full document. The resulting [CLS] representations capture rich, contextualized sentence semantics.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">2</div>
-                <div class="step-title">Summary-Level RL Training</div>
-                <div class="step-desc">Using the Advantage Actor-Critic method, the extractor is trained to directly optimize summary-level ROUGE-L scores. Reward shaping provides intermediate signals at each extraction step to address training signal sparsity.</div>
+                <div class="step-title">LSTM Pointer Network Decoder</div>
+                <div class="step-desc">An LSTM-based pointer network serves as the extraction decoder. At each time step, it attends over all sentence representations from the BERT encoder and selects one sentence. The LSTM hidden state carries information about previously extracted sentences, enabling the decoder to avoid redundant selections and make contextually informed extraction decisions sequentially.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">3</div>
-                <div class="step-title">Redundancy Control</div>
-                <div class="step-desc">Trigram blocking for the extractor and reranking for the abstractor further reduce redundancy in generated summaries.</div>
+                <div class="step-title">Summary-Level RL Training (A2C)</div>
+                <div class="step-desc">The extractor is trained using the <strong>Advantage Actor-Critic (A2C)</strong> algorithm to directly maximize summary-level ROUGE-L F1 scores. The key insight is that the reward is computed on the <em>full summary</em> (all extracted-then-rewritten sentences concatenated), aligning the training objective with the evaluation metric. To address the sparse reward problem (reward is only available after all sentences are extracted), <strong>reward shaping</strong> provides dense intermediate signals: at each extraction step <em>t</em>, the agent receives an incremental reward equal to the difference in summary-level ROUGE when adding the <em>t</em>-th sentence.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Abstractor with Copy Mechanism</div>
+                <div class="step-desc">The abstractor is a standard sequence-to-sequence model with attention and a copy mechanism (pointer-generator). It is trained independently on (extracted sentence, reference sentence) pairs using maximum likelihood. At inference time, it rewrites each extracted sentence into a more concise abstractive form.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">5</div>
+                <div class="step-title">Redundancy Control: Trigram Blocking &amp; Reranking</div>
+                <div class="step-desc">Two mechanisms reduce redundancy: (1) <strong>Trigram blocking</strong> at the extractor level prevents selecting sentences that share trigrams with already-selected sentences; (2) <strong>Reranking</strong> at the abstractor level generates multiple candidate rewrites via beam search, then selects the candidate that maximizes ROUGE with respect to the other summary sentences while minimizing repetition.</div>
             </div>
         </div>
     </div>
 
     <div class="section">
         <h2>Experimental Results</h2>
-        <p>Evaluated on CNN/Daily Mail, New York Times (NYT50), and DUC-2002 datasets.</p>
+        <p>The model is evaluated on three benchmark datasets: CNN/Daily Mail (non-anonymized version), New York Times (NYT50), and DUC-2002. Results demonstrate consistent improvements from both the BERT-based extractor and summary-level RL training.</p>
 
+        <h3>CNN/Daily Mail</h3>
         <table class="results-table">
             <thead>
                 <tr><th>Model (CNN/Daily Mail)</th><th>ROUGE-1</th><th>ROUGE-2</th><th>ROUGE-L</th></tr>
             </thead>
             <tbody>
                 <tr><td>Sentence Rewrite (Chen & Bansal, 2018)</td><td>40.88</td><td>17.80</td><td>38.54</td></tr>
-                <tr><td>BERTSUM (Liu, 2019)</td><td>43.25</td><td>20.24</td><td>39.63</td></tr>
+                <tr><td>Bottom-Up (Gehrmann et al., 2018)</td><td>41.22</td><td>18.68</td><td>38.34</td></tr>
+                <tr><td>BERTSUM (Liu, 2019) -- extractive</td><td>43.25</td><td>20.24</td><td>39.63</td></tr>
                 <tr><td>BERT-ext + abs (ours)</td><td>40.14</td><td>17.87</td><td>37.83</td></tr>
+                <tr><td>BERT-ext + abs + RL (ours)</td><td>41.58</td><td>18.87</td><td>39.34</td></tr>
                 <tr><td class="highlight-cell">BERT-ext + abs + RL + rerank (ours)</td><td class="highlight-cell">41.90</td><td class="highlight-cell">19.08</td><td class="highlight-cell">39.64</td></tr>
             </tbody>
         </table>
 
+        <h3>NYT50 &amp; DUC-2002</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>Dataset</th><th>ROUGE-1</th><th>ROUGE-2</th><th>ROUGE-L</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>BERT-ext + abs + RL + rerank (ours)</td><td>NYT50</td><td>46.63</td><td>26.76</td><td>43.38</td></tr>
+                <tr><td>BERT-ext + abs + RL + rerank (ours)</td><td>DUC-2002</td><td>43.39</td><td>19.38</td><td>40.14</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Ablation &amp; Analysis</h3>
         <ul class="key-points">
-            <li><strong>New SOTA for Abstractive:</strong> BERT-ext + abs + RL + rerank achieves the best abstractive summarization results on CNN/Daily Mail with R-AVG 33.54</li>
-            <li><strong>Strong Extractor:</strong> The BERT-based extractor alone (BERT-ext) outperforms all previous extractors in the Sentence Rewriting framework (R-1: 42.29, R-2: 19.38, R-L: 38.63)</li>
-            <li><strong>NYT50:</strong> The model achieves R-1: 46.63, R-2: 26.76, R-L: 43.38 on the New York Times dataset</li>
-            <li><strong>DUC-2002 Generalization:</strong> Outperforms baselines with large margins (R-1: 43.39, R-2: 19.38, R-L: 40.14), demonstrating strong out-of-domain generalization</li>
-            <li><strong>Human Evaluation:</strong> Achieves the highest total score (127) in relevance (66) and readability (61) compared to baselines</li>
+            <li><strong>New SOTA for Abstractive:</strong> BERT-ext + abs + RL + rerank achieves the best abstractive summarization results on CNN/Daily Mail (R-AVG 33.54), outperforming the previous Sentence Rewriting baseline by a significant margin.</li>
+            <li><strong>Strong Extractor:</strong> The BERT-based extractor alone (BERT-ext) outperforms all previous extractors within the Sentence Rewriting framework (R-1: 42.29, R-2: 19.38, R-L: 38.63), confirming the value of BERT's pretrained representations and interval segment embeddings for sentence selection.</li>
+            <li><strong>RL Closes the Gap:</strong> Summary-level RL training improves R-1 by +1.44, R-2 by +1.00, and R-L by +1.51 over the non-RL baseline, demonstrating that aligning the training objective with the evaluation metric yields substantial gains.</li>
+            <li><strong>Reranking Adds Refinement:</strong> The reranking step provides further improvements (+0.32 R-1, +0.21 R-2, +0.30 R-L), showing that selecting among multiple abstractor outputs can reduce redundancy and improve overall quality.</li>
+            <li><strong>DUC-2002 Generalization:</strong> The model outperforms baselines with large margins on DUC-2002 (R-1: 43.39, R-2: 19.38, R-L: 40.14), demonstrating strong out-of-domain generalization from CNN/DM training.</li>
+            <li><strong>Human Evaluation:</strong> In a human study, the full model achieves the highest total score (127) across relevance (66) and readability (61), confirming that summary-level optimization produces not only higher ROUGE but also more coherent and informative summaries as judged by human annotators.</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>This work addresses a fundamental problem in extractive-abstractive summarization: the gap between sentence-level training and summary-level evaluation. By combining <strong>BERT's representation power</strong> with <strong>summary-level reinforcement learning</strong>, the approach achieves state-of-the-art results and demonstrates that globally optimizing the entire summary quality is more effective than locally optimizing individual sentences.</p>
+        <p>This work addresses a fundamental problem in extractive-abstractive summarization: the disconnect between <em>how models are trained</em> (sentence-level optimization) and <em>how they are evaluated</em> (summary-level metrics). The key contributions are threefold:</p>
+        <ul class="key-points">
+            <li><strong>Principled Training Alignment:</strong> By using summary-level ROUGE as the RL reward with reward shaping for dense supervision, the extractor learns to select sentence combinations that collectively form the best summary, rather than greedily picking individually high-scoring but potentially redundant sentences.</li>
+            <li><strong>Effective Use of Pretrained Models:</strong> The BERT-based extractor with interval segment embeddings demonstrates that large pretrained language models can be successfully adapted for document-level sentence extraction, providing rich contextual representations that significantly improve selection quality.</li>
+            <li><strong>Practical Framework:</strong> The modular extractor-abstractor design allows each component to be trained and improved independently. The combination of RL training, trigram blocking, and reranking forms a comprehensive approach to reducing redundancy at multiple stages of the pipeline, setting a strong foundation for subsequent work on abstractive summarization.</li>
+        </ul>
     </div>
 
     <div class="section">

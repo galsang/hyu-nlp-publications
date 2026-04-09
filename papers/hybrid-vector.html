@@ -23,7 +23,7 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A two-stage retrieval framework (HEAVEN) that achieves 99.87% of multi-vector accuracy while reducing computation by 99.82% for visually rich document retrieval.</p>
+        <p>HEAVEN is a two-stage hybrid retrieval framework that introduces Visually-Summarized Pages and query token filtering to achieve 99.87% of multi-vector Recall@1 while reducing per-query computation by 99.82%, enabling scalable retrieval over visually rich documents.</p>
     </div>
 
     <figure class="paper-figure">
@@ -33,57 +33,112 @@
 
     <div class="section">
         <h2>Background & Motivation</h2>
-        <p>Visually rich documents (PDFs with tables, charts, layouts) require retrieval methods that understand visual structure. <strong>Single-vector methods</strong> are efficient but inaccurate; <strong>multi-vector methods</strong> are accurate but computationally expensive. HEAVEN bridges this gap by combining the best of both worlds.</p>
+        <p>Visually rich documents&mdash;PDFs containing tables, charts, figures, and complex layouts&mdash;are central to legal discovery, scientific search, and enterprise knowledge management. Traditional text-based retrieval fails on such content because crucial information is embedded in visual elements, not extractable text. Large Vision-Language Models (LVLMs) have enabled a new paradigm of direct image-based page encoding that bypasses OCR entirely, but existing approaches present a stark trade-off:</p>
+        <ul>
+            <li><strong>Single-vector retrieval</strong> (e.g., DSE, GME) encodes each page as one embedding and uses efficient dot-product similarity, requiring only O(d|P|) operations. However, it produces coarse representations that miss fine-grained visual details.</li>
+            <li><strong>Multi-vector retrieval</strong> (e.g., ColQwen2.5, ColPali) preserves token/patch-level embeddings and computes MaxSim interactions for fine-grained matching. This achieves high accuracy but requires O(d&middot;n_q&middot;&Sigma;n_P) operations&mdash;orders of magnitude more expensive.</li>
+        </ul>
+        <p>A key observation motivates HEAVEN: the performance gap between the two paradigms shrinks dramatically when retrieving larger candidate sets. On ViMDoc, the gap is 22.5% at Recall@1 but narrows to only 0.63% at Recall@200. This suggests that single-vector methods can reliably identify a broad set of candidates, which a targeted multi-vector reranker can then refine.</p>
         <div class="highlight-box">
-            <p><strong>Core Challenge:</strong> How can we achieve multi-vector-level accuracy at single-vector-level cost for retrieving visually rich documents at production scale?</p>
+            <p><strong>Core Insight:</strong> Single-vector retrieval already captures most relevant pages at moderate recall depths. By combining efficient single-vector candidate generation with focused multi-vector reranking on only key query tokens, we can achieve near-optimal accuracy at a fraction of the cost.</p>
         </div>
     </div>
 
     <div class="section">
         <h2>Proposed Method: HEAVEN Framework</h2>
-        <p>HEAVEN is a two-stage hybrid retrieval framework that combines single-vector efficiency for initial candidate retrieval with multi-vector precision for reranking, while introducing novel techniques to minimize computation at each stage.</p>
+        <p>HEAVEN (<strong>H</strong>ybrid-vector retrieval for <strong>E</strong>fficient and <strong>A</strong>ccurate <strong>V</strong>isual multi-docum<strong>EN</strong>t) is a two-stage framework with two key innovations: Visually-Summarized Pages (VS-Pages) that reduce index size while preserving visual information, and POS-based query token filtering that eliminates redundant multi-vector computation.</p>
 
         <figure class="paper-figure">
             <img src="https://arxiv.org/html/2510.22215v1/x2.png" alt="HEAVEN pipeline overview">
-            <figcaption><strong>Figure 2.</strong> Overview of the HEAVEN pipeline: fast candidate retrieval followed by precise reranking with filtered query tokens.</figcaption>
+            <figcaption><strong>Figure 2.</strong> Overview of the HEAVEN pipeline: Stage 1 retrieves candidates via single-vector matching over VS-Pages, then Stage 2 reranks using multi-vector scoring with filtered query tokens.</figcaption>
         </figure>
 
         <div class="method-steps">
             <div class="method-step">
                 <div class="step-num">1</div>
-                <div class="step-title">Fast Candidate Retrieval</div>
-                <div class="step-desc">Single-vector search over Visually-Summarized Pages (VS-Pages) that assemble representative visual layouts for efficient initial filtering</div>
+                <div class="step-title">Stage 1: Candidate Retrieval via VS-Pages</div>
+                <div class="step-desc">
+                    <strong>VS-Page Construction:</strong> DocLayout-YOLO extracts title regions from each document page. Title layouts are grouped (reduction factor r = min(15, |D_k|)) and assembled vertically into composite VS-Pages, each summarizing the visual content of multiple source pages. This reduces the index size while preserving informative visual elements.<br><br>
+                    <strong>Candidate Scoring:</strong> Single-vector similarity S_SV(q, VS) = &langle;E_q, E_VS&rangle; is computed over all VS-Pages. The top p1 &times; 100% candidates (default p1 = 0.5) are retained, expanded to their constituent pages, and refined using a combined score: S(q, P) = &alpha; &middot; S_SV(q, &Gamma;^{-1}(P)) + (1-&alpha;) &middot; S_SV(q, P), with &alpha; = 0.1. The top K = 200 pages proceed to Stage 2.
+                </div>
             </div>
             <div class="method-step">
                 <div class="step-num">2</div>
-                <div class="step-title">Precise Reranking</div>
-                <div class="step-desc">Multi-vector reranking with query tokens filtered by linguistic importance to reduce redundant computation</div>
+                <div class="step-title">Stage 2: Multi-Vector Reranking with Token Filtering</div>
+                <div class="step-desc">
+                    <strong>Key Token Filtering:</strong> POS tagging (via NLTK) identifies linguistically important tokens&mdash;nouns and named entities&mdash;which constitute approximately 30% of query tokens. Only these key tokens participate in the expensive MaxSim computation, reducing FLOPs by ~70%.<br><br>
+                    <strong>Reranking:</strong> Filtered multi-vector scoring S_MV(q_key, P) = &Sigma;_i max_j &langle;E_{q_key}^{(i)}, E_P^{(j)}&rangle; reranks the K candidates. A final refinement step combines scores: S(q, P) = &beta; &middot; S_SV(q, P) + (1-&beta;) &middot; S_MV(q, P), with &beta; = 0.3 by default, using the top p2 = 25% candidates scored with all query tokens for the final output.
+                </div>
             </div>
         </div>
     </div>
 
     <div class="section">
-        <h2>ViMDOC Benchmark</h2>
-        <p>We introduce <strong>ViMDOC</strong>, the first benchmark for visually rich, multi-document, long-document retrieval, addressing a critical gap in existing evaluation resources.</p>
+        <h2>ViMDoc Benchmark</h2>
+        <p>The paper introduces <strong>ViMDoc</strong>, the first benchmark designed for visually rich, multi-document, long-document retrieval. Existing VDR benchmarks either restrict evaluation to single documents or use short documents, failing to capture the realistic challenge of retrieving across large document collections.</p>
         <ul class="key-points">
-            <li><strong>76,347 pages</strong> across 1,379 documents</li>
-            <li><strong>10,904 queries</strong> with diverse question types</li>
-            <li><strong>55.4 pages</strong> average document length</li>
+            <li><strong>76,347 pages</strong> across 1,379 documents (sourced from VisR-Bench, REAL-MM-RAG, MMLongBench-Doc, MMDocIR, LongDocURL)</li>
+            <li><strong>10,904 queries</strong> after two-stage filtering that removed 45.8% of context-dependent or position-dependent queries</li>
+            <li><strong>55.4 pages</strong> average document length&mdash;significantly longer than existing benchmarks</li>
+            <li><strong>677 cross-page queries</strong> (6.2%) requiring information from multiple pages simultaneously</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>Experimental Results</h2>
+        <p>HEAVEN uses DSE for Stage 1 single-vector retrieval and ColQwen2.5 for Stage 2 multi-vector reranking. Results are evaluated on four benchmarks using page-level Recall@{1,3} and per-query FLOPs.</p>
+
+        <h3>Main Results (vs. ColQwen2.5 multi-vector baseline)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Dataset</th><th>Method</th><th>Recall@1</th><th>Recall@3</th><th>FLOPs (B)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td rowspan="3">ViMDoc</td><td>DSE (single-vec)</td><td>58.03</td><td>77.08</td><td>0.235</td></tr>
+                <tr><td>ColQwen2.5 (multi-vec)</td><td>71.13</td><td>86.39</td><td>407.320</td></tr>
+                <tr><td><strong>HEAVEN</strong></td><td><strong>71.05</strong></td><td><strong>86.41</strong></td><td><strong>0.486</strong></td></tr>
+                <tr><td rowspan="3">OpenDocVQA</td><td>DSE (single-vec)</td><td>59.38</td><td>75.82</td><td>0.247</td></tr>
+                <tr><td>ColQwen2.5 (multi-vec)</td><td>72.63</td><td>86.38</td><td>482.049</td></tr>
+                <tr><td><strong>HEAVEN</strong></td><td><strong>71.56</strong></td><td><strong>84.53</strong></td><td><strong>0.541</strong></td></tr>
+                <tr><td rowspan="3">ViDoSeek</td><td>DSE (single-vec)</td><td>69.53</td><td>87.13</td><td>0.017</td></tr>
+                <tr><td>ColQwen2.5 (multi-vec)</td><td>75.57</td><td>91.94</td><td>41.514</td></tr>
+                <tr><td><strong>HEAVEN</strong></td><td><strong>75.04</strong></td><td><strong>91.33</strong></td><td><strong>0.623</strong></td></tr>
+                <tr><td rowspan="3">M3DocVQA</td><td>DSE (single-vec)</td><td>55.14</td><td>71.30</td><td>0.126</td></tr>
+                <tr><td>ColQwen2.5 (multi-vec)</td><td>57.99</td><td>78.73</td><td>288.507</td></tr>
+                <tr><td><strong>HEAVEN</strong></td><td><strong>59.31</strong></td><td><strong>78.66</strong></td><td><strong>0.545</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>Efficiency Analysis (ViMDoc)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Method</th><th>Latency (sec/query)</th><th>FLOPs (B)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>DSE (single-vec)</td><td>0.115</td><td>0.235</td></tr>
+                <tr><td>ColQwen2.5 (multi-vec)</td><td>2006.361</td><td>407.320</td></tr>
+                <tr><td><strong>HEAVEN</strong></td><td><strong>2.412</strong></td><td><strong>0.486</strong></td></tr>
+            </tbody>
+        </table>
+
         <ul class="key-points">
-            <li><strong>99.87% Recall@1 preservation</strong> compared to full multi-vector retrieval</li>
-            <li><strong>99.82% FLOPs reduction</strong> per query</li>
-            <li>Consistent performance across multiple benchmarks and document types</li>
+            <li><strong>99.87% average Recall@1</strong> of ColQwen2.5 across all four benchmarks, with 99.82% FLOPs reduction</li>
+            <li>On M3DocVQA, HEAVEN <strong>surpasses</strong> ColQwen2.5 with 102.27% relative Recall@1, demonstrating that the hybrid approach can even outperform full multi-vector retrieval</li>
+            <li>HEAVEN is <strong>832x faster</strong> than ColQwen2.5 per query (2.4 sec vs. 2006 sec) while matching accuracy</li>
+            <li>Stage 1 alone (VS-Pages only) already matches or exceeds DSE accuracy while reducing FLOPs by 40&ndash;80% through index compression</li>
+        </ul>
+
+        <h3>Ablation Study Highlights</h3>
+        <ul class="key-points">
+            <li>Removing VS-Pages increases Stage 1 FLOPs by 75% (0.235B vs. 0.134B on ViMDoc) with only marginal recall improvement (+0.5%)</li>
+            <li>Removing query token filtering in Stage 2 nearly doubles FLOPs (0.871B vs. 0.486B) with negligible accuracy change (+0.03% Recall@1)</li>
+            <li>HEAVEN outperforms four ColQwen2.5-based efficiency variants&mdash;document patch pooling, document patch pruning, query token pooling, and query token pruning&mdash;achieving the best efficiency-accuracy trade-off across all operating points</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>As enterprises deal with millions of PDF documents, efficient yet accurate retrieval is critical. HEAVEN makes production-scale deployment practical by <strong>dramatically reducing computational cost while maintaining quality</strong>, enabling visually-aware document search at scale without sacrificing the accuracy that multi-vector methods provide.</p>
+        <p>As enterprises manage millions of visually rich PDF documents for legal discovery, scientific search, and knowledge management, the computational cost of multi-vector retrieval (over 2,000 seconds per query) makes it impractical at production scale. HEAVEN solves this by delivering <strong>equivalent accuracy in just 2.4 seconds per query</strong>&mdash;an 832x speedup. The framework is modular: its VS-Page construction and query token filtering techniques are model-agnostic and can be applied on top of any single-vector/multi-vector model pair. Additionally, the introduced ViMDoc benchmark fills a critical gap by enabling realistic evaluation of retrieval systems across multiple long, visually complex documents&mdash;a setting that prior benchmarks did not address.</p>
     </div>
 
     <div class="section">

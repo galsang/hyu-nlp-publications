@@ -22,56 +22,95 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A zero-shot emphasis selection method that exploits the self-attention distributions of pre-trained language models to identify words deserving emphasis in visual media text, without any task-specific training.</p>
+        <p>A zero-shot emphasis selection method that exploits self-attention distributions of pre-trained language models (PLMs) to identify words deserving emphasis in visual media text, achieving a Ranking Score of 0.6898 on the SemEval-2020 Task 10 validation set without any task-specific training.</p>
+        <figure class="paper-figure">
+            <img src="../images/semeval2020-emphasis/figure1.png" alt="Attention map for emphasis selection">
+            <figcaption><strong>Figure 1.</strong> Sample attention map of the sentence "In honor of the brave", where each row represents the attention distribution of the corresponding word over other words.</figcaption>
+        </figure>
     </div>
 
     <div class="section">
         <h2>Background &amp; Motivation</h2>
-        <p>In visual communication such as social media posts, posters, and advertisements, text emphasis is crucial for conveying the author's intent. An automatic system that recommends which words to emphasize could accelerate the creation of visual media content.</p>
+        <p>In visual communication such as social media posts, posters, flyers, and advertisements, text emphasis is crucial for conveying the author's intent and facilitating comprehension. When designing visual media, content creators must decide which words to make bold, italic, larger, or differently colored &mdash; choices that dramatically affect how the message is perceived by the audience. An automatic system that recommends which words to emphasize could significantly accelerate the creation of visual media content and help non-expert designers produce more effective materials.</p>
+        <p>SemEval-2020 Task 10 formalizes this as the <strong>emphasis selection</strong> problem: given short English sentences from Adobe Spark (e.g., "In honor of the brave"), predict the correct ranking of words based on emphasis frequency annotations from nine human annotators. Each annotator independently selects up to four words they would emphasize in a visual context, and the emphasis frequency of a word is defined as the proportion of annotators who selected it. The task thus requires modeling a fundamentally subjective phenomenon &mdash; what humans collectively consider "important" in visual text.</p>
         <div class="highlight-box">
-            <p><strong>Core Insight:</strong> Prior research has shown that PLMs like BERT contain rich linguistic knowledge in their attention patterns. This paper investigates whether some attention heads in PLMs are naturally <strong>specialized for emphasis selection</strong>, making it possible to identify important words without any supervised training.</p>
+            <p><strong>Core Insight:</strong> Recent studies have shown that Transformer-based PLMs such as BERT encode rich linguistic knowledge in their self-attention distributions &mdash; for example, certain attention heads can parse dependency trees (Clark et al., 2019) or induce constituency structures (Kim et al., 2020). This paper hypothesizes that <strong>some attention heads are naturally specialized for emphasis selection</strong>, making it possible to identify important words in a fully zero-shot manner, without any supervised training or gold-standard annotations. This is particularly compelling because emphasis selection is inherently subjective: rather than learning from potentially noisy labels, the method leverages the distributional semantics already captured during pre-training.</p>
         </div>
+        <p>Unlike prior approaches to keyword extraction or keyphrase generation &mdash; which typically rely on statistical measures (TF-IDF), graph-based algorithms (TextRank), or supervised neural models &mdash; this work takes a fundamentally different path by treating attention weights as a direct proxy for word importance. The key question driving this research is: <em>Does the way a PLM internally "attends" to words during language modeling correlate with human judgments of emphasis?</em></p>
     </div>
 
     <div class="section">
         <h2>Proposed Method: Attention-Based Emphasis Selection</h2>
-        <p>The method derives emphasis frequency (e_freq) for each word from PLM attention maps, using three strategies:</p>
+        <p>The method derives emphasis frequency (e_freq) for each word from PLM attention maps. Given a sentence fed to a PLM, an attention map g<sub>(i,j)</sub> is extracted for the j-th attention head on the i-th layer. Since most PLMs use subword tokenization (e.g., WordPiece for BERT), the subword-level attention maps must be converted to word-level by averaging attention weights of subword tokens belonging to the same word. Three strategies are then proposed for converting attention maps into emphasis scores:</p>
         <div class="method-steps">
             <div class="method-step">
                 <div class="step-num">1</div>
                 <div class="step-title">Words2Target</div>
-                <div class="step-desc">Computes emphasis frequency as the average attention weight other words pay to the target word, measuring how influential the word is in building other words' representations</div>
+                <div class="step-desc">Computes emphasis frequency as the average attention weight all words (including [CLS] and [SEP]) pay to the target word &mdash; i.e., the column average of the attention map. This measures how influential the target word is when constructing other words' hidden representations for the next layer. Intuitively, a word that many other words attend to strongly is likely semantically central to the sentence. This is the most broadly applicable method, working with both encoder (BERT) and decoder (GPT-2) models.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">2</div>
                 <div class="step-title">CLS2Target</div>
-                <div class="step-desc">Uses the attention weight from the [CLS] token to the target word, measuring how much the word contributes to the sentence representation</div>
+                <div class="step-desc">Uses the attention weight from the [CLS] token to the target word. Since [CLS] is specifically designed to encode the sentence-level representation during pre-training (via next sentence prediction in BERT), its attention distribution can be interpreted as a relevance weighting of words for sentence-level understanding. Not applicable to GPT-2, which has no [CLS] token.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">3</div>
                 <div class="step-title">SEP2Target</div>
-                <div class="step-desc">Uses the attention weight from the [SEP] token to the target word as an alternative sentence-level signal</div>
+                <div class="step-desc">Uses the attention weight from the [SEP] token to the target word as an alternative sentence-level signal for word importance. Clark et al. (2019) observed that [SEP] tokens often serve as a "no-op" attention target, but this method tests whether the reverse direction &mdash; [SEP] attending to content words &mdash; carries meaningful importance signals. Not applicable to GPT-2.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Exhaustive Configuration Search</div>
+                <div class="step-desc">For each PLM, all possible (layer, head, method) configurations are exhaustively evaluated &mdash; e.g., 12 &times; 12 &times; 3 = 432 for BERT-base, 24 &times; 16 &times; 3 = 1,152 for BERT-large. The configuration with the highest Ranking Score on the validation set is selected. This brute-force search is computationally feasible because inference on the short sentences in the dataset is fast, and no gradient computation or parameter updates are needed.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">5</div>
+                <div class="step-title">Top-K Ensemble</div>
+                <div class="step-desc">The final prediction is generated by ensembling the top-5 best-performing (model, layer, head, method) configurations. The e_freq predictions from each configuration are averaged to produce a smoothed emphasis ranking. This simple averaging strategy provides complementary signals from different models and attention heads, reducing variance and improving overall accuracy.</div>
             </div>
         </div>
-        <p>For each PLM, the best (layer, head, method) configuration is selected based on the Ranking Score metric on the validation set.</p>
+        <p>A critical implementation detail is the subword aggregation step: when a word is split into multiple subword tokens (e.g., "emphasize" &rarr; "em", "##pha", "##size"), the attention weights of all subword tokens are averaged to produce a single word-level score. This ensures that the method operates at the word level, matching the granularity of the emphasis annotations.</p>
     </div>
 
     <div class="section">
         <h2>Experimental Results</h2>
-        <p>Evaluated on the SemEval-2020 Task 10 dataset consisting of short English sentences from flyers, posters, and advertisements, with emphasis annotations from nine annotators.</p>
+        <p>Evaluated on the SemEval-2020 Task 10 dataset consisting of short English sentences from Adobe Spark (flyers, posters, ads, motivational memes), with emphasis annotations from nine annotators. The dataset contains 3,000 instances split into training (70%), validation (10%), and test (20%) sets. Performance is measured by Match<sub>m</sub> (overlap of top-m emphasized words between prediction and gold standard) and the Ranking Score (average of Match<sub>1</sub> through Match<sub>4</sub>). Six PLMs were evaluated: BERT-base-uncased, BERT-large-uncased, DistilBERT-base-uncased, DistilBERT-base-multilingual, RoBERTa-base, XLNet-base, and GPT-2.</p>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>Method</th><th>Match<sub>1</sub></th><th>Match<sub>2</sub></th><th>Match<sub>3</sub></th><th>Match<sub>4</sub></th><th>R (dev)</th><th>R (test)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Random</td><td>-</td><td>0.173</td><td>0.309</td><td>0.375</td><td>0.452</td><td>0.327</td><td>0.318</td></tr>
+                <tr><td>TF-IDF</td><td>-</td><td>0.306</td><td>0.462</td><td>0.615</td><td>0.676</td><td>0.515</td><td>0.518</td></tr>
+                <tr><td>BERT-base-uncased</td><td>Word2Target</td><td>0.431</td><td>0.625</td><td>0.725</td><td>0.765</td><td>0.637</td><td>0.625</td></tr>
+                <tr><td>BERT-large-uncased</td><td>Word2Target</td><td>0.449</td><td>0.623</td><td>0.736</td><td>0.760</td><td><strong>0.642</strong></td><td>0.629</td></tr>
+                <tr><td>DistilBERT-base-uncased</td><td>Word2Target</td><td>0.454</td><td>0.619</td><td>0.726</td><td>0.768</td><td><strong>0.642</strong></td><td>0.629</td></tr>
+                <tr><td>DistilBERT-base-multi.</td><td>Word2Target</td><td>0.436</td><td>0.626</td><td>0.714</td><td>0.761</td><td>0.634</td><td>0.620</td></tr>
+                <tr><td>RoBERTa-base</td><td>CLS2Target</td><td>0.441</td><td>0.589</td><td>0.688</td><td>0.715</td><td>0.608</td><td>-</td></tr>
+                <tr><td>GPT-2</td><td>Word2Target</td><td>0.225</td><td>0.435</td><td>0.569</td><td>0.625</td><td>0.463</td><td>-</td></tr>
+                <tr style="font-weight:bold;"><td>Ensemble (Top-5)</td><td>-</td><td>0.485</td><td>0.679</td><td>0.780</td><td>0.815</td><td>0.690</td><td>0.666</td></tr>
+                <tr style="color:#888;"><td>Supervised Baseline</td><td>-</td><td>0.592</td><td>0.752</td><td>0.804</td><td>0.822</td><td>0.742</td><td>0.750</td></tr>
+            </tbody>
+        </table>
 
         <ul class="key-points">
-            <li><strong>Best Single Model:</strong> BERT-large-uncased achieves a Ranking Score of 0.6420 on the validation set, outperforming the TF-IDF baseline (0.5145)</li>
-            <li><strong>Ensemble Performance:</strong> Ensembling the top-5 PLM configurations achieves 0.6898 Ranking Score on validation and 0.6656 on the test set</li>
-            <li><strong>Zero-shot Advantage:</strong> The method operates in a fully zero-shot manner without leveraging any gold-standard annotations, implying universal applicability in low-resource settings</li>
-            <li><strong>Specialized Attention Heads:</strong> Analysis reveals a clear gap between top-performing attention heads and others, confirming that specific heads are specialized for emphasis selection</li>
-            <li><strong>DistilBERT Efficiency:</strong> DistilBERT models achieve high performance despite their small size, suggesting knowledge distillation preserves emphasis-related attention patterns</li>
+            <li><strong>Best Single Models:</strong> BERT-large-uncased and DistilBERT-base-uncased both achieve a Ranking Score of 0.642 on the validation set, substantially outperforming the TF-IDF baseline (0.515) by a margin of +0.127. All PLM-based methods except GPT-2 outperform TF-IDF, confirming that attention-based emphasis scores carry richer information than term frequency statistics.</li>
+            <li><strong>Ensemble Performance:</strong> Ensembling the top-5 PLM configurations by averaging their e_freq predictions achieves 0.690 on validation and 0.666 on the test set, demonstrating that different attention heads provide complementary emphasis signals.</li>
+            <li><strong>Zero-shot vs. Supervised Gap:</strong> The zero-shot ensemble reaches 89.5% of the supervised baseline's performance (0.690 vs. 0.742 on dev), a remarkably small gap given that it uses no task-specific training data at all. This suggests PLMs already encode most of the knowledge needed for emphasis selection.</li>
+            <li><strong>Words2Target Dominance:</strong> The Words2Target method produces the best configuration for most models (BERT-base, BERT-large, DistilBERT, GPT-2), indicating that aggregated attention from all tokens is a more robust importance signal than attention from a single special token.</li>
+            <li><strong>Specialized Attention Heads:</strong> Layer-wise analysis reveals a clear gap between the top-performing attention head and the rest (e.g., 0.0445 gap in BERT-large-uncased), confirming that specific heads are specialized for emphasis selection. This "specialization gap" varies across models: BERT-large shows the largest gap, suggesting its additional capacity allows for more differentiated head roles.</li>
+            <li><strong>DistilBERT Efficiency:</strong> DistilBERT matches BERT-large despite having only 6 layers vs. 24 and roughly 2.5&times; fewer parameters, suggesting knowledge distillation preserves emphasis-related attention patterns. The authors hypothesize that DistilBERT's compressed heads may function as implicit ensembles of the parent model's heads, concentrating multiple attention behaviors into fewer heads.</li>
+            <li><strong>Architecture Matters:</strong> GPT-2 performs poorly (0.463) due to its causal (left-to-right) attention mask, which prevents later words from attending to earlier ones, biasing attention toward the first word. XLNet also underperforms because its permutation-based attention tends to focus on punctuation marks rather than content words. These results underscore that bidirectional attention is critical for emphasis selection.</li>
+            <li><strong>Multilingual Transfer:</strong> DistilBERT-base-multilingual achieves 0.634 on the English emphasis task despite being trained on 104 languages, only slightly below the English-only DistilBERT (0.642). This suggests that emphasis-related attention patterns may be partially language-universal.</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>This work provides evidence that pre-trained language models <strong>implicitly learn word importance</strong> through their attention mechanisms. The practical zero-shot approach can assist in automated visual media creation, and the analysis of specialized attention heads contributes to our understanding of what linguistic knowledge PLMs encode during pre-training.</p>
+        <p>This work provides concrete evidence that pre-trained language models <strong>implicitly learn word importance</strong> through their self-attention mechanisms during pre-training. The fully zero-shot approach eliminates the need for expensive, subjective emphasis annotations, making it practical for automated visual media creation tools &mdash; a significant advantage in real-world applications where emphasis judgments are inherently subjective and costly to collect at scale.</p>
+        <p>From a scientific perspective, the discovery of specialized attention heads deepens our understanding of what linguistic knowledge PLMs encode. The finding that certain heads are naturally "tuned" for emphasis selection &mdash; without ever being explicitly trained on emphasis data &mdash; raises intriguing questions about the emergence of pragmatic knowledge during language model pre-training. It suggests that the distributional patterns in large text corpora encode not just syntactic and semantic information, but also aspects of communicative importance.</p>
+        <p>Practically, the method's simplicity (requiring only a single forward pass and no gradient computation) makes it suitable for real-time deployment in content creation tools. The ensemble approach offers a principled way to improve accuracy when slightly higher latency is acceptable. This work also opens the door to probing PLMs for other word-level importance phenomena &mdash; such as prosodic stress prediction, summarization salience estimation, or information structure analysis &mdash; using the same attention-based framework.</p>
     </div>
 
     <div class="section">

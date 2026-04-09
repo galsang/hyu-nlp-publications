@@ -22,31 +22,122 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A novel reasoning feedback-based learning (RFL) approach that leverages external model feedback to progressively improve a language model's ability to infer conversational context.</p>
+        <p>A novel Reasoning Feedback-based Learning (RFL) framework that harnesses detailed reasoning feedback from an external model to progressively refine training data, achieving <strong>95.04% accuracy</strong> on conversational context inference &mdash; a 7.93%p gain over the baseline and 1.32%p over standard fine-tuning.</p>
     </div>
+
     <div class="section">
-        <h2>Background</h2>
-        <p>Understanding conversational context &mdash; inferring implicit information, speaker intentions, and situational dynamics from dialogue &mdash; is a fundamental challenge in dialogue systems. While large language models have improved dialogue understanding, they still struggle with complex inference cases that require multi-step reasoning over conversation history. Standard fine-tuning approaches often plateau on difficult examples where surface-level pattern matching fails, leaving a significant portion of challenging conversational inferences unresolved.</p>
+        <h2>Background & Motivation</h2>
+        <p>Conversational context inference &mdash; the task of understanding implicit information, speaker intentions, and situational dynamics from dialogue &mdash; is a fundamental challenge in building robust dialogue systems. While large language models (LLMs) have advanced dialogue understanding, they still falter on complex cases that require <strong>multi-step reasoning</strong> over conversation history.</p>
+        <div class="highlight-box">
+            <p><strong>Key Challenges with Existing Approaches:</strong></p>
+            <ul>
+                <li><strong>Performance plateau on hard examples:</strong> Standard fine-tuning methods improve overall accuracy but stall on difficult inference cases where surface-level pattern matching is insufficient.</li>
+                <li><strong>Limited learning signal:</strong> Multiple-choice question (MCQ) fine-tuning teaches the model <em>what</em> the correct answer is, but not <em>why</em> &mdash; the reasoning path remains opaque.</li>
+                <li><strong>No targeted error correction:</strong> Conventional training treats all examples equally rather than concentrating effort on the most challenging instances where the model repeatedly fails.</li>
+            </ul>
+        </div>
+        <p>These limitations motivate <strong>RFL</strong>: a framework that supplements standard training with structured reasoning feedback from a stronger external model, explicitly teaching the target model <em>why</em> its incorrect predictions are wrong and guiding it toward the correct reasoning path.</p>
     </div>
+
     <div class="section">
-        <h2>Method</h2>
+        <h2>Proposed Method: Reasoning Feedback-Based Learning (RFL)</h2>
+        <p>RFL is a three-stage iterative framework that leverages an external, more capable model to generate detailed reasoning feedback. This feedback is used to progressively refine training data so the target model can overcome its most persistent errors.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Initial Fine-Tuning & Error Collection</div>
+                <div class="step-desc">The target model is first fine-tuned on the conversational context inference task using standard MCQ training. After training, it is evaluated on the training set to identify <strong>incorrectly predicted instances</strong> &mdash; the hard cases where the model fails despite standard supervision.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Reasoning Feedback Generation</div>
+                <div class="step-desc">An external, more powerful model receives each incorrectly predicted instance along with the target model's wrong answer. It generates <strong>detailed reasoning feedback</strong> explaining: (a) why the chosen answer is incorrect, (b) what the correct reasoning chain should be, and (c) the correct answer with justification. This transforms bare labels into rich, explanatory training signal.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Progressive Data Refinement & Re-Training</div>
+                <div class="step-desc">The reasoning feedback is incorporated into the training data, replacing or augmenting the original instances for the hard cases. The target model is then re-trained on this <strong>progressively refined dataset</strong>, concentrating learning effort on the most challenging examples. This cycle can be repeated to achieve iterative improvement.</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <p><strong>How Reasoning Feedback Differs from Standard Labels:</strong></p>
+            <p>In standard MCQ fine-tuning, the training signal is simply the correct answer label (e.g., "Answer: B"). RFL replaces this with a structured reasoning trace that includes three components:</p>
+            <ul>
+                <li><strong>Error diagnosis:</strong> An explicit explanation of why the target model's predicted answer is wrong, pinpointing the faulty reasoning step.</li>
+                <li><strong>Correct reasoning chain:</strong> A step-by-step reasoning path that connects dialogue context clues to the correct answer, making the implicit inference process explicit.</li>
+                <li><strong>Justified answer:</strong> The correct answer accompanied by a natural language justification grounded in the conversation, reinforcing the causal link between evidence and conclusion.</li>
+            </ul>
+            <p>This rich signal transforms each error into a <strong>targeted learning opportunity</strong>, teaching the model not just to memorize answers but to internalize the reasoning patterns behind them.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Setup</h2>
+        <p>RFL is evaluated on the <strong>conversational context inference</strong> task, which frames dialogue understanding as a multiple-choice problem: given a conversation history, the model must select the correct inference about implicit information, speaker intent, or situational context from a set of candidates.</p>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>Component</th><th>Details</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Task</strong></td><td>Conversational Context Inference (MCQ format)</td></tr>
+                <tr><td><strong>Target Model</strong></td><td>LLM fine-tuned on dialogue inference data</td></tr>
+                <tr><td><strong>External Feedback Model</strong></td><td>Larger, more capable LLM used to generate reasoning feedback</td></tr>
+                <tr><td><strong>Metric</strong></td><td>Accuracy (%)</td></tr>
+                <tr><td><strong>Training Strategy</strong></td><td>Iterative: fine-tune &rarr; collect errors &rarr; generate feedback &rarr; retrain</td></tr>
+            </tbody>
+        </table>
+
+        <p>The key design choice is the <strong>progressive refinement loop</strong>: after each training round, only the instances the model still gets wrong are sent to the external model for feedback, ensuring that computational resources are concentrated where they matter most.</p>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+
+        <h3>Main Results</h3>
+        <p>RFL is compared against a baseline model (without fine-tuning) and standard MCQ fine-tuning (without reasoning feedback).</p>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>Method</th><th>Accuracy (%)</th><th>Improvement over Baseline</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Baseline</td><td>87.11</td><td>&mdash;</td></tr>
+                <tr><td>MCQ Fine-Tuning</td><td>93.72</td><td>+6.61%p</td></tr>
+                <tr><td class="highlight-cell"><strong>RFL (Proposed)</strong></td><td class="highlight-cell"><strong>95.04</strong></td><td class="highlight-cell"><strong>+7.93%p</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>Where Does the Gain Come From?</h3>
+        <div class="highlight-box">
+            <p><strong>Decomposing the RFL Improvement:</strong></p>
+            <ul>
+                <li><strong>Standard fine-tuning contribution (+6.61%p):</strong> MCQ-based training captures the majority of learnable patterns, lifting accuracy from 87.11% to 93.72%. This addresses the "easy" and "medium" difficulty examples where pattern matching suffices.</li>
+                <li><strong>Reasoning feedback contribution (+1.32%p):</strong> The additional gain from 93.72% to 95.04% comes entirely from hard cases that standard fine-tuning fails to solve. Though smaller in absolute terms, this gain is especially significant because it targets the most challenging tail of the distribution &mdash; cases that resist conventional training.</li>
+            </ul>
+        </div>
+
+        <h3>Analysis: Impact on Error Categories</h3>
         <ul class="key-points">
-            <li><strong>Reasoning Feedback-Based Learning (RFL):</strong> Proposes a learning framework where an external, more capable model generates detailed reasoning feedback on the target model's incorrect predictions, providing explanations of why certain inferences are wrong and what the correct reasoning path should be.</li>
-            <li><strong>Progressive data refinement:</strong> Uses the reasoning feedback to iteratively improve training data quality, focusing on cases where the model previously failed, thereby concentrating learning effort on the most challenging examples.</li>
-            <li><strong>Feedback-guided fine-tuning:</strong> Incorporates the structured reasoning feedback into the training process, enabling the model to learn not just correct answers but also the reasoning patterns behind them.</li>
+            <li><strong>7.93%p over baseline:</strong> RFL achieves 95.04% accuracy, substantially outperforming the baseline model by nearly 8 percentage points.</li>
+            <li><strong>1.32%p over MCQ fine-tuning:</strong> Beyond standard fine-tuning, the additional reasoning feedback provides a meaningful further improvement, demonstrating the value of teaching models <em>why</em> answers are correct, not just <em>what</em> is correct.</li>
+            <li><strong>Effective on hard cases:</strong> The largest gains come from previously intractable examples where standard training repeatedly failed &mdash; detailed external feedback successfully addresses these challenging inference instances.</li>
+            <li><strong>Progressive refinement works:</strong> By iteratively focusing on error cases and enriching the training signal, RFL breaks through the performance ceiling that conventional methods hit on difficult examples.</li>
+            <li><strong>Diminishing error pool:</strong> Each refinement iteration reduces the number of error instances available for feedback generation, indicating genuine learning rather than overfitting &mdash; the model progressively internalizes the reasoning patterns taught by the external model.</li>
         </ul>
     </div>
+
     <div class="section">
-        <h2>Results</h2>
-        <ul class="key-points">
-            <li>The RFL approach achieves 95.04% accuracy on the conversational context inference task, surpassing the baseline by 7.93 percentage points.</li>
-            <li>RFL outperforms standard multiple-choice question (MCQ) fine-tuning by 1.32 percentage points, demonstrating the added value of reasoning feedback over conventional training.</li>
-            <li>Detailed feedback from more powerful external models plays a crucial role in overcoming the most challenging inference cases that standard methods fail to resolve.</li>
+        <h2>Why It Matters</h2>
+        <p>This work demonstrates that structured reasoning feedback from external models can serve as a powerful training signal for improving dialogue understanding. The contributions extend beyond the specific task:</p>
+        <ul>
+            <li><strong>Breaking the fine-tuning plateau:</strong> RFL provides a principled method to move past the performance ceiling that standard fine-tuning hits on hard examples, by explicitly teaching reasoning rather than just answers.</li>
+            <li><strong>General framework:</strong> The progressive refinement strategy &mdash; identify errors, generate reasoning feedback, retrain &mdash; is task-agnostic and applicable to any NLP task where reasoning quality matters, including commonsense reasoning, reading comprehension, and relation extraction.</li>
+            <li><strong>Efficient use of stronger models:</strong> Rather than deploying a large model at inference time, RFL uses it only during training to generate feedback, keeping inference costs low while capturing the reasoning capabilities of stronger models in a smaller target model.</li>
+            <li><strong>Knowledge distillation through reasoning:</strong> Unlike traditional knowledge distillation which transfers soft probability distributions, RFL distills <em>reasoning processes</em> from a stronger teacher to a weaker student, offering a more interpretable and targeted form of knowledge transfer.</li>
         </ul>
-    </div>
-    <div class="section">
-        <h2>Significance</h2>
-        <p>This work introduces a practical methodology for improving dialogue understanding through structured reasoning feedback, showing that external model guidance can break through performance plateaus on hard conversational inference examples. The progressive refinement approach offers a general framework applicable beyond dialogue to any task where reasoning quality matters.</p>
     </div>
     <div class="section">
         <h2>Links</h2>

@@ -23,78 +23,90 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A framework that uses Shannon entropy from token-level logprobs as a confidence signal to enable selective early stopping, achieving 25-50% computational savings with zero accuracy degradation.</p>
+        <p>A training-free framework that prompts RL-trained reasoning models to self-assess their confidence at intermediate steps, enabling adaptive early stopping that substantially reduces reasoning length without sacrificing accuracy.</p>
     </div>
 
     <figure class="paper-figure">
-        <img src="https://arxiv.org/html/2510.08146v2/x1.png" alt="Computational efficiency gains across model-dataset combinations">
-        <figcaption><strong>Figure 1.</strong> Computational efficiency gains across model-dataset combinations, showing 25-50% token reduction while maintaining accuracy.</figcaption>
+        <img src="https://aclanthology.org/2026.findings-eacl.263.pdf" alt="Overview of Self-Assessed Confidence-Based Adaptive Reasoning" style="display:none;">
+        <figcaption><strong>Figure 1.</strong> Overview of the adaptive reasoning framework: the model periodically self-assesses confidence during reasoning via reflective markers (e.g., "Wait"), and terminates early once sufficient certainty is reached.</figcaption>
     </figure>
 
     <div class="section">
         <h2>Background & Motivation</h2>
-        <p>Advanced reasoning models (like o1, QwQ) generate long chains of thought even for simple questions, wasting significant computation. <strong>Can we detect when the model is already confident enough and stop early?</strong></p>
+        <p>Large reasoning models (LRMs) such as OpenAI's o1 and DeepSeek-R1, trained with reinforcement learning, produce long chains of thought involving reflection, verification, and backtracking. While these extended reasoning traces enable strong performance on complex tasks, they often lead to <strong>underthinking</strong> (premature termination before reaching a correct answer) or <strong>overthinking</strong> (unnecessary continuation past the point of correctness, wasting computation and sometimes degrading accuracy).</p>
+        <p>Prior approaches rely on internal logit-derived signals (e.g., DEER), batch-sampled candidates, or memory-intensive techniques that are difficult to access in closed-source models. <strong>Can we instead leverage the model's own self-assessed confidence to adaptively control reasoning length?</strong></p>
         <div class="highlight-box">
-            <p><strong>Key Insight:</strong> Shannon entropy computed from token-level logprobs provides a reliable, model-intrinsic confidence signal that strongly discriminates between questions the model can and cannot answer correctly.</p>
+            <p><strong>Key Insight:</strong> RL-trained reasoning models are capable of introspectively evaluating their own confidence with reasonable reliability. By prompting them to explicitly express confidence at intermediate steps, we can dynamically decide when to stop reasoning &mdash; without any additional training, access to internal logits, or external sampling.</p>
         </div>
     </div>
 
-    <figure class="paper-figure">
-        <img src="https://arxiv.org/html/2510.08146v2/x2.png" alt="Three-step framework overview">
-        <figcaption><strong>Figure 2.</strong> Overview of the three-step framework: confidence assessment, threshold selection, and early stopping decision.</figcaption>
-    </figure>
-
     <div class="section">
         <h2>Proposed Method</h2>
-        <p>The framework computes Shannon entropy from the top-20 logprobs after softmax normalization, then applies theoretically grounded thresholds to decide whether to stop reasoning early or continue.</p>
+        <p>The method introduces a self-assessment mechanism that prompts the model to evaluate its own confidence at natural decision points during reasoning. A system prompt instructs the model to output a structured confidence label on a 10-class scale ranging from <em>Almost no chance</em> (0.0&ndash;0.1) to <em>Almost certain</em> (0.9&ndash;1.0).</p>
 
         <div class="method-steps">
             <div class="method-step">
                 <div class="step-num">1</div>
-                <div class="step-title">Confidence Assessment</div>
-                <div class="step-desc">Compute Shannon entropy from token logprobs to quantify the model's certainty about its answer</div>
+                <div class="step-title">Reflective Marker Detection</div>
+                <div class="step-desc">During reasoning, LRMs naturally produce reflective tokens such as "Wait" and "Alternatively" that signal transitions in the thought process. These markers serve as natural decision points for confidence estimation.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">2</div>
-                <div class="step-title">Threshold Selection</div>
-                <div class="step-desc">Apply one of 4 theoretically grounded methods to determine the confidence cutoff</div>
+                <div class="step-title">Self-Assessed Confidence Injection</div>
+                <div class="step-desc">At each decision point, generation is paused and an additional prompt requests the model to express its confidence via a structured <code>\confidence{...}</code> label, preventing further reasoning during estimation.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">3</div>
-                <div class="step-title">Early Stopping</div>
-                <div class="step-desc">Stop or continue reasoning based on whether confidence exceeds the selected threshold</div>
+                <div class="step-title">Adaptive Early Stopping</div>
+                <div class="step-desc">If the confidence reaches the threshold (default: <em>Almost certain</em>), the <code>&lt;/think&gt;</code> tag is inserted to terminate reasoning and proceed to the final answer. Otherwise, a continuation cue ("Wait") extends reasoning briefly.</div>
             </div>
         </div>
 
-        <p style="margin-top: 16px;">Four threshold methods:</p>
+        <p style="margin-top: 16px;">Key design choices:</p>
         <ul class="key-points">
-            <li><strong>Entropy Mean:</strong> Conservative baseline using average entropy as the cutoff</li>
-            <li><strong>Information-Theoretic Optimal:</strong> Maximizes information gain for optimal discrimination</li>
-            <li><strong>Bayesian Optimal:</strong> Minimizes overall classification error</li>
-            <li><strong>Scale-Invariant Universal:</strong> Works across different models without recalibration</li>
+            <li><strong>Keyword-triggered estimation:</strong> Confidence is assessed when reflective markers ("Wait", "Alternatively") appear naturally in the reasoning trace, aligning with the model's own thought transitions</li>
+            <li><strong>Periodic probing alternative:</strong> For models with sparse reflective markers, a Periodic-Conf(<em>k</em>) variant pauses every <em>k</em> tokens to query confidence</li>
+            <li><strong>Configurable threshold:</strong> Three confidence thresholds evaluated &mdash; <em>Very good chance</em> (0.7&ndash;0.8), <em>Highly likely</em> (0.8&ndash;0.9), and <em>Almost certain</em> (0.9&ndash;1.0) &mdash; enabling a trade-off between efficiency and conservatism</li>
+            <li><strong>Training-free &amp; model-agnostic:</strong> Requires no fine-tuning or access to internal model states; works through prompting alone</li>
         </ul>
-        <p>The framework requires only <strong>5-10 examples</strong> for basic deployment and <strong>25+ examples</strong> for full optimization.</p>
     </div>
 
     <div class="section">
         <h2>Experimental Results</h2>
-        <ul class="key-points">
-            <li><strong>25-50% token reduction</strong> across all model-dataset pairs</li>
-            <li><strong>88-100% accuracy</strong> for high-confidence questions</li>
-            <li><strong>Zero accuracy degradation</strong> (no loss in overall performance)</li>
-            <li><strong>Cohen's d: 0.66-1.95</strong> (strong effect size for confidence discrimination)</li>
-            <li>Evaluated on GPT OSS 120B/20B, Qwen3-30B across AIME'24, AIME'25, GPQA Diamond</li>
-        </ul>
+        <p>The method is evaluated on three RL-trained LRMs (<strong>QwQ-32B</strong>, <strong>Qwen3-32B</strong>, <strong>R1-Distill-Qwen-32B</strong>) across five benchmarks: MATH-500, AIME25, AIME24, AMC23, and GPQA Diamond. Baselines include <strong>Vanilla</strong> (no early stopping) and <strong>DEER</strong> (logit-based confidence).</p>
 
-        <figure class="paper-figure">
-            <img src="https://arxiv.org/html/2510.08146v2/x7.png" alt="Pareto analysis showing accuracy-efficiency trade-offs">
-            <figcaption><strong>Figure 3.</strong> Pareto analysis showing the accuracy-efficiency trade-off frontier across different threshold configurations.</figcaption>
-        </figure>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model / Method</th><th>Avg. Accuracy (&uarr;)</th><th>Avg. Length (&darr;)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>QwQ-32B</strong></td><td></td><td></td></tr>
+                <tr><td>&nbsp;&nbsp;Vanilla</td><td>76.75</td><td>9,260</td></tr>
+                <tr><td>&nbsp;&nbsp;DEER</td><td>77.48</td><td>7,529</td></tr>
+                <tr><td>&nbsp;&nbsp;<strong>Ours</strong></td><td><strong>79.17</strong></td><td>7,512</td></tr>
+                <tr><td><strong>Qwen3-32B</strong></td><td></td><td></td></tr>
+                <tr><td>&nbsp;&nbsp;Vanilla</td><td>80.32</td><td>8,148</td></tr>
+                <tr><td>&nbsp;&nbsp;DEER</td><td>78.78</td><td>5,630</td></tr>
+                <tr><td>&nbsp;&nbsp;<strong>Ours</strong></td><td><strong>81.25</strong></td><td>6,624</td></tr>
+                <tr><td><strong>R1-Distill-32B</strong></td><td></td><td></td></tr>
+                <tr><td>&nbsp;&nbsp;Vanilla</td><td>66.75</td><td>7,057</td></tr>
+                <tr><td>&nbsp;&nbsp;DEER</td><td><strong>68.24</strong></td><td>5,778</td></tr>
+                <tr><td>&nbsp;&nbsp;Ours</td><td>67.37</td><td><strong>5,387</strong></td></tr>
+            </tbody>
+        </table>
+
+        <ul class="key-points">
+            <li><strong>Higher accuracy with shorter reasoning:</strong> For QwQ-32B and Qwen3-32B, the proposed method achieves the highest average accuracy while substantially reducing reasoning length compared to Vanilla</li>
+            <li><strong>Up to 24% token reduction</strong> on average (e.g., Qwen3-32B: 8,148 &rarr; 6,624 tokens) with no accuracy loss &mdash; in many cases accuracy even improves</li>
+            <li><strong>Stable on hard benchmarks:</strong> Performance remains reliable on challenging datasets like AIME24 and AIME25, where Qwen3-32B achieves 75.56% accuracy (vs. 72.22% Vanilla) with shorter traces</li>
+            <li><strong>DEER comparison:</strong> Unlike DEER, which relies on internal logits and can be overconfident (causing premature stopping on some models), self-assessed confidence provides more stable and accessible estimates</li>
+            <li><strong>Confidence alignment:</strong> Self-assessed confidence correlates with logit-based confidence (Pearson r = 0.33), suggesting that reasoning models encode certainty coherently across both generated text and internal representations</li>
+        </ul>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>As reasoning models become mainstream, their computational cost becomes a bottleneck. This work shows we can <strong>intelligently allocate compute where it is needed</strong>, saving 25-50% of cost with no quality loss. This has direct implications for deploying reasoning models at scale in cost-sensitive production environments.</p>
+        <p>This work demonstrates that RL-trained reasoning models possess a meaningful capacity for <strong>introspective confidence estimation</strong> that can be harnessed through simple prompting. Unlike methods requiring access to internal logits or multiple sampled trajectories, this approach is <strong>training-free, model-agnostic, and compatible with closed-source APIs</strong>. The finding that self-assessed confidence aligns with internal signals further supports the hypothesis that reasoning-oriented models develop genuine self-monitoring capabilities through RL optimization &mdash; a property largely absent in standard instruction-tuned LLMs. As reasoning models become central to production systems, this lightweight mechanism offers a practical path toward <strong>reducing inference costs while preserving or even improving accuracy</strong>.</p>
     </div>
 
     <div class="section">

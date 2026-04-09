@@ -25,7 +25,7 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>LLM이 관용어를 단순히 암기하는 것인지 아니면 추론을 통해 진정으로 이해하는 것인지를 6개 언어 64,660개 관용어에 걸쳐 체계적으로 분석한 연구입니다.</p>
+        <p>6개 언어 64,660개 관용어를 포함하는 다국어 관용어 데이터셋 MIDAS를 구축하고, LLM이 암기만이 아닌 암기, 합성적 추론, 맥락 단서를 결합한 하이브리드 메커니즘으로 관용어를 처리함을 밝혀낸 연구입니다.</p>
     </div>
 
     <figure class="paper-figure">
@@ -35,37 +35,102 @@
 
     <div class="section">
         <h2>배경 및 동기</h2>
-        <p>"비가 억수같이 쏟아진다(It's raining cats and dogs)"와 같은 관용어는 문자 그대로의 의미와 다른 뜻을 가집니다. LLM이 이러한 관용어를 처리할 때, 훈련 데이터에서 <strong>단순히 암기</strong>하는 것일까요, 아니면 맥락에서 <strong>추론</strong>하는 것일까요? 이 근본적인 질문에 답하기 위해 6개 언어에 걸친 대규모 실험을 수행합니다.</p>
+        <div class="highlight-box">
+            <p>"비가 억수같이 쏟아진다(It's raining cats and dogs)"와 같은 관용어는 문자 그대로의 의미와 크게 다른 비유적 의미를 갖습니다. LLM이 이러한 관용어를 올바르게 해석할 때, 그것은 훈련 데이터에서 <strong>암기한 매핑을 검색</strong>하는 것일까요, 아니면 맥락과 합성성으로부터 <strong>추론</strong>하는 것일까요? 이 질문은 LLM의 언어 이해 능력을 파악하는 데 핵심적이지만, 기존 관용어 데이터셋은 단일 언어에 한정되거나, 검증된 의미가 부족하거나, GPT가 생성한 정의에 의존하는 한계가 있었습니다.</p>
+        </div>
+        <p>본 연구는 세 가지 핵심 연구 질문을 다룹니다: (1) LLM은 암기, 추론, 또는 둘 다에 의존하는가? (2) 맥락 단서와 합성성이 관용어 처리에 어떤 영향을 미치는가? (3) 유형론적으로 다양한 언어에서 관용어 이해의 기저 메커니즘은 무엇인가? 이에 답하기 위해 대규모의 인간 검증 다국어 벤치마크를 구축하고, 각 요인을 분리하는 통제 실험을 설계합니다.</p>
     </div>
 
     <div class="section">
-        <h2>MIDAS 데이터셋</h2>
+        <h2>제안 방법</h2>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div>
+                    <div class="step-title">MIDAS 데이터셋 구축</div>
+                    <div class="step-desc">6개 언어의 권위 있는 출처에서 64,660개 고유 관용어(총 70,909개 인스턴스)를 수집: 영어(Wiktionary, 9,766개), 독일어(Duden, 10,097개), 중국어(chinese-xinhua, 11,851개), 한국어(표준국어대사전, 11,316개), 아랍어(아랍어 관용어 사전, 8,051개), 터키어(TDK, 13,579개). 각 관용어에는 LLM 지원 처리와 원어민 검증을 거친 인간 검증 비유적 의미가 함께 제공됩니다.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div>
+                    <div class="step-title">관용어 이해를 위한 MCQ 평가</div>
+                    <div class="step-desc">각 관용어에 대해 5지선다 문제를 구성합니다: 하나의 정답(비유적 의미)과 4개의 오답(표면 형태 유사도 기반 2개 + 의미 유사도 기반 2개, multilingual-e5-large-instruct 임베딩 사용). 각 문제는 답안 위치를 섞어 3회 실시하며, 3회 모두 정답이어야 정답으로 인정하여 위치 편향을 제거합니다.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div>
+                    <div class="step-title">연속 생성 태스크를 통한 암기 평가</div>
+                    <div class="step-desc">관용어의 앞부분을 제시하고 마지막 단어를 예측하도록 합니다. 엄격한 필터링으로 목표 단어가 쉽게 예측 가능하지 않도록 보장합니다: 최소 관용어 길이 3-4단어, 맥락-목표 FastText 유사도 &lt;0.7, 관용어 간 중복 없음. 모델이 상위 예측에서 정답의 첫 토큰을 생성하면 "암기됨"으로 분류합니다(오픈소스: 상위 5개 로그 확률, 클로즈드소스: temperature 0 생성).</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div>
+                    <div class="step-title">합성성 점수 부여</div>
+                    <div class="step-desc">각 관용어에 LLM 프롬프팅을 통해 합성성 점수(1-5 척도)를 부여합니다. 개별 구성 단어로부터 비유적 의미를 얼마나 추론할 수 있는지를 측정합니다. 1점 = 완전히 불투명, 5점 = 쉽게 추론 가능. 합성성과 MCQ 정답률의 상관관계를 통해 모델이 합성적 추론을 활용하는지 확인합니다.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">5</div>
+                <div>
+                    <div class="step-title">맥락 및 추론 분석</div>
+                    <div class="step-desc">예문 제공 여부에 따른 MCQ 정확도를 비교하여 맥락 단서 효과를 정량화합니다. 또한 추론 특화 모델 QwQ-32B와 기본 모델 Qwen2.5-32B를 비교하고, Chain-of-Thought(CoT) 프롬프팅 효과를 측정하여 명시적 추론의 기여도를 분리합니다.</div>
+                </div>
+            </div>
+        </div>
 
         <figure class="paper-figure">
             <img src="https://arxiv.org/html/2505.16216v1/x2.png" alt="영어 관용어 항목 예시">
             <figcaption><strong>Figure 2.</strong> MIDAS 데이터 예시: 각 관용어에는 표현, 비유적 의미, 예문이 포함됩니다.</figcaption>
         </figure>
-
-        <ul class="key-points">
-            <li><strong>규모:</strong> 6개 언어(영어, 독일어, 중국어, 한국어, 아랍어, 터키어)의 64,660개 관용어, 총 70,909개 인스턴스</li>
-            <li><strong>구성:</strong> 각 관용어에 비유적 의미와 예문 포함</li>
-            <li><strong>평가:</strong> 유사도 기반 오답 선택지를 포함한 5지선다 MCQ + 연속 생성 태스크</li>
-            <li><strong>합성성 평가:</strong> LLM 프롬프팅을 통해 1-5 척도의 합성성 점수 부여</li>
-        </ul>
     </div>
 
     <div class="section">
         <h2>실험 결과</h2>
 
+        <h3>모델별 및 언어별 MCQ 정확도 (%)</h3>
         <table class="results-table">
             <thead>
-                <tr><th>언어</th><th>MCQ 최고 정확도</th><th>암기율 범위</th><th>맥락 효과</th></tr>
+                <tr><th>모델</th><th>EN</th><th>DE</th><th>ZH</th><th>KO</th><th>AR</th><th>TR</th></tr>
             </thead>
             <tbody>
-                <tr><td>영어</td><td>91.13% (GPT-4o)</td><td>67-81%</td><td>소폭 향상</td></tr>
-                <tr><td>중국어</td><td>95.65% (DeepSeek-V3)</td><td>높음</td><td>소폭 향상</td></tr>
-                <tr><td>한국어</td><td>72.72% (GPT-4o)</td><td>26-37%</td><td class="highlight-cell">~30%p 향상</td></tr>
-                <tr><td>터키어</td><td>71.82% (GPT-4o)</td><td>낮음</td><td class="highlight-cell">~25%p 향상</td></tr>
+                <tr><td>Aya-Expanse-32B</td><td>81.71</td><td>71.77</td><td>75.45</td><td>49.89</td><td>65.62</td><td>48.94</td></tr>
+                <tr><td>Qwen2.5-32B</td><td>83.71</td><td>73.94</td><td>93.35</td><td>51.39</td><td>71.25</td><td>40.31</td></tr>
+                <tr><td>DeepSeek-V3</td><td>90.34</td><td>83.94</td><td class="highlight-cell">95.65</td><td>55.64</td><td>75.53</td><td>62.52</td></tr>
+                <tr><td>GPT-4o</td><td class="highlight-cell">91.13</td><td class="highlight-cell">88.08</td><td>91.44</td><td class="highlight-cell">72.72</td><td class="highlight-cell">72.85</td><td class="highlight-cell">71.82</td></tr>
+            </tbody>
+        </table>
+
+        <h3>암기율 (%)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>모델</th><th>EN</th><th>DE</th><th>ZH</th><th>KO</th><th>AR</th><th>TR</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Aya-Expanse-32B</td><td>80.36</td><td>56.43</td><td>92.95</td><td>36.59</td><td>30.54</td><td>32.66</td></tr>
+                <tr><td>Qwen2.5-32B</td><td>73.72</td><td>45.27</td><td>77.97</td><td>31.61</td><td>29.87</td><td>22.28</td></tr>
+                <tr><td>DeepSeek-V3</td><td>70.83</td><td>59.28</td><td>89.51</td><td>31.06</td><td>29.45</td><td>45.82</td></tr>
+                <tr><td>GPT-4o</td><td>67.18</td><td>49.53</td><td>70.26</td><td>26.13</td><td>27.25</td><td>35.08</td></tr>
+            </tbody>
+        </table>
+
+        <h3>맥락의 영향: 예문 제공 여부에 따른 정확도 변화</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>모델</th><th>언어</th><th>맥락 없음</th><th>맥락 있음</th><th>향상폭</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Aya-Expanse-32B</td><td>한국어</td><td>52.78</td><td>82.81</td><td class="highlight-cell">+30.03</td></tr>
+                <tr><td>Qwen2.5-32B</td><td>터키어</td><td>37.34</td><td>69.21</td><td class="highlight-cell">+31.87</td></tr>
+                <tr><td>Qwen2.5-32B</td><td>한국어</td><td>51.46</td><td>82.14</td><td class="highlight-cell">+30.68</td></tr>
+                <tr><td>DeepSeek-V3</td><td>한국어</td><td>57.93</td><td>83.73</td><td class="highlight-cell">+25.80</td></tr>
+                <tr><td>DeepSeek-V3</td><td>터키어</td><td>63.06</td><td>88.45</td><td class="highlight-cell">+25.39</td></tr>
+                <tr><td>GPT-4o</td><td>터키어</td><td>71.24</td><td>90.72</td><td>+19.48</td></tr>
+                <tr><td>GPT-4o</td><td>한국어</td><td>75.93</td><td>92.42</td><td>+16.49</td></tr>
+                <tr><td>GPT-4o</td><td>영어</td><td>91.53</td><td>95.22</td><td>+3.69</td></tr>
+                <tr><td>DeepSeek-V3</td><td>중국어</td><td>95.44</td><td>95.87</td><td>+0.43</td></tr>
             </tbody>
         </table>
 
@@ -83,18 +148,20 @@
         <div class="section" style="margin-top:20px;">
             <h2>핵심 발견</h2>
             <ul class="key-points">
-                <li><strong>하이브리드 처리:</strong> LLM은 순수한 암기나 순수한 추론이 아닌, 맥락 단서와 추론을 결합한 <strong>하이브리드 방식</strong>으로 관용어를 처리</li>
-                <li><strong>암기의 영향:</strong> 암기된 관용어에서 3.82-15.83% 높은 정확도 — 한국어/터키어에서는 격차가 10%p 이상</li>
-                <li><strong>합성성과 성능:</strong> 정답을 맞힌 관용어의 합성성 점수가 14-44% 더 높아, 구성 요소의 의미가 추론에 활용됨을 시사</li>
-                <li><strong>추론 모델의 우수성:</strong> 추론 특화 모델(QwQ)이 기본 모델(Qwen2.5)을 일관되게 능가</li>
-                <li><strong>Chain-of-Thought의 양면성:</strong> CoT가 고성능 언어에서는 오히려 해로울 수 있어, 추론 모델 훈련의 트레이드오프를 시사</li>
+                <li><strong>하이브리드 처리:</strong> LLM은 암기, 합성적 추론, 맥락 단서를 통합하는 <strong>하이브리드 메커니즘</strong>으로 관용어를 처리합니다. 세 가지 요인 모두 모든 모델-언어 조합에서 통계적으로 유의미하게 기여합니다.</li>
+                <li><strong>암기는 중요하지만 충분하지 않음:</strong> 암기된 관용어는 3.82-15.83%p 더 높은 정확도를 보이며(모든 차이가 통계적으로 유의), 가장 큰 격차는 Qwen2.5의 영어(+15.83%p)입니다. 그러나 암기되지 않은 관용어도 빈번하게 정답을 맞추어 추론의 역할을 확인합니다.</li>
+                <li><strong>합성성이 추론을 가능하게 함:</strong> 정답을 맞힌 관용어는 1.63-44.00% 더 높은 합성성 점수를 보입니다(Mann-Whitney U, 모두 유의). Qwen2.5는 아랍어에서 +44.00%, 영어에서 +42.86%로 가장 강한 효과를 보여, 합성적 추론에 크게 의존함을 나타냅니다.</li>
+                <li><strong>저자원 언어에서 맥락이 결정적:</strong> 예문 제공 시 한국어와 터키어에서 25-32%p의 향상을 보이는 반면, 상위 모델의 중국어는 0.4-4.7%p에 그칩니다. 맥락이 저대표 언어의 낮은 암기율을 보상합니다.</li>
+                <li><strong>추론 모델의 일관된 우수성:</strong> QwQ-32B의 Thinking 모드는 6개 언어 모두에서 우수한 성능을 보입니다. 그러나 기본 Qwen2.5 모델에 대한 CoT 프롬프팅은 양날의 검: 저자원 언어에서는 +2-5%p 도움이 되지만 고자원 언어에서는 -1-4%p 오히려 해롭습니다.</li>
+                <li><strong>하류 과제에의 영향:</strong> GPT-4o 평가자에게 관용어 의미를 제공하면 인간 판단과의 일치도가 문장 생성에서 Kendall's tau 0.118에서 0.739로 향상되어, 관용어 지식이 실용적 NLP 과제에 핵심적임을 확인합니다.</li>
             </ul>
         </div>
     </div>
 
     <div class="section">
         <h2>왜 중요한가?</h2>
-        <p>관용어 이해는 깊은 언어 이해력의 리트머스 테스트입니다. <strong>LLM이 단순 암기가 아닌 추론을 활용한다</strong>는 발견은 이러한 모델이 언어 의미를 어느 정도 "이해"한다는 증거를 제공합니다. 동시에 저자원 언어에서의 큰 성능 격차는 다국어 AI 발전 방향을 제시합니다.</p>
+        <p>관용어 이해는 LLM이 언어를 진정으로 이해하는지, 아니면 단순히 패턴 매칭을 하는지를 보여주는 가장 중요한 테스트 중 하나입니다. 본 연구는 <strong>LLM이 암기, 합성적 추론, 맥락 추론을 결합한 하이브리드 메커니즘</strong>으로 관용어를 처리한다는 최초의 대규모, 통제된, 다국어 증거를 제공합니다. 암기되지 않은 관용어도 추론을 통해 이해할 수 있다는 발견은 단순한 기억 검색을 넘어선 진정한 언어적 역량을 보여줍니다.</p>
+        <p>실용적으로, 고자원 언어(EN/ZH: 91-96%)와 저자원 언어(KO/TR: 40-73%) 사이의 극적인 성능 격차는 더 나은 다국어 관용어 자원의 시급한 필요성을 강조합니다. MIDAS 데이터셋 자체 -- 유형론적으로 다양한 6개 언어에 걸친 64,660개의 인간 검증 관용어 -- 는 이 분야의 핵심적인 공백을 채우며 비유적 언어 이해에 대한 향후 연구를 가능하게 합니다. 하류 과제 실험은 나아가 명시적인 관용어 지식이 번역 및 문장 생성과 같은 실제 과제를 크게 향상시킬 수 있음을 보여줍니다.</p>
     </div>
 
     <div class="section">

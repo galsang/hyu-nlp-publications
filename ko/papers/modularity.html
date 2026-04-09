@@ -22,7 +22,7 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>모듈형 코드 생성이 LLM 성능을 항상 향상시킨다는 통념에 도전하며, 과제 난이도와 모델 능력에 따라 그 효과가 달라짐을 실증적으로 밝힌 연구입니다.</p>
+        <p>순환 복잡도에 기반한 새로운 모듈성 점수(MoS) 지표를 도입하고, 변환 부수 효과를 엄밀하게 통제한 실험을 5개 LLM(Code Llama 7B/34B, DeepSeekCoder 6.7B/33B, GPT-4o-mini)과 2개 경쟁 프로그래밍 벤치마크(APPS, CodeContests)에서 수행한 결과, 모듈형 코드가 LLM 기반 코드 생성 성능의 핵심 요인이 <strong>아니며</strong>, 기존 연구에서 보고된 이점은 모듈화 자체가 아닌 코드 변환 과정의 부수 효과일 가능성이 높음을 밝힌 연구입니다.</p>
         <figure class="paper-figure">
             <img src="../../images/modularity/figure1.png" alt="논문 개요">
             <figcaption><strong>Figure 1.</strong> 모듈형 vs 비모듈형 코드 생성 접근법 비교. 모듈화 추구가 실제로 LLM 기반 코드 생성 성능을 향상시키는지 검토합니다.</figcaption>
@@ -31,39 +31,129 @@
 
     <div class="section">
         <h2>배경 및 동기</h2>
-        <p>모듈형 프로그래밍 — 문제를 작은 재사용 가능한 하위 함수로 분해하는 방식 — 은 소프트웨어 공학의 핵심 원칙입니다. 최근 LLM 기반 코드 생성 연구에서도 이 원칙을 적용하여, 모델이 최종 솔루션을 작성하기 전에 문제를 하위 함수로 분해하도록 유도하는 접근법이 등장했습니다.</p>
+        <p>모듈형 프로그래밍 -- 최종 프로그램을 작고 독립적인 구성 요소를 통합하여 구성하는 방식 -- 은 소프트웨어 개발에서 오랫동안 바람직한 관행으로 여겨져 왔습니다. 복잡성을 줄이고, 유지보수성을 높이며, 코드 재사용을 가능하게 합니다. 최근 LLM 기반 코드 생성 에이전트의 부상과 함께, 인간의 인지와 협업을 위해 설계된 이 전통적 원칙이 근본적으로 다른 이러한 새로운 도구에도 동일하게 효과적인지에 대한 의문이 제기됩니다.</p>
         <div class="highlight-box">
-            <p><strong>가정:</strong> 모듈형 프롬프팅 전략(예: 하위 함수를 먼저 생성)이 좋은 소프트웨어 공학 관행처럼 코드 생성 품질을 향상시킬 것이라는 통념이 있었습니다.</p>
+            <p><strong>기존 통념:</strong> 모듈형 코드가 인간 프로그래머에게 도움이 되는 것처럼 LLM에도 도움이 될 것이라는 가정이 있었습니다. 복잡성 감소, 재사용성 향상, 추론 용이성 등의 이점이 기대되었으며, 다수의 선행 연구(예: CodeT, Parsel, 모듈형 프롬프팅 전략)가 LLM에 모듈형 코드 생성을 유도했을 때의 성능 향상을 보고했습니다. 이들 연구는 인간에게 유효한 모듈성의 이점이 언어 모델에도 자연스럽게 전이될 것이라고 전제했습니다.</p>
         </div>
         <div class="highlight-box">
-            <p><strong>핵심 질문:</strong> 모듈화 추구가 다양한 모델, 벤치마크, 문제 난이도에서 <em>실제로</em> 더 나은 코드 생성으로 이어지는가?</p>
+            <p><strong>문제점:</strong> 기존 연구들은 모듈성을 <em>정량적으로 측정</em>할 원칙적인 방법이 부재했습니다. 적절한 지표 없이는, 관찰된 성능 향상이 실제로 모듈성 자체에서 비롯된 것인지 확인할 수 없습니다. 선행 연구들은 보통 "모듈형 프롬프팅" vs. "표준 프롬프팅"을 비교했지만, 모듈형 변환 과정에서 코드 간소화, 재포맷팅, 변수명 변경, 심지어 미묘한 알고리즘 변경 등 성능에 독립적으로 영향을 미칠 수 있는 교란 요인이 도입됩니다.</p>
+        </div>
+        <div class="highlight-box">
+            <p><strong>핵심 질문:</strong> 정형적 모듈성 지표와 신중하게 설계된 코드 범주를 통해 교란 요인을 엄밀하게 통제했을 때, 모듈성이 <em>실제로</em> LLM 기반 코드 생성을 향상시키는가? 아니면 성능 향상을 잘못된 원인에 귀속시켜 온 것인가?</p>
         </div>
     </div>
 
     <div class="section">
-        <h2>방법론</h2>
-        <p>저자들은 모듈형 vs 비모듈형 코드 생성 전략을 여러 축에서 체계적으로 평가합니다:</p>
-        <ul class="key-points">
-            <li><strong>다양한 LLM:</strong> 오픈소스 및 상용 모델을 다양한 크기로 실험하여 일반화 가능성 검증</li>
-            <li><strong>다양한 벤치마크:</strong> HumanEval, MBPP, APPS, CodeContests 등 쉬운 문제부터 대회 수준까지 포괄하는 벤치마크에서 평가</li>
-            <li><strong>모듈화 전략:</strong> 계획 후 코딩, 하위 함수 분해, 단일 함수 생성 등 다양한 모듈형 프롬프팅 방식 비교</li>
-            <li><strong>세분화 분석:</strong> 문제 난이도, 코드 복잡도, 모델 능력별로 결과를 세분화하여 모듈화가 도움이 되는 경우와 그렇지 않은 경우를 식별</li>
-        </ul>
+        <h2>제안 방법</h2>
+        <p>저자들은 코드 모듈성이 LLM 성능에 미치는 영향을 측정하고 평가하기 위한 정량적 프레임워크를 제안합니다. 이 프레임워크는 정형적 모듈성 지표, 4가지 코드 범주를 활용한 통제된 실험 설계, 포괄적 평가 프로토콜의 세 가지 구성 요소로 이루어집니다.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">모듈성 점수(MoS) 지표</div>
+                <div class="step-desc">순환 복잡도(Cyclomatic Complexity, CC)에 기반한 새로운 지표입니다. CC는 제어 흐름 그래프에서 CC = E - N + 2 (E: 간선 수, N: 노드 수)로 계산하여 독립 실행 경로 수를 측정합니다. 이상적인 모듈 수를 m* = &lfloor;CC<sub>total</sub> / &tau;&rfloor; (&tau; = 5, 소프트웨어 공학에서 널리 사용되는 복잡도 임계값으로 각 모듈이 최대 5개의 독립 경로를 처리해야 함을 의미)로 산출합니다. MoS는 m* > 0일 때 min(1, n/m*) (n: 실제 모듈 수), m*과 n이 모두 0일 때 0, m* = 0이고 n > 0일 때 1로 정의됩니다. 이 지표의 유효성은 함수 호출 빈도와의 강한 상관관계(Pearson = 0.41, Spearman = 0.61)로 확인되어, 의미 있는 모듈 상호작용을 포착함을 검증했습니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">통제된 비교를 위한 4가지 코드 유형</div>
+                <div class="step-desc">모듈성의 효과를 변환 부수 효과와 분리하기 위해 4가지 코드 유형을 정의합니다: <strong>MC</strong> (모듈형 코드 -- 기존 데이터셋 솔루션에서 추출한 자연적으로 높은 MoS를 가진 솔루션), <strong>SC</strong> (단일 코드 -- 동일 문제의 MoS=0 솔루션으로 단일체 구현), <strong>TMC</strong> (변환된 모듈형 코드 -- 기능적 등가성을 유지하면서 GPT-3.5-Turbo로 SC를 모듈형으로 변환), <strong>TSC</strong> (변환된 단일 코드 -- TMC의 헬퍼 함수를 수동으로 인라인하여 단일 형태로 복원). 핵심 비교는 TMC vs. TSC입니다: 두 유형 모두 동일한 변환 파이프라인을 거쳤으므로 변환 부수 효과를 공유하되, 코드가 모듈형인지 단일형인지<em>만</em> 다릅니다. 이를 통해 순수한 모듈성의 효과를 분리합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">평가 프로토콜</div>
+                <div class="step-desc">두 가지 패러다임에서 실험합니다: 각 코드 유형에서 추출한 2-shot 시연을 사용한 <strong>In-Context Learning (ICL)</strong>, 그리고 MC 전용 또는 SC 전용 데이터셋(CodeContests ~5K 문제, 61K 학습 예제)으로 학습하는 <strong>파인튜닝</strong>. 다양한 규모의 5개 LLM을 평가합니다: Code Llama (7B, 34B), DeepSeekCoder (6.7B, 33B), GPT-4o-mini. 두 가지 난이도 높은 벤치마크를 사용합니다: APPS (Introductory, Interview, Competition 난이도 분할; ~2K 학습 / ~3.7K 테스트 문제)와 CodeContests (~7.3K 학습 문제, 문제당 평균 182개 솔루션, 165개 테스트 문제). 성능은 pass@1, pass@5, pass@10으로 측정합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">퍼플렉시티 및 상관관계 분석</div>
+                <div class="step-desc">생성 성능 외에도, LLM이 모듈형 코드와 단일 코드 중 어느 쪽을 본질적으로 선호하는지 측정하기 위한 퍼플렉시티 분석을 수행합니다. 또한 100개의 CodeContests 샘플에 대해 Pearson 및 Spearman 상관 검정을 실시하여, in-context 시연의 MoS 값과 pass@1 점수 간의 직접적 통계적 관계를 정량화합니다. 이러한 다면적 분석을 통해 발견이 단일 평가 렌즈의 부수물이 아님을 보장합니다.</div>
+            </div>
+        </div>
     </div>
 
     <div class="section">
-        <h2>주요 결과</h2>
+        <h2>실험 결과</h2>
+
+        <h3>CodeContests ICL 결과 (pass@1 / pass@10)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>모델</th><th>MC</th><th>SC</th><th>TMC</th><th>TSC</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Code Llama 7B</td><td>1.98 / 8.02</td><td>2.58 / 8.81</td><td>2.57 / 10.18</td><td><strong>4.35</strong> / <strong>10.67</strong></td></tr>
+                <tr><td>Code Llama 34B</td><td>4.11 / 12.78</td><td><strong>5.83</strong> / 14.10</td><td>3.39 / 13.55</td><td>5.61 / <strong>15.32</strong></td></tr>
+                <tr><td>DeepSeekCoder 6.7B</td><td>5.30 / 12.78</td><td>7.15 / 16.27</td><td>8.02 / <strong>17.88</strong></td><td><strong>8.19</strong> / 17.79</td></tr>
+                <tr><td>DeepSeekCoder 33B</td><td>6.79 / 16.14</td><td>8.87 / 20.50</td><td><strong>9.38</strong> / <strong>22.74</strong></td><td>8.78 / 22.09</td></tr>
+                <tr><td>GPT-4o-mini</td><td>14.07</td><td><strong>15.35</strong></td><td>14.29</td><td>14.40</td></tr>
+            </tbody>
+        </table>
+
+        <h3>APPS ICL 결과 (pass@1 / pass@5)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>모델</th><th>MC</th><th>SC</th><th>TMC</th><th>TSC</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Code Llama 7B</td><td>7.98 / 12.75</td><td>11.12 / 15.78</td><td><strong>14.67</strong> / <strong>19.63</strong></td><td>13.84 / 17.15</td></tr>
+                <tr><td>DeepSeekCoder 6.7B</td><td>24.76 / 32.59</td><td>28.93 / 36.26</td><td><strong>34.26</strong> / <strong>40.74</strong></td><td>33.24 / 39.73</td></tr>
+            </tbody>
+        </table>
+
+        <h3>CodeContests 파인튜닝 결과 (pass@1 / pass@10)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>모델</th><th>MC (파인튜닝)</th><th>SC (파인튜닝)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Code Llama 7B</td><td>3.88 / 12.20</td><td><strong>4.42</strong> / <strong>12.56</strong></td></tr>
+                <tr><td>DeepSeekCoder 6.7B</td><td>6.06 / 13.82</td><td><strong>8.73</strong> / <strong>16.16</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>퍼플렉시티 분석: LLM의 코드 스타일 선호도</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>모델</th><th>PPL(MC)</th><th>PPL(SC)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Code Llama 7B</td><td>2.20 &plusmn; 0.57</td><td>2.40 &plusmn; 1.00</td></tr>
+                <tr><td>Code Llama 34B</td><td>2.02 &plusmn; 0.45</td><td>2.00 &plusmn; 0.44</td></tr>
+                <tr><td>DeepSeekCoder 6.7B</td><td>1.93 &plusmn; 0.41</td><td>2.05 &plusmn; 0.63</td></tr>
+                <tr><td>DeepSeekCoder 33B</td><td>1.89 &plusmn; 0.42</td><td>1.89 &plusmn; 0.42</td></tr>
+            </tbody>
+        </table>
+
+        <h3>MoS와 성능의 상관관계 (CodeContests, 100개 샘플)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>모델</th><th>Pearson</th><th>Spearman</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Code Llama 7B</td><td>-0.34 (p=0)</td><td>-0.31 (p=0)</td></tr>
+                <tr><td>DeepSeekCoder 6.7B</td><td>-0.21 (p=0.04)</td><td>-0.25 (p=0.01)</td></tr>
+            </tbody>
+        </table>
+
         <ul class="key-points">
-            <li><strong>보편적 이점 없음:</strong> 모듈형 생성이 단일 함수 생성보다 일관되게 우수하지 않으며, 많은 설정에서 동등하거나 오히려 낮은 성능을 보임</li>
-            <li><strong>난이도의 영향:</strong> 모듈화는 어려운 대회 수준 문제에서는 도움이 되지만, 단순한 문제에서는 불필요한 복잡성을 유발하여 오히려 성능 저하</li>
-            <li><strong>모델 능력의 영향:</strong> 강력한 모델은 모듈형 전략의 혜택을 더 받지만, 약한 모델은 분해의 추가 부담으로 어려움을 겪음</li>
-            <li><strong>오류 전파:</strong> 모듈형 접근법은 연쇄 오류에 취약 — 하위 함수가 잘못되면 전체 솔루션이 실패</li>
+            <li><strong>SC가 일관되게 MC를 능가:</strong> 5개 모델과 두 벤치마크 모두에서, 단일(비모듈형) 코드가 자연적 모듈형 코드보다 in-context 시연으로서 더 우수한 성능을 보였습니다. APPS에서 DeepSeekCoder 6.7B는 SC로 28.93, MC로 24.76 pass@1을 달성하여 4점 이상의 차이를 보였습니다.</li>
+            <li><strong>TMC vs. TSC에서 모듈성의 이점 불명확:</strong> 모듈성<em>만</em> 다른 변환 코드 쌍을 비교했을 때(순수 효과 분리), 성능 차이는 미미했습니다. 예를 들어 DeepSeekCoder 6.7B는 CodeContests에서 TMC 8.02 vs. TSC 8.19로, 기존 보고된 이점이 모듈성이 아닌 변환 과정의 부수 효과였음을 시사합니다.</li>
+            <li><strong>TMC/TSC 모두 MC를 상회:</strong> 두 변환 변형 모두 원래 모듈형 코드를 크게 능가하여, 변환 과정(코드 재포맷팅, 간소화)이 -- 모듈 구조가 아닌 -- 기존에 모듈성의 공으로 돌려졌던 성능 향상의 실제 원인임을 확인합니다.</li>
+            <li><strong>파인튜닝에서도 동일한 경향:</strong> 모듈형 또는 단일 코드만으로 학습해도(~5K 문제, 61K 예제) SC 학습 모델이 MC 학습 모델을 능가했습니다. DeepSeekCoder 6.7B: 8.73 vs. 6.06 pass@1 -- 단일 코드가 44% 상대적 향상을 달성했습니다.</li>
+            <li><strong>MoS와의 음의 상관관계:</strong> 100개 CodeContests 샘플에 대한 통계 분석 결과, 모듈성 점수와 코드 생성 성능 간 <em>약한 음의 상관관계</em>가 확인되어 (Pearson: -0.34 ~ -0.21, 모두 통계적으로 유의), 기존 통념과 정면으로 배치됩니다.</li>
+            <li><strong>퍼플렉시티로 드러난 LLM의 중립성:</strong> 4개 모델 모두 모듈형 코드와 단일 코드에 거의 동일한 퍼플렉시티를 보였습니다 (PPL ~1.9--2.4). DeepSeekCoder 33B는 양쪽 모두 정확히 1.89를 기록했습니다. 모듈 구조를 통해 이해도가 크게 향상되는 인간과 달리, LLM은 코드 구조에 대해 진정으로 무관심합니다.</li>
+            <li><strong>GPT-4o-mini는 무관심:</strong> 가장 강력한 모델은 4가지 코드 유형 간 거의 동일한 성능을 보여 (14.07--15.35 pass@1), 고성능 모델에서 어떤 스타일이든 동등한 능숙도로 처리할 수 있어 모듈성의 영향이 미미함을 시사합니다.</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>왜 중요한가</h2>
-        <p>이 연구는 LLM 기반 코드 생성에서 "모듈화가 항상 좋다"는 기존 가정에 도전합니다. 세밀한 실증 분석을 통해, 연구자와 실무자가 모듈형 프롬프팅 전략을 <strong>언제 적용하고 언제 단순한 단일 생성이 더 나은 선택인지</strong> 판단할 수 있는 근거를 제공합니다. 최적의 전략은 문제 난이도와 모델 능력 간의 상호작용에 달려 있으며, 하나의 접근법이 모든 상황에 적합하지 않음을 시사합니다.</p>
+        <p>이 연구는 LLM 기반 코드 생성에서 "모듈화가 항상 좋다"는 기존 가정을 뒤집으며, 연구자와 실무자 모두에게 중요한 통찰을 제공합니다:</p>
+        <ul>
+            <li><strong>변환 부수 효과지, 모듈성이 아니다:</strong> 기존 연구에서 보고된 모듈성의 효과가 코드 변환 과정의 의도치 않은 부수 효과(예: 간소화, 재포맷팅, 변수명 변경)에서 비롯되었을 가능성이 높음을 입증했습니다. TMC vs. TSC 비교 -- 논문에서 가장 엄밀하게 통제된 실험 -- 는 무시할 수 있는 차이만 보여주어, 코드 변환과 코드 구조를 혼동하는 향후 연구에 대한 중요한 방법론적 경고를 제공합니다.</li>
+            <li><strong>LLM은 인간이 아니다:</strong> 퍼플렉시티 분석 결과 LLM은 모듈형 코드와 단일 코드에 대해 거의 동일한 예측 능력을 보였습니다 (PPL 차이가 모든 모델에서 0.2 이내). 이해와 유지보수를 위해 모듈 구조에서 큰 이점을 얻는 인간과 달리, 이는 근본적인 인지 격차를 드러냅니다: 코드 예제의 유용성에 영향을 미치는 요인이 인간과 LLM 관점에서 다르며, 인간의 소프트웨어 공학 휴리스틱을 AI 시스템에 무비판적으로 전이해서는 안 됩니다.</li>
+            <li><strong>실용적 지침:</strong> 실무자들은 LLM 기반 코드 생성을 위해 코드 시연을 모듈화하는 데 추가 노력을 기울일 필요가 없습니다. Few-shot 예제 구성이나 파인튜닝 데이터셋 구축 시 구조적 스타일보다 코드의 품질, 정확성, 그리고 변환 과정의 재포맷팅 효과가 더 중요함을 시사합니다.</li>
+            <li><strong>방법론적 템플릿:</strong> MoS 지표와 4가지 범주 실험 설계는 다른 코드 속성(예: 주석 스타일, 명명 규칙, 디자인 패턴)과 LLM 성능에 대한 그 영향을 조사하는 향후 연구를 위한 재사용 가능한 템플릿을 제공합니다. 변환 후 역변환을 통해 교란 요인을 분리하는 접근법은 광범위하게 적용 가능합니다.</li>
+        </ul>
     </div>
 
     <div class="section">

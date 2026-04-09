@@ -22,43 +22,217 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>사전학습 언어 모델에서의 구문 분석 추출의 실용적 효과를 재검토하는 연구</p>
-        <figure class="paper-figure">
-            <img src="https://ar5iv.labs.arxiv.org/html/2211.00479/assets/x1.png" alt="논문 개요">
-            <figcaption><strong>Figure 1.</strong> CPE-PLM(사전학습 언어 모델에서의 구문 분석 추출) 개념도. 단일 어텐션 헤드, Top-K 앙상블, 레이어별 앙상블 등 다양한 앙상블 방법을 보여줍니다.</figcaption>
-        </figure>
+        <p>사전학습 언어 모델에서의 구문 분석 추출(CPE-PLM)을 엄밀히 재검토하고, 이종 PLM의 어텐션 헤드를 결합하는 새로운 앙상블 기법을 제안하여 PTB에서 55.7 F1을 달성 -- 비지도 파서와 동등한 성능을 보이며, 퓨샷 환경에서는 지도 학습 파서를 크게 능가함을 입증한 연구.</p>
     </div>
+
+    <figure class="paper-figure">
+        <img src="https://ar5iv.labs.arxiv.org/html/2211.00479/assets/x1.png" alt="논문 개요">
+        <figcaption><strong>Figure 1.</strong> CPE-PLM(사전학습 언어 모델에서의 구문 분석 추출) 개념도. 단일 어텐션 헤드, Top-K 앙상블, 레이어별 앙상블 등 다양한 앙상블 방법을 보여줍니다.</figcaption>
+    </figure>
+
     <div class="section">
-        <h2>배경</h2>
-        <p>BERT와 같은 사전학습 언어 모델(PLM)이 은닉 표현에 구문 정보를 인코딩한다는 연구가 늘어나면서, 지도 학습 파싱 없이 이 표현들로부터 구문 분석 트리를 추출하는 여러 방법이 제안되었습니다. 초기 결과는 유망해 보였으나, 대부분의 평가가 제한적이고 때로는 비일관적인 실험 설정에서 수행되어, 이러한 기법이 진정으로 실용적인지 판단하기 어려웠습니다. 본 논문은 한 걸음 물러서서 PLM에서의 구문 분석 추출이 보다 광범위한 현실적 조건에서 실제로 얼마나 잘 작동하는지를 엄밀하게 재검토합니다.</p>
+        <h2>배경 및 동기</h2>
+        <p>사전학습 언어 모델에서의 구문 분석 추출(CPE-PLM)은 태스크별 파인튜닝 없이 사전학습 언어 모델의 <strong>내부 지식만을 활용</strong>하여 구문 분석 트리를 유도하려는 최근의 패러다임입니다. 핵심 아이디어는 BERT, RoBERTa 등의 PLM이 어텐션 패턴과 은닉 표현에 구문 구조를 인코딩하고 있으며, 이를 차트 기반 알고리즘으로 디코딩하여 파스 트리를 얻을 수 있다는 것입니다.</p>
+        <div class="highlight-box">
+            <p><strong>기존 연구의 주요 한계점:</strong></p>
+            <ul>
+                <li><strong>비일관적 평가:</strong> 기존 연구들은 서로 다른 PLM, 레이어 선택 전략, 거리 메트릭, 디코딩 알고리즘을 사용하여 공정한 비교가 불가능했습니다.</li>
+                <li><strong>제한된 범위:</strong> 대부분의 평가가 단일 PLM이나 좁은 구성 집합에 집중되어, CPE-PLM이 진정으로 달성할 수 있는 성능의 전체 그림을 놓치고 있었습니다.</li>
+                <li><strong>미탐색된 앙상블 잠재력:</strong> 개별 어텐션 헤드의 파싱 능력은 제한적이지만, 여러 헤드, 레이어, 나아가 여러 PLM에 걸쳐 정보를 결합하는 잠재력은 체계적으로 탐구되지 않았습니다.</li>
+                <li><strong>불명확한 실용적 가치:</strong> 학습이 필요 없는 CPE-PLM이 기존의 비지도 또는 지도 학습 파서 대비 실제 시나리오에서 어떤 실용적 이점을 제공할 수 있는지 불분명했습니다.</li>
+            </ul>
+        </div>
+        <p>본 논문은 CPE-PLM의 <strong>수학적 재정식화</strong>, <strong>새로운 앙상블 기법</strong> 제안, 그리고 다국어, 하류 태스크, 다양한 데이터 환경에 걸친 포괄적 실험을 통해 이 모든 격차를 해소합니다. 총 <strong>16개의 PLM</strong>(영어 12개, 다국어 4개)을 체계적으로 평가하며, 인코더 기반(BERT, RoBERTa, ELECTRA), 디코더 기반(GPT-2, CTRL), 하이브리드 아키텍처(XLNet, BART)를 모두 포괄하는 가장 광범위한 CPE-PLM 평가를 수행합니다.</p>
     </div>
+
     <div class="section">
-        <h2>방법</h2>
+        <h2>제안 방법</h2>
+        <p>본 논문은 먼저 CPE-PLM을 통합된 수학적 프레임워크로 재정식화하여 기존 접근법들 간의 관계를 명확히 하고, 원칙적인 앙상블 전략을 가능하게 합니다.</p>
+
+        <h3>핵심 정식화</h3>
+        <p>주어진 문장에 대해, 각 어텐션 헤드가 스팬에 대한 쌍별 점수 함수를 제공합니다. 트리 점수는 다음과 같이 분해됩니다:</p>
+        <p style="text-align:center;"><em>s<sub>tree</sub>(T) = &Sigma;<sub>(i,j)&isin;T</sub> s<sub>span</sub>(i,j)</em></p>
+        <p>스팬 점수는 재귀적으로 정의됩니다: <em>i &lt; j</em>일 때 <em>s<sub>span</sub>(i,j) = s<sub>comp</sub>(i,j) + min<sub>i&le;k&lt;j</sub> s<sub>split</sub>(i,k,j)</em>, <em>s<sub>span</sub>(i,i) = 0</em>. 분할 점수는 <em>s<sub>split</sub>(i,k,j) = s<sub>span</sub>(i,k) + s<sub>span</sub>(k+1,j)</em>로 추가 분해됩니다. 파스 트리는 총 트리 점수를 최소화하는 <strong>CKY 알고리즘</strong>을 통해 탐색합니다: <em>T&#770; = argmin<sub>T</sub> s<sub>tree</sub>(T)</em>.</p>
+        <p>어텐션 분포 간의 발산을 측정하기 위해 <strong>Jensen-Shannon 발산(JSD)</strong>과 <strong>Hellinger 거리(HEL)</strong> 두 가지 거리 함수를 사용하며, Hellinger 거리가 단순성과 동등한 효과 면에서 선호됩니다.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">수학적 재정식화</div>
+                <div class="step-desc">쌍 점수 함수는 <em>s<sub>p</sub>(i,j) := C(j-i+1,2)<sup>-1</sup> &Sigma; f(g(w<sub>x</sub>), g(w<sub>y</sub>))</em>로 정의됩니다. 여기서 <em>g(m,n)</em>은 <em>m</em>번째 레이어의 <em>n</em>번째 헤드에서 어텐션 분포를 추출하고, <em>f</em>는 단어 쌍의 어텐션 분포 간 거리를 측정합니다. 이 정식화는 기존 접근법들을 단일 프레임워크로 통합하고, 원칙적인 앙상블 전략을 가능하게 합니다. <em>l</em>개의 레이어와 <em>a</em>개의 헤드를 가진 PLM에서 <em>l &times; a</em>개의 후보 트리가 생성됩니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Greedy 앙상블</div>
+                <div class="step-desc">최고 성능의 단일 어텐션 헤드에서 시작하여, 검증 셋에서 전체 파싱 성능이 향상되면 추가 헤드를 순차적으로 앙상블에 추가합니다. 정렬된 후보 헤드 집합 <em>G<sub>sorted</sub></em>를 순회하며, 검증 성능 향상에 기여하는 헤드만 유지합니다. 참여 헤드 수에 고정된 제한이 없어, 최적의 앙상블 크기를 적응적으로 결정합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Beam 앙상블</div>
+                <div class="step-desc">신경망 텍스트 생성의 빔 서치에서 영감을 받아, 각 확장 단계에서 <em>b</em>개의 최고 가설(헤드 조합)을 유지합니다. 각 반복에서 현재 모든 가설에 후보 헤드를 하나씩 추가하고 평가하여, 상위 <em>b</em>개 조합만 유지합니다. 각 헤드는 최대 한 번만 선택됩니다(비복원). 빔 크기는 단일 PLM에서 <em>b=5</em>, 다중 PLM에서 <em>b=30</em>으로 설정하여, 탐욕적 지역 최적해를 적절한 계산 비용으로 회피합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">다중 PLM 확장</div>
+                <div class="step-desc">어텐션 헤드 후보 풀을 단일 PLM을 넘어 <em>P</em>개의 이종 모델로 확장하여 결합된 트리 풀을 구성합니다: <em>&tau;<sub>multi</sub> := {T&#770;<sub>(p,m,n)</sub> | p&isin;{1,...,P}, m&isin;{1,...,l}, n&isin;{1,...,a}}</em>. 앙상블은 모든 PLM의 모든 가용 헤드 중에서 최적의 조합을 선택하여, 서로 다른 아키텍처에 인코딩된 상보적 구문 지식을 활용합니다. 총 16개 PLM 평가: 영어 12개(BERT-base/large, RoBERTa-base/large, ELECTRA-base/large, GPT-2, GPT-2-medium, CTRL, BART-large, XLNet-base/large) 및 다국어 4개(MBERT, XLM, XLM-R, XLM-R-large).</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>실험 결과</h2>
+
+        <h3>단일 PLM 성능 (PTB, 주요 모델)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>PLM</th><th>최고 단일 헤드</th><th>Greedy 앙상블</th><th>Beam 앙상블</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>BERT-base</td><td>42.7</td><td>43.0</td><td>--</td></tr>
+                <tr><td>BERT-large</td><td>44.2</td><td>45.0</td><td>--</td></tr>
+                <tr><td>RoBERTa-large</td><td>41.9</td><td>47.2</td><td>--</td></tr>
+                <tr><td>ELECTRA-large</td><td>44.3</td><td>47.9</td><td>--</td></tr>
+                <tr><td>XLNet-large</td><td>46.4</td><td>47.2</td><td>--</td></tr>
+                <tr><td>XLM-R</td><td>46.7</td><td>48.5</td><td>--</td></tr>
+                <tr><td>기존 최고 (Kim et al., 2021)</td><td colspan="3" style="text-align:center;">47.7</td></tr>
+            </tbody>
+        </table>
+
+        <h3>CPE-PLM vs. 비지도 파서 (PTB 테스트셋)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>모델</th><th>유형</th><th>F1</th><th>NP</th><th>VP</th><th>PP</th><th>ADVP</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>PRPN</td><td>비지도</td><td>47.3</td><td>59</td><td>46</td><td>57</td><td>32</td></tr>
+                <tr><td>ON-LSTM</td><td>비지도</td><td>48.1</td><td>64</td><td>41</td><td>54</td><td>31</td></tr>
+                <tr><td>Neural PCFG</td><td>비지도</td><td>50.8</td><td>71</td><td>33</td><td>58</td><td>45</td></tr>
+                <tr><td>Compound PCFG</td><td>비지도</td><td>55.2</td><td>74</td><td>41</td><td>68</td><td>52</td></tr>
+                <tr><td>Neural L-PCFG</td><td>비지도</td><td>55.3</td><td>67</td><td>48</td><td>65</td><td>58</td></tr>
+                <tr><td>XLM-R + Greedy</td><td>CPE-PLM (단일)</td><td>48.5</td><td>69</td><td>29</td><td>62</td><td>73</td></tr>
+                <tr><td>All PLMs + Greedy</td><td>CPE-PLM (다중)</td><td>55.3</td><td>75</td><td>36</td><td>76</td><td>76</td></tr>
+                <tr><td class="highlight-cell"><strong>All PLMs + Beam</strong></td><td class="highlight-cell"><strong>CPE-PLM (다중)</strong></td><td class="highlight-cell"><strong>55.7</strong></td><td class="highlight-cell"><strong>74</strong></td><td class="highlight-cell"><strong>42</strong></td><td class="highlight-cell"><strong>75</strong></td><td class="highlight-cell"><strong>72</strong></td></tr>
+            </tbody>
+        </table>
+        <div class="highlight-box">
+            <p><strong>구문 유형별 분석:</strong> CPE-PLM은 NP(75%), PP(76%), ADVP(76%) 구성소 인식에서 뛰어나며, PP와 ADVP에서는 비지도 파서를 크게 능가합니다. 그러나 VP 재현율(42%)은 Neural L-PCFG(48%) 대비 상대적 약점으로, 동사구 경계가 어텐션 패턴만으로는 포착하기 어려움을 시사합니다.</p>
+        </div>
+
+        <h3>다국어 결과 (9개 언어, F1)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>방법</th><th>평균</th><th>EN</th><th>EU</th><th>FR</th><th>DE</th><th>HE</th><th>HU</th><th>KO</th><th>PL</th><th>SV</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Top-K (MBERT)</td><td>39.8</td><td>44.6</td><td>39.3</td><td>35.9</td><td>35.9</td><td>37.8</td><td>33.2</td><td>47.5</td><td>51.1</td><td>32.6</td></tr>
+                <tr><td>Greedy (MBERT)</td><td>40.4</td><td>47.1</td><td>40.2</td><td>36.9</td><td>37.5</td><td>38.6</td><td>30.2</td><td>49.1</td><td>52.4</td><td>31.9</td></tr>
+                <tr><td class="highlight-cell"><strong>Greedy (전체 MLM)</strong></td><td class="highlight-cell"><strong>47.5</strong></td><td class="highlight-cell"><strong>51.9</strong></td><td class="highlight-cell"><strong>44.0</strong></td><td class="highlight-cell"><strong>41.9</strong></td><td class="highlight-cell"><strong>47.3</strong></td><td class="highlight-cell"><strong>48.1</strong></td><td class="highlight-cell"><strong>40.1</strong></td><td class="highlight-cell"><strong>53.7</strong></td><td class="highlight-cell"><strong>61.4</strong></td><td class="highlight-cell"><strong>39.0</strong></td></tr>
+            </tbody>
+        </table>
+        <p>4개의 다국어 PLM(MBERT, XLM, XLM-R, XLM-R-large)을 결합하면 평균 F1이 40.4에서 47.5로 +7.1 포인트 향상됩니다. 폴란드어가 61.4 F1로 가장 높은 점수를 달성하며, 한국어(53.7)와 영어(51.9)가 그 뒤를 잇습니다. 유형론적으로 다양한 9개 언어 전반에 걸친 일관된 향상은 다중 PLM 시너지가 언어 비의존적 현상임을 확인합니다.</p>
+
+        <h3>퓨샷 파싱: CPE-PLM vs. 지도 학습 파서 (Benepar)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>주석 수</th><th>CPE-PLM Greedy</th><th>CPE-PLM Beam</th><th>Benepar (지도 학습)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>46.2</td><td>45.4</td><td>11.6</td></tr>
+                <tr><td>2</td><td>48.4</td><td>45.9</td><td>12.5</td></tr>
+                <tr><td>5</td><td>49.9</td><td>47.7</td><td>12.5</td></tr>
+                <tr><td>10</td><td>49.1</td><td>49.6</td><td>14.0</td></tr>
+                <tr><td>17 (데이터의 1%)</td><td>49.4</td><td>51.3</td><td>31.1</td></tr>
+                <tr><td class="highlight-cell">100% 검증셋</td><td class="highlight-cell">55.3</td><td class="highlight-cell">55.7</td><td class="highlight-cell">92.2</td></tr>
+            </tbody>
+        </table>
+
+        <h3>검증셋 의존도</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>검증 데이터</th><th>Greedy F1</th><th>상대적 손실</th><th>Beam F1</th><th>상대적 손실</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>1%</td><td>49.4</td><td>-5.9%</td><td>51.3</td><td>-4.5%</td></tr>
+                <tr><td>2%</td><td>49.9</td><td>-5.3%</td><td>49.8</td><td>-6.0%</td></tr>
+                <tr><td>5%</td><td>52.7</td><td>-2.5%</td><td>51.8</td><td>-4.0%</td></tr>
+                <tr><td>10%</td><td>54.3</td><td>-0.9%</td><td>52.9</td><td>-2.9%</td></tr>
+                <tr><td>100%</td><td>55.3</td><td>--</td><td>55.7</td><td>--</td></tr>
+            </tbody>
+        </table>
+        <p>검증 데이터의 1%(17개 주석 트리)만으로도 CPE-PLM은 전체 성능의 90% 이상을 유지하여, 극단적인 데이터 효율성을 확인합니다.</p>
+
+        <h3>하류 태스크: URNNG 학습</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>구성</th><th>퍼플렉시티</th><th>F1</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Compound PCFG</td><td>85.4</td><td>57.8</td></tr>
+                <tr><td>CPE-PLM (All + Greedy) &rarr; URNNG</td><td>81.3</td><td>57.2</td></tr>
+                <tr><td class="highlight-cell"><strong>CPE-PLM (All + Beam) &rarr; URNNG</strong></td><td class="highlight-cell"><strong>82.0</strong></td><td class="highlight-cell"><strong>60.7</strong></td></tr>
+            </tbody>
+        </table>
+        <p>CPE-PLM이 유도한 트리로 URNNG를 학습하면 파싱 F1이 55.7에서 60.7로 +5 포인트 향상되어, CPE-PLM 트리가 전용 파서 학습을 위한 효과적인 감독 신호로 기능함을 보여줍니다.</p>
+
+        <h3>하류 태스크: TreeLSTM 분류 정확도</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>파스 소스</th><th>SST-2</th><th>MR</th><th>SUBJ</th><th>TREC</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>우분기 기준선</td><td>85.72</td><td>83.37</td><td>94.80</td><td>94.50</td></tr>
+                <tr><td>CPE-PLM (All + Beam)</td><td>86.10</td><td>83.62</td><td>94.85</td><td>94.75</td></tr>
+                <tr><td>지도 학습 파서</td><td>86.70</td><td>83.62</td><td>95.12</td><td>95.05</td></tr>
+            </tbody>
+        </table>
+        <p>CPE-PLM 트리는 4개 텍스트 분류 벤치마크 모두에서 우분기 기준선을 일관되게 능가하며, 지도 학습 파서 트리에 근접한 성능을 보여 유도된 구문 구조가 하류 응용에 의미 있는 정보를 담고 있음을 확인합니다.</p>
+
+        <h3>추론 시간 비교</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>접근법</th><th>F1</th><th>시간</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Compound PCFG</td><td>55.2</td><td>31분</td></tr>
+                <tr><td>CPE-PLM (Greedy)</td><td>55.3</td><td>27분</td></tr>
+                <tr><td>CPE-PLM으로 학습한 거리 기반 파서</td><td>55.0</td><td>36초</td></tr>
+                <tr><td class="highlight-cell"><strong>CPE-PLM으로 학습한 Benepar</strong></td><td class="highlight-cell"><strong>59.3</strong></td><td class="highlight-cell"><strong>32초</strong></td></tr>
+            </tbody>
+        </table>
+        <p>CPE-PLM에서 지도 학습 파서(Benepar)로의 지식 증류는 추론 시간을 27분에서 32초로 단축하면서 오히려 F1을 55.7에서 59.3으로 <em>향상</em>시켜, 실용적인 배포 경로를 제시합니다.</p>
+
         <ul class="key-points">
-            <li><strong>체계적 평가 프레임워크:</strong> 기존 연구에서 종종 비일관적이었던 변수들 &mdash; PLM 선택, 레이어 선택 전략, 스팬 점수 계산을 위한 거리 메트릭, 트리 디코딩 알고리즘 &mdash; 을 통제하는 통합 평가 프로토콜을 수립합니다.</li>
-            <li><strong>광범위한 실험 범위:</strong> 다수의 PLM(BERT, RoBERTa, XLNet 등), 다양한 레이어 집계 전략(단일 레이어, 레이어 평균, 학습된 결합), 그리고 서로 다른 차트 기반 디코딩 방법을 동일한 조건에서 비교합니다.</li>
-            <li><strong>실용성 스트레스 테스트:</strong> 표준 PTB 평가를 넘어 도메인 외 데이터, 다양한 문장 길이, 다양한 트리 깊이에서 테스트하여 실제 배포 조건을 더 잘 반영하는 견고성을 평가합니다.</li>
+            <li><strong>비지도 파서와 동등한 성능:</strong> 다중 PLM 빔 앙상블은 55.7 F1을 달성하여 Compound PCFG(55.2)를 능가하고 Neural L-PCFG(55.3)와 동등 -- 어떠한 학습 없이 이를 달성했습니다.</li>
+            <li><strong>퓨샷에서의 압도적 우위:</strong> 주석 데이터 1개만으로 CPE-PLM은 46.2 F1, Benepar는 11.6 F1을 기록합니다. 17개(데이터의 1%)에서도 CPE-PLM이 지도 학습 파싱을 20+ F1 포인트 차이로 능가하여, 저자원 환경에서의 높은 실용성을 입증합니다.</li>
+            <li><strong>앙상블 다양성이 핵심:</strong> 단일 PLM 추출의 최대 성능은 약 47-48 F1이지만, 이종 모델(BERT, RoBERTa, ELECTRA, 다국어 변형)의 헤드를 결합하면 +8.5 F1 향상되어, 서로 다른 PLM이 상보적 구문 지식을 인코딩함을 보여줍니다.</li>
+            <li><strong>다중 PLM 시너지의 일관성:</strong> 이종 앙상블의 이점은 평가된 9개 언어 모두에서 유지되며, 다중 MLM Greedy 앙상블이 평균 F1을 40.4에서 47.5로 +7.1 포인트 향상시킵니다.</li>
+            <li><strong>하류 태스크에서의 유용성:</strong> CPE-PLM이 유도한 파스 트리로 URNNG를 학습하면 60.7 F1(단독 대비 5포인트 상승)을 달성하고, TreeLSTM 분류기에서는 4개 벤치마크 모두에서 지도 학습 파서 다음으로 높은 성능을 기록합니다.</li>
+            <li><strong>지식 증류를 통한 빠른 배포:</strong> CPE-PLM의 출력을 Benepar에 증류하면 32초 만에 59.3 F1을 달성 -- 직접 CPE-PLM 대비 50배 빠르면서 정확도도 3.6 포인트 향상됩니다.</li>
+            <li><strong>인코더 PLM의 우위:</strong> 인코더 기반 모델(BERT, RoBERTa, ELECTRA)이 디코더 기반(GPT-2: 37.2-40.8 F1) 및 하이브리드 아키텍처(BART: 38.5 F1)를 일관되게 능가하여, 양방향 어텐션이 구문 구조 포착에 결정적임을 시사합니다.</li>
         </ul>
     </div>
-    <div class="section">
-        <h2>결과</h2>
-        <ul class="key-points">
-            <li><strong>선택에 민감한 성능:</strong> PLM, 사용 레이어, 디코딩 방법에 따라 파싱 품질이 극적으로 변합니다. 이전에 보고된 일부 강력한 결과가 통제된 설정에서 재현되지 않아, 세부 구현 사항이 결과에 크게 영향을 미침을 보여줍니다.</li>
-            <li><strong>지도 학습 파서와의 큰 격차:</strong> 최상의 추출 구성에서도 지도 학습 구문 분석기에 크게 미치지 못하여, PLM 기반 추출이 아직 하류 응용에서 학습된 파서의 실용적 대안이 아님을 나타냅니다.</li>
-            <li><strong>견고성 문제:</strong> 긴 문장과 도메인 외 텍스트에서 성능이 눈에 띄게 저하되어 실제 사용의 실용적 한계를 부각합니다.</li>
-            <li><strong>실행 가능한 권고사항:</strong> 어떤 PLM-레이어-디코더 조합이 가장 잘 작동하는지, 추출 방법이 유용한 경우(예: 저자원 환경에서의 저비용 근사)에 대한 구체적 지침을 제공합니다.</li>
-        </ul>
-    </div>
+
     <div class="section">
         <h2>의의</h2>
-        <p>본 논문은 PLM에서의 비지도 구문 분석 분야에 대한 중요한 현실 점검 역할을 합니다. 기존 문헌에서 부재했던 엄밀하고 통제된 비교를 제공함으로써, 이러한 방법이 실제로 무엇을 할 수 있고 무엇을 할 수 없는지를 명확히 합니다. 연구자들이 지나치게 낙관적인 결론을 피하고, 추출 기반 파싱이 실용적으로 가능해지기 위해 해결해야 할 진정한 병목 &mdash; 문장 길이와 도메인 이동에 대한 견고성 등 &mdash; 에 노력을 재집중하도록 돕습니다.</p>
+        <p>본 논문은 구문 분석 및 PLM 해석 가능성 분야에 다음과 같은 중요한 기여를 합니다:</p>
+        <ul>
+            <li><strong>학습 없는 파싱의 실현:</strong> CPE-PLM은 학습 데이터나 모델 파인튜닝이 전혀 필요 없으면서도, 대규모 학습이 필요한 비지도 파서와 동등한 결과를 달성합니다. 이는 계산 자원이나 학습 데이터가 제한된 상황에서 매력적인 선택지가 됩니다.</li>
+            <li><strong>퓨샷 환경에서의 명확한 실용적 틈새:</strong> 저데이터 환경에서 지도 학습 파서 대비 압도적 우위(1개 예시에서 46.2 vs. 11.6 F1)는 소수의 주석된 파스 트리만 가용한 경우 CPE-PLM이 최선의 선택임을 확립합니다.</li>
+            <li><strong>PLM의 구문 지식에 대한 통찰:</strong> 다중 PLM 앙상블의 성공은 서로 다른 사전학습 모델이 구문 구조의 상보적 측면을 인코딩하고 있음을 밝혀, PLM이 포착하는 언어 지식과 이를 효과적으로 추출하는 방법에 대한 이해를 심화시킵니다.</li>
+            <li><strong>실용적 배포 경로:</strong> 지식 증류 결과(CPE-PLM을 Benepar에 증류: 32초 만에 59.3 F1)는 CPE-PLM이 단순한 연구적 호기심이 아니라 실제 시스템에 효율적으로 배포될 수 있음을 보여주며, 학습 없는 추출과 실용적 추론 속도 사이의 격차를 해소합니다.</li>
+            <li><strong>통합된 이론적 프레임워크:</strong> 수학적 재정식화는 기존에 단편적이었던 연구 분야에 명확성을 부여하며, 사전학습 모델에서 구조화된 언어 지식을 추출하는 향후 연구를 위한 원칙적 기반을 제공합니다.</li>
+        </ul>
     </div>
+
     <div class="section">
         <h2>링크</h2>
         <div class="links-section">
             <a href="https://aclanthology.org/2022.coling-1.479/" target="_blank" class="paper-link">ACL Anthology</a>
+            <a href="https://arxiv.org/abs/2211.00479" target="_blank" class="paper-link">arXiv Paper</a>
+            <a href="https://aclanthology.org/2022.coling-1.479.pdf" target="_blank" class="paper-link">PDF</a>
         </div>
     </div>
+
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-parsing">Parsing &amp; Syntax</span>
     </div>

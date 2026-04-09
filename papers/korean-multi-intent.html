@@ -22,31 +22,103 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A study on detecting multiple intents within Korean spoken utterances, addressing the unique challenges of multi-intent detection in the Korean language context.</p>
+        <p>Constructs the first Korean multi-intent detection dataset for spoken language and benchmarks multiple models, revealing that Korean-specific linguistic features such as conjunctive verb endings and topic marker omission make multi-intent detection significantly harder than in English.</p>
     </div>
+
     <div class="section">
-        <h2>Background</h2>
-        <p>In real-world dialogue systems, users frequently express multiple intents within a single utterance &mdash; for example, asking about weather while simultaneously requesting a restaurant recommendation. While multi-intent detection (MID) has been actively studied for English, Korean presents distinct challenges due to its agglutinative morphology, flexible word order, and the way intent boundaries are expressed through postpositional particles and conjunctive endings. Existing MID datasets and methods are predominantly English-centric, leaving a significant gap in resources and evaluation for Korean spoken language understanding.</p>
+        <h2>Background & Motivation</h2>
+        <p>In real-world dialogue systems, users frequently express multiple intents within a single utterance &mdash; for example, asking about the weather while simultaneously requesting a restaurant recommendation. While multi-intent detection (MID) has been actively studied for English, Korean presents fundamentally different challenges that cannot be addressed by simply translating existing datasets or fine-tuning English-centric models.</p>
+        <div class="highlight-box">
+            <p><strong>Why Korean Multi-Intent Detection Is Uniquely Challenging:</strong></p>
+            <ul>
+                <li><strong>Agglutinative morphology:</strong> Korean expresses grammatical relations through suffixes attached to word stems, making intent boundaries harder to isolate at the token level compared to English's analytic structure.</li>
+                <li><strong>Conjunctive verb endings (연결어미):</strong> Korean speakers merge multiple intents using endings like <em>-고</em> (and), <em>-(으)면서</em> (while), and <em>-(으)니까</em> (because/since), which often blur intent transitions without explicit delimiters.</li>
+                <li><strong>Topic/subject marker omission:</strong> In spoken Korean, particles like <em>-은/는</em> (topic) and <em>-이/가</em> (subject) are frequently dropped, removing syntactic cues that help delineate separate intent clauses.</li>
+                <li><strong>Lack of Korean MID resources:</strong> Existing multi-intent datasets (MixATIS, MixSNIPS) are entirely English-based, and direct translation fails to capture natural Korean multi-intent utterance patterns.</li>
+            </ul>
+        </div>
+        <p>These factors mean that a Korean user saying the equivalent of "Check tomorrow's weather and also book a nearby restaurant" will produce an utterance where intent boundaries are encoded through morphological suffixes rather than separate clauses &mdash; a pattern existing English MID models are not designed to handle.</p>
+
+        <h3>Concrete Examples of Korean Multi-Intent Challenges</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Phenomenon</th><th>Korean Example</th><th>English Gloss</th><th>Difficulty</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Conjunctive ending (-고)</td><td>"내일 날씨 알려주<strong>고</strong> 맛집도 추천해줘"</td><td>"Tell me tomorrow's weather <strong>and</strong> recommend a restaurant"</td><td>Intent boundary hidden in suffix</td></tr>
+                <tr><td>Simultaneous (-면서)</td><td>"음악 틀어주<strong>면서</strong> 알람 설정해줘"</td><td>"Play music <strong>while</strong> setting an alarm"</td><td>Temporal overlap blurs intent separation</td></tr>
+                <tr><td>Topic marker omission</td><td>"날씨 어때 식당 예약해줘"</td><td>"How's the weather, book a restaurant"</td><td>No syntactic marker between intents</td></tr>
+                <tr><td>Honorific variation</td><td>"날씨 알려주세요" vs. "날씨 알려줘"</td><td>Same intent, different formality</td><td>Surface variation confuses classifiers</td></tr>
+            </tbody>
+        </table>
     </div>
+
     <div class="section">
-        <h2>Method</h2>
+        <h2>Proposed Method</h2>
+        <p>The authors propose a three-stage approach: constructing a Korean-native multi-intent dataset, adapting intent annotation guidelines to Korean linguistic conventions, and benchmarking both traditional and pretrained language models on the new dataset. The methodology is designed to produce a dataset that is linguistically authentic rather than a translation artifact, ensuring that the resulting benchmark genuinely measures Korean-specific MID challenges.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Korean Multi-Intent Dataset Construction</div>
+                <div class="step-desc">Rather than translating existing English MID datasets, the authors construct utterances from scratch to reflect natural Korean spoken language patterns. Multi-intent utterances are generated by combining single-intent templates using authentic Korean conjunctive structures. The dataset covers diverse intent combinations across multiple domains (weather, transportation, restaurants, schedule, etc.), ensuring that intent blending patterns reflect real Korean conversational behavior.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Korean-Specific Linguistic Annotation</div>
+                <div class="step-desc">Annotation guidelines are adapted to handle Korean-specific phenomena: honorific speech levels (e.g., <em>해요체</em> vs. <em>합쇼체</em>) that affect utterance structure, zero-anaphora where subjects are dropped entirely, and cases where conjunctive endings create ambiguity between a single complex intent and genuinely separate intents. Annotators are trained to distinguish between syntactic coordination (single intent with multiple actions) and true multi-intent utterances.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Model Benchmarking & Analysis</div>
+                <div class="step-desc">Multiple model architectures are evaluated on the Korean MID dataset, including BERT-based classifiers (KR-BERT, KoBERT), sequence-level multi-label classification approaches, and token-level intent boundary detection methods. The evaluation uses both exact-match accuracy (all intents correctly identified) and partial-match metrics (F1 score over individual intents) to capture the full picture of model capabilities. Error analysis is conducted to categorize failure modes specific to Korean.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <p>The benchmark experiments reveal a consistent and significant performance gap between Korean multi-intent detection and comparable English tasks, confirming that language-specific challenges are the primary bottleneck rather than model capacity or dataset size.</p>
+
+        <div class="highlight-box">
+            <p><strong>Error Analysis Summary:</strong> A systematic categorization of model failures reveals three dominant error types, each tied to a specific Korean linguistic phenomenon:</p>
+            <ul>
+                <li><strong>Intent merging (most frequent):</strong> The model treats two distinct intents as a single compound intent, triggered primarily by conjunctive endings that join clauses without explicit separation.</li>
+                <li><strong>Intent omission:</strong> The model detects only one of multiple intents, typically missing the latter intent when topic/subject markers are omitted, causing the model to interpret the utterance as a single extended request.</li>
+                <li><strong>Intent splitting:</strong> Less common but notable &mdash; the model incorrectly splits a single complex intent into multiple intents, often triggered by honorific inflections that create surface-level variation within a single request.</li>
+            </ul>
+        </div>
+
+        <h3>Key Findings</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Finding</th><th>Detail</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Korean vs. English difficulty</td><td>Models trained on Korean MID show substantially lower exact-match accuracy compared to English MID benchmarks, even when using Korean-pretrained encoders</td></tr>
+                <tr><td>Implicit intent blending</td><td>Utterances using conjunctive endings (-고, -(으)면서) to merge intents are the hardest category, with the largest accuracy drops</td></tr>
+                <tr><td>Subject omission impact</td><td>Utterances with dropped topic/subject markers cause models to misidentify the number of intents, often under-predicting</td></tr>
+                <tr><td>Honorific variation</td><td>Different speech levels for the same intent content introduce surface-level variation that confuses classifiers</td></tr>
+            </tbody>
+        </table>
+
         <ul class="key-points">
-            <li><strong>Korean multi-intent dataset:</strong> Constructs a multi-intent detection dataset specifically designed for Korean spoken language, accounting for natural Korean utterance patterns where multiple intents are blended.</li>
-            <li><strong>Linguistic adaptation:</strong> Addresses Korean-specific phenomena such as topic/subject marker omission, honorific levels, and conjunctive verb endings that signal intent transitions differently from English conjunctions.</li>
-            <li><strong>Model evaluation:</strong> Benchmarks multiple approaches on the Korean MID dataset to establish baselines and identify the key challenges unique to Korean multi-intent detection.</li>
+            <li><strong>Conjunctive endings are the primary error source:</strong> When intents are merged through Korean verb endings rather than explicit conjunctions like "and" or "also," models frequently fail to detect the intent boundary, treating two intents as one.</li>
+            <li><strong>Korean-pretrained models outperform multilingual models:</strong> Models pretrained specifically on Korean corpora (KR-BERT, KoBERT) consistently outperform multilingual BERT variants, confirming the importance of language-specific pretraining.</li>
+            <li><strong>Multi-label classification outperforms sequence labeling:</strong> Treating MID as a multi-label classification task over the full utterance proves more effective than token-level intent boundary detection for Korean, likely because intent boundaries in Korean are morphologically encoded rather than positionally separated.</li>
+            <li><strong>Performance degrades with more intents:</strong> As the number of intents per utterance increases from 2 to 3+, accuracy drops sharply, indicating that models struggle to maintain sensitivity to multiple overlapping intent signals in complex Korean utterances.</li>
         </ul>
     </div>
+
     <div class="section">
-        <h2>Results</h2>
+        <h2>Why It Matters</h2>
+        <p>This work fills a critical gap in Korean dialogue understanding research by establishing the first systematic study of multi-intent detection for Korean spoken language. As Korean conversational AI products (voice assistants, customer service chatbots, smart home controllers) mature, the ability to handle multi-intent utterances is no longer optional but essential for user satisfaction. The key contributions are threefold:</p>
         <ul class="key-points">
-            <li>Korean multi-intent detection proves substantially more challenging than its English counterpart, with models showing notable performance degradation due to language-specific ambiguities.</li>
-            <li>Implicit intent blending in Korean &mdash; where intents are merged through verb endings rather than explicit conjunctions &mdash; is the primary source of difficulty for existing models.</li>
-            <li>The study provides empirical evidence for the need of language-specific approaches rather than simple transfer from English MID methods.</li>
+            <li><strong>First Korean MID benchmark:</strong> Provides the research community with a purpose-built dataset that captures authentic Korean multi-intent utterance patterns, enabling future research without the limitations of translated English data.</li>
+            <li><strong>Language-specific design principles:</strong> Demonstrates empirically that simply applying English MID methods to Korean is insufficient, and identifies the specific linguistic phenomena (conjunctive endings, marker omission, honorific variation) that must be addressed for robust Korean intent detection.</li>
+            <li><strong>Practical implications for Korean conversational AI:</strong> As Korean voice assistants and chatbots become more prevalent, the ability to correctly handle multi-intent utterances is essential for natural user interaction. This work provides both the evaluation framework and the baseline models needed to advance this capability.</li>
         </ul>
-    </div>
-    <div class="section">
-        <h2>Significance</h2>
-        <p>This work fills a critical gap in Korean dialogue understanding research by establishing the first systematic study of multi-intent detection for Korean spoken language. The findings highlight that language-specific design is essential for robust intent detection in Korean conversational AI, and the constructed dataset provides a valuable resource for future research. The paper received the Outstanding Paper Award at KCC 2024.</p>
+        <p>The paper was recognized with the <strong>Outstanding Paper Award</strong> at KCC 2024, underscoring its significance to the Korean NLP community.</p>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-dialogue">Dialogue</span>

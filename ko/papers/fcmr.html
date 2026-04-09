@@ -25,7 +25,7 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>금융 도메인에서 텍스트 보고서, 테이블, 차트에 걸친 멀티모달 멀티홉 추론을 3단계 난이도로 평가하는 벤치마크입니다. 최고 성능 모델조차 Hard 수준에서 30.4%에 불과합니다.</p>
+        <p>FCMR은 금융 텍스트 보고서, 테이블, 차트에 걸친 교차 모달 멀티홉 추론을 3단계 난이도(Easy/Medium/Hard)로 평가하는 2,199개 인스턴스 규모의 벤치마크로, 최고 성능 모델(Claude 3.5 Sonnet)조차 3-hop 추론이 필요한 Hard 수준에서 30.4% 정확도에 불과함을 밝혔습니다.</p>
     </div>
 
     <figure class="paper-figure">
@@ -35,10 +35,14 @@
 
     <div class="section">
         <h2>배경 및 동기</h2>
-        <p>실제 금융 분석은 텍스트 보고서를 <strong>종합적으로</strong> 읽고, 테이블에서 수치를 확인하며, 차트에서 추세를 파악해야 합니다. 그러나 기존 벤치마크에는 두 가지 심각한 문제가 있었습니다:</p>
+        <p>실제 금융 분석은 텍스트 보고서를 읽고, 테이블에서 수치를 확인하며, 차트에서 추세를 파악하는 등 여러 모달리티의 정보를 동시에 통합해야 합니다. 대표적인 교차 모달 멀티홉 추론 벤치마크인 MMQA에는 두 가지 심각한 한계가 있었습니다:</p>
         <div class="highlight-box">
-            <p><strong>데이터 오염:</strong> GPT-4o가 이미지 없이 MMQA에서 43.4%를 달성하여 — 기존 벤치마크가 이미 훈련 데이터에 포함되었을 가능성을 시사합니다. FCMR에서는 이미지 없는 성능이 14.71%로 떨어져 오염 위험이 크게 감소합니다.</p>
+            <p><strong>데이터 오염:</strong> GPT-4o가 <em>시각적 단서 없이도</em> MMQA의 가장 어려운 부분에서 43.4%를 달성했습니다 (이미지 포함 시 63.4%). 이는 벤치마크 데이터가 모델 사전학습 코퍼스에 이미 포함되었을 가능성을 시사합니다. Wikipedia 기반 데이터라는 점이 오염 위험을 더욱 가중시킵니다. 반면 FCMR에서는 차트 없는 성능이 14.71%로 떨어져 랜덤 기준선(12.28%)에 근접하여 오염에 대한 강건성이 확인되었습니다.</p>
         </div>
+        <div class="highlight-box">
+            <p><strong>복잡한 질의의 부재:</strong> MMQA에서 세 가지 모달리티(텍스트, 테이블, 이미지)를 모두 활용하는 진정한 3-hop 교차 모달 추론 인스턴스는 전체의 0.8%에 불과합니다. 이는 모델의 심층적 다단계 정보 통합 능력 평가를 심각하게 제한합니다.</p>
+        </div>
+        <p>FCMR은 금융 공시 자료(SEC EDGAR 10-K 보고서 및 WRDS Compustat 재무제표, 순매출 상위 101개 기업, 2019--2023년 5년간 데이터)를 기반으로 하여 두 문제를 모두 해결하고, Easy(1-hop), Medium(2-hop), Hard(3-hop)의 체계적인 난이도 구분을 제공합니다.</p>
     </div>
 
     <figure class="paper-figure">
@@ -48,6 +52,7 @@
 
     <div class="section">
         <h2>제안 방법: CMRGen 파이프라인</h2>
+        <p><strong>교차 모달 멀티홉 추론 생성기(CMRGen)</strong>는 벤치마크 인스턴스를 자동으로 구축하는 3단계 프레임워크입니다. 각 인스턴스는 참/거짓을 판별해야 하는 3개의 진술문으로 구성되며, 0~3개가 정답일 수 있습니다. 총 2,199개 인스턴스: Easy 757개, Medium 728개, Hard 714개입니다.</p>
 
         <figure class="paper-figure">
             <img src="https://arxiv.org/html/2412.12567v2/x3.png" alt="CMRGen 프레임워크">
@@ -57,32 +62,76 @@
         <div class="method-steps">
             <div class="method-step">
                 <div class="step-num">1</div>
-                <div class="step-title">데이터 구축</div>
-                <div class="step-desc">SEC EDGAR 10-K 보고서(텍스트) + WRDS Compustat(테이블) + matplotlib/plotly(차트)</div>
+                <div class="step-title">입력 데이터 구축</div>
+                <div class="step-desc"><strong>텍스트:</strong> 순매출 상위 101개 기업의 SEC EDGAR 10-K 보고서(항목 1, 2, 7, 7A, 8). <strong>테이블:</strong> WRDS Compustat 연간 간이 재무제표(전처리 후 70개 컬럼, 2019--2023년). <strong>차트:</strong> 테이블 컬럼으로부터 matplotlib, seaborn, plotly를 사용하여 생성한 4가지 유형(꺾은선, 막대, 산점도, 원형) -- 실제 10-K 공시의 정량적 시각화 98%를 커버합니다.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">2</div>
-                <div class="step-title">질문 생성</div>
-                <div class="step-desc">Trend, Ranking, Conditional, Arithmetic 연산 템플릿</div>
+                <div class="step-title">진술문 생성</div>
+                <div class="step-desc">GPT-4o-mini와 5가지 템플릿 유형(<strong>사실 확인(FC)</strong>, <strong>조건부 임계값(CT)</strong>, <strong>산술(AR)</strong>, <strong>추세(TR)</strong>, <strong>순위(RK)</strong>)을 사용하여 단일 모달리티 1-hop 진술문을 생성합니다. 멀티홉 진술문은 1-hop + 1-hop = 2-hop(Medium), 2-hop + 1-hop = 3-hop(Hard)으로 조합하여 진정한 교차 모달 추론 체인을 보장합니다.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">3</div>
                 <div class="step-title">패러프레이징 및 필터링</div>
-                <div class="step-desc">2단계 LLM 패러프레이징 + 편향 제거, 질문당 $0.004</div>
+                <div class="step-desc">GPT-4o를 이용한 2단계 어휘/구문 패러프레이징 후 Claude 3.5 Sonnet으로 의미 보존을 검증합니다. 품질 지표: 단어 위치 편차(WPD) = 0.2, 어휘 편차(LD) = 0.45로 기존 패러프레이즈 벤치마크(MRPC, PAWS)를 상회합니다. Hard 수준 인스턴스는 추가적인 인간 전문가 검토를 거칩니다. 비용: 질문당 $0.004에 불과합니다.</div>
             </div>
         </div>
     </div>
 
     <div class="section">
         <h2>실험 결과</h2>
+        <p>모든 모델은 제로샷 Chain-of-Thought 설정으로 평가되었으며, 태스크 특화 튜닝 없이 테이블은 JSON 형식으로 제공되었습니다.</p>
+
+        <h3>주요 MLLM 성능</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>모델</th><th>Easy</th><th>Medium</th><th>Hard</th><th>평균</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Claude 3.5 Sonnet</td><td>75.43%</td><td>50.82%</td><td class="highlight-cell">30.39%</td><td>52.21%</td></tr>
+                <tr><td>GPT-4o</td><td>64.20%</td><td>43.70%</td><td>24.37%</td><td>44.09%</td></tr>
+                <tr><td>Gemini 1.5 Pro</td><td>63.01%</td><td>31.18%</td><td>22.27%</td><td>38.82%</td></tr>
+                <tr><td>Gemini 1.5 Flash</td><td>57.33%</td><td>26.65%</td><td>13.43%</td><td>32.80%</td></tr>
+                <tr><td>GPT-4o mini</td><td>49.14%</td><td>21.98%</td><td>13.03%</td><td>28.05%</td></tr>
+                <tr><td>Llama 3.2 90B-Vision</td><td colspan="4" style="text-align:center;">오픈소스 최고 성능이나 상용 모델에 미치지 못함</td></tr>
+                <tr><td>랜덤 기준선</td><td>12.20%</td><td>12.91%</td><td>12.28%</td><td>12.46%</td></tr>
+            </tbody>
+        </table>
+
+        <h3>LLM + DePlot (차트-테이블 변환)</h3>
         <table class="results-table">
             <thead>
                 <tr><th>모델</th><th>Easy</th><th>Medium</th><th>Hard</th></tr>
             </thead>
             <tbody>
-                <tr><td>Claude 3.5 Sonnet</td><td>75.43%</td><td>50.82%</td><td class="highlight-cell">30.39%</td></tr>
-                <tr><td>GPT-4o</td><td>64.20%</td><td>43.70%</td><td>24.37%</td></tr>
-                <tr><td>Gemini 1.5 Pro</td><td>-</td><td>-</td><td>낮음</td></tr>
+                <tr><td>Claude 3.5 Sonnet + DePlot</td><td>66.84%</td><td>46.15%</td><td class="highlight-cell">36.13%</td></tr>
+                <tr><td>GPT-4o + DePlot</td><td>68.69%</td><td>49.18%</td><td>32.91%</td></tr>
+            </tbody>
+        </table>
+        <p>DePlot 변환이 두 모델 모두 <strong>Hard 수준 성능을 향상</strong>시켰습니다(Claude: 30.39% &rarr; 36.13%; GPT-4o: 24.37% &rarr; 32.91%). 이는 현재 MLLM의 시각적 차트 해석 능력이 아직 불완전함을 시사합니다.</p>
+
+        <h3>모달리티별 오류 분석 (Claude 3.5 Sonnet, 90개 진술문)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>난이도</th><th>텍스트</th><th>테이블</th><th>차트</th><th>총 오류 수</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Easy</td><td>4%</td><td>21%</td><td>75%</td><td>24</td></tr>
+                <tr><td>Medium</td><td>16%</td><td>19%</td><td>65%</td><td>31</td></tr>
+                <tr><td>Hard</td><td>14%</td><td>32%</td><td>54%</td><td>41</td></tr>
+            </tbody>
+        </table>
+
+        <h3>차트 유형별 정확도 (Claude 3.5 Sonnet)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>차트 유형</th><th>Easy</th><th>Medium</th><th>Hard</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>원형(Pie)</td><td>84.31%</td><td>N/A</td><td>N/A</td></tr>
+                <tr><td>막대(Bar)</td><td>78.60%</td><td>50.00%</td><td>29.20%</td></tr>
+                <tr><td>꺾은선(Line)</td><td>74.89%</td><td>52.70%</td><td>39.22%</td></tr>
+                <tr><td>산점도(Scatter)</td><td>71.01%</td><td>49.79%</td><td>23.44%</td></tr>
             </tbody>
         </table>
 
@@ -92,16 +141,18 @@
         </figure>
 
         <ul class="key-points">
-            <li><strong>최고 성능의 한계:</strong> Claude 3.5 Sonnet조차 Hard에서 30.39% 정확도에 불과</li>
-            <li><strong>핵심 병목:</strong> 정보 검색 단계가 가장 큰 실패 요인 — 올바른 정보를 찾는 것이 가장 어려운 부분</li>
-            <li><strong>오류 유형:</strong> 차트 추세 해석 오류(35건), 순위 판단 실수(16건), 수치 해석 오류(17건)</li>
-            <li><strong>최적화 가능성:</strong> 모달리티 통합 + 4단계 추론 + Self-Refine 적용 시 Hard 성능이 32%에서 46%로 향상</li>
+            <li><strong>성능 한계:</strong> 최고 모델(Claude 3.5 Sonnet)조차 Hard에서 30.39%, 전체 평균 52.21%에 불과하여 실제 금융 분석 적용에는 크게 부족</li>
+            <li><strong>정보 검색이 핵심 병목:</strong> 40개 샘플에 대한 4단계(계획, 모달리티 식별, 정보 검색, 정보 추론) 수동 분석 결과, 식별된 모달리티에서 올바른 정보를 추출하지 못하는 것이 가장 빈번한 오류</li>
+            <li><strong>차트 이해가 가장 취약:</strong> Easy 수준에서 오류의 75%, Hard 수준에서 54%가 차트에서 발생. 산점도가 가장 어려운 차트 유형(Hard 정확도 23.44%)으로, 비구조적 표현 때문</li>
+            <li><strong>보수적 편향:</strong> 모든 모델이 불확실한 상황에서 "거짓"으로 기본 판단하는 경향을 보이며, Claude의 Hard 수준 진술문별 정밀도(74.27%)가 재현율(47.99%)을 크게 상회</li>
+            <li><strong>주요 오류 유형:</strong> 추세 평가 오류(35건), 데이터/수치 해석 실수(17건), 순위 판단 오류(16건), 음수 처리 어려움 등</li>
+            <li><strong>최적화 여지:</strong> 모달리티 통합 + 4단계 추론 + Self-Refine 조합으로 Hard 100개 샘플 성능이 32%에서 46%로 향상되나 그 이상은 포화 -- 전용 접근법이 필요. 추론 특화 모델(o1: 43%, Gemini 2.0 Flash Thinking: 39%)도 격차 해소에 실패</li>
         </ul>
     </div>
 
     <div class="section">
-        <h2>왜 중요한가?</h2>
-        <p>금융은 정확성이 가장 중요한 분야입니다. AI가 금융 분석을 지원하려면 여러 데이터 형식을 정확하게 연결하고 추론할 수 있어야 합니다. FCMR은 실제 금융 환경을 반영하면서도 <strong>데이터 오염에 강건한</strong> 벤치마크이며, 질문당 $0.004의 비용으로 대규모 생성이 가능한 실용적 장점을 갖추고 있습니다.</p>
+        <h2>의의</h2>
+        <p>금융은 정확성이 절대적으로 요구되는 분야입니다. AI가 금융 분석을 의미 있게 지원하려면 이질적인 데이터 형식을 신뢰성 있게 통합하고 추론할 수 있어야 하지만, FCMR은 현재 최신 멀티모달 LLM이 이 능력에서 크게 부족함을 보여줍니다. 이 벤치마크의 세 가지 핵심 기여는 다음과 같습니다: (1) <strong>데이터 오염에 대한 강건성</strong>(차트 없이는 랜덤 수준의 성능), (2) 최대 3-hop까지의 <strong>진정한 멀티홉 교차 모달 추론</strong>에 대한 체계적 평가, (3) 질문당 $0.004의 비용으로 <strong>확장 가능한 저비용 데이터셋 생성</strong>이 가능한 CMRGen 프레임워크 -- 법률, 의학, 공학 등 타 분야로의 확장 가능성도 제시합니다.</p>
     </div>
 
     <div class="section">

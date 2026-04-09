@@ -29,45 +29,89 @@
     </div>
 
     <div class="section">
-        <h2>Background & Motivation</h2>
-        <p>"Unlearning" specific knowledge from LLMs is becoming increasingly important for privacy protection (GDPR "right to be forgotten"), harmful content removal, and copyright compliance.</p>
+        <h2>Background &amp; Motivation</h2>
+        <p>Large language models inevitably retain harmful biases, sensitive personal data, and copyrighted content during pre-training. As regulations such as the EU's GDPR "right to be forgotten" tighten, the ability to selectively remove specific knowledge from trained models -- known as <strong>knowledge unlearning</strong> -- has become a critical research problem. Recent unlearning methods have adopted a <strong>localization-based</strong> strategy: first identify the specific parameter regions (typically MLP value vectors) that "store" the target knowledge, then confine parameter updates to those regions in order to remove the knowledge while preserving unrelated general capabilities.</p>
 
-        <p style="margin-top: 12px;">The core assumption of existing approaches:</p>
         <div class="highlight-box">
-            <p><strong>Assumption:</strong> Specific knowledge is stored "locally" in specific parameters of the model, so finding and modifying those parameters should be sufficient to remove the knowledge.</p>
+            <p><strong>Core Assumption Under Scrutiny:</strong> Specific knowledge is stored "locally" in identifiable parameter subsets, so finding and modifying those parameters should be sufficient for effective unlearning. However, existing evaluations rely on unreliable surface-level metrics, and the causal connection between localization accuracy and unlearning effectiveness has never been rigorously verified.</p>
         </div>
 
-        <p style="margin-top: 12px;">This study fundamentally re-examines the validity of this assumption.</p>
+        <p style="margin-top: 12px;">This paper designs a controlled experimental framework that eliminates confounding factors -- most importantly, the accuracy of the localization method itself -- to directly test whether parameter locality is truly indicative of effective knowledge removal. The results fundamentally challenge the foundational assumption underlying localized unlearning approaches.</p>
     </div>
 
     <div class="section">
-        <h2>Experimental Design</h2>
-        <p>We design controlled experiments that eliminate confounders overlooked by prior work:</p>
+        <h2>Proposed Method: Controlled Experimental Framework</h2>
+        <p>The key innovation is a controlled setup where the <strong>ground-truth parameter region</strong> storing the target knowledge is known by construction, eliminating localization accuracy as a confounding factor:</p>
 
-        <ul class="key-points">
-            <li><strong>Parameter Locality Verification:</strong> Comparing modification of parameters presumed to "store knowledge" versus modification of other parameters</li>
-            <li><strong>Diverse Localization Methods:</strong> Using multiple parameter attribution methods to verify consistency of results</li>
-            <li><strong>General Capability Preservation:</strong> Evaluating whether overall language capabilities are maintained after knowledge removal</li>
-        </ul>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Retain-Only Fine-Tuning</div>
+                <div class="step-desc">Start from a pretrained model &theta;<sub>p</sub> and fine-tune it on the <em>retain set only</em> to obtain &theta;<sub>r</sub>. This serves as the gold-standard reference model that has never seen the forget set.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Controlled Knowledge Injection</div>
+                <div class="step-desc">Train &theta;<sub>r</sub> on the <em>forget set</em> with parameter updates restricted to a randomly selected 10% of MLP value vectors (the target region V<sub>tgt</sub>), producing the "contaminated" model &theta;<sub>o</sub>. By construction, V<sub>tgt</sub> is the exact set of parameters that encode the forget knowledge.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Oracle vs. Random Comparison</div>
+                <div class="step-desc">Apply unlearning methods in two scenarios: <strong>Oracle</strong> (updates confined to V<sub>tgt</sub>, the true knowledge region) and <strong>Random</strong> (updates confined to V<sub>rdm</sub>, a randomly selected alternative region of equal size). If locality matters, Oracle should significantly outperform Random.</div>
+            </div>
+        </div>
+
+        <p style="margin-top: 16px;">Additionally, the paper benchmarks three existing localization methods -- <strong>Activations</strong>, <strong>MemFlex</strong>, and <strong>WAGLE</strong> -- against random parameter selection under four unlearning algorithms: WGA (weighted gradient ascent), NPO (negative preference optimization), DPO (direct preference optimization), and RMU (representation mutation).</p>
     </div>
 
     <div class="section">
-        <h2>Key Findings</h2>
+        <h2>Experimental Results</h2>
+        <p>Experiments are conducted on the <strong>TOFU benchmark</strong> (4,000 synthetic QA pairs about fictitious authors; 10% forget set, 90% retain set) using <strong>LLaMA-3.1-8B-Instruct</strong> and <strong>OLMo2-7B-Instruct</strong>. Evaluation uses robust metrics: Exact Strength (ES), Forget Strength (FS = 1 &minus; ES<sub>forget</sub>), Retain Strength (RS = ES<sub>retain</sub>), AUES (area under the FS-RS curve), and MU95 (forget quality at 95% model utility).</p>
+
+        <h3>Localization Methods vs. Random Selection (LLaMA-3.1-8B)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Method</th><th>AUES &uarr;</th><th>MU95 &uarr;</th></tr>
+            </thead>
+            <tbody>
+                <tr class="highlight-cell"><td class="highlight-cell">Random</td><td class="highlight-cell">0.529</td><td class="highlight-cell">-14.87</td></tr>
+                <tr><td>Activations</td><td>0.522</td><td>-16.84</td></tr>
+                <tr><td>MemFlex</td><td>0.491</td><td>-15.97</td></tr>
+                <tr><td>WAGLE</td><td>0.525</td><td>-16.61</td></tr>
+            </tbody>
+        </table>
+        <p style="margin-top: 8px; font-size: 0.92em; color: #666;">Random parameter selection outperformed all dedicated localization methods on both metrics.</p>
+
+        <h3>Oracle vs. Random -- Controlled Experiment (LLaMA-3.1-8B)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Unlearning Method</th><th>AUES (Random)</th><th>AUES (Oracle)</th><th>&Delta;</th><th>p-value</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>WGA</td><td>0.586</td><td>0.593</td><td>0.018</td><td>0.61</td></tr>
+                <tr><td>NPO</td><td>0.625</td><td>0.619</td><td>0.011</td><td>0.71</td></tr>
+                <tr><td>DPO</td><td>0.497</td><td>0.492</td><td>0.007</td><td>0.66</td></tr>
+                <tr><td>RMU</td><td>0.506</td><td>0.502</td><td>0.017</td><td>0.37</td></tr>
+            </tbody>
+        </table>
+
         <ul class="key-points">
-            <li><strong>"Parameter Locality ≠ Effective Removal":</strong> Modifying parameters presumed to store the knowledge does not guarantee effective knowledge removal</li>
-            <li><strong>Effectiveness of Non-Local Modification:</strong> Modifying "unrelated" parameters can achieve comparable or even better unlearning results — calling the locality assumption itself into question</li>
-            <li><strong>Trade-off with General Capabilities:</strong> Localized approaches struggle to balance knowledge removal with preservation of general capabilities</li>
-            <li><strong>Methodological Implications:</strong> Effective unlearning requires new approaches that go beyond parameter locality</li>
+            <li><strong>No Statistically Significant Difference:</strong> All p-values exceed 0.3, indicating that Oracle (true knowledge region) provides no meaningful advantage over Random (arbitrary region) across all four unlearning methods</li>
+            <li><strong>Random Sometimes Wins:</strong> For NPO, DPO, and RMU, the Random scenario actually achieved higher AUES than Oracle, directly contradicting the locality assumption</li>
+            <li><strong>Localization Methods Underperform Random:</strong> On LLaMA-3.1-8B, all three localization methods (Activations, MemFlex, WAGLE) scored lower than random parameter selection</li>
+            <li><strong>Flexible Parameter Adaptation:</strong> L2 minimization analysis shows that even when updating a random parameter region, the model can reproduce the target MLP outputs to a degree comparable to updating the true knowledge region -- indicating that multiple parameter configurations can satisfy unlearning objectives</li>
         </ul>
+
         <figure class="paper-figure">
             <img src="https://arxiv.org/html/2505.16252v1/extracted/6465654/image.png" alt="Comparison of Oracle and Random scenarios across layers">
-            <figcaption><strong>Figure 1.</strong> Comparison of Oracle and Random scenarios: L2 minimization of MLP outputs at each layer. Even when adjusting localized parameters, the MLP outputs can be reproduced to a degree comparable to random parameter selection.</figcaption>
+            <figcaption><strong>Figure 1.</strong> Comparison of Oracle and Random scenarios: L2 minimization of MLP outputs at each layer. Even when adjusting a random parameter region, the MLP outputs can be reproduced to a degree comparable to the true knowledge region, demonstrating flexible parameter adaptation.</figcaption>
         </figure>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>As regulations like the EU's GDPR "right to be forgotten" tighten, removing specific information from AI is a critical challenge both technically and legally. This study rigorously demonstrates the <strong>fundamental limitations</strong> of widely used localization-based unlearning methods, providing a foundation for the research community to explore more effective approaches. It delivers the important lesson that "knowing where to modify" does not mean "being able to effectively forget."</p>
+        <p>This work delivers a critical message to the unlearning research community: <strong>"knowing where knowledge is stored" does not mean "being able to effectively forget."</strong> The widely adopted localization-based paradigm rests on an unverified assumption, and this paper is the first to rigorously test and refute it through controlled experiments with known ground-truth parameter regions.</p>
+        <p style="margin-top: 12px;">The practical implications are significant. As AI regulations like GDPR's "right to be forgotten" create real legal obligations for model providers, the field needs unlearning methods that actually work. By demonstrating that multiple parameter configurations can achieve equivalent unlearning performance, the authors suggest that future research should shift away from strict parameter locality and instead explore <strong>flexible parameter adaptation</strong> strategies across diverse model regions. This finding provides a foundation for the development of more robust and reliable unlearning approaches.</p>
     </div>
 
     <div class="section">

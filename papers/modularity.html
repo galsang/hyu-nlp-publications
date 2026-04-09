@@ -22,7 +22,7 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A comprehensive study revealing that modular code generation — widely assumed to help LLMs — does not consistently improve performance and can even hurt it, depending on the task and model.</p>
+        <p>By introducing a novel Modularity Score (MoS) metric grounded in cyclomatic complexity and carefully controlling for confounding transformation artifacts across five LLMs (Code Llama 7B/34B, DeepSeekCoder 6.7B/33B, GPT-4o-mini) and two competitive programming benchmarks (APPS, CodeContests), this study reveals that modular code is <strong>not</strong> a core factor for improving LLM-based code generation -- and that previously reported benefits were likely artifacts of the code transformation process rather than modularity itself.</p>
         <figure class="paper-figure">
             <img src="../images/modularity/figure1.png" alt="Paper overview">
             <figcaption><strong>Figure 1.</strong> Comparison of modular and non-modular code generation approaches. The study examines whether pursuing modularity actually improves LLM-based code generation performance.</figcaption>
@@ -31,39 +31,129 @@
 
     <div class="section">
         <h2>Background & Motivation</h2>
-        <p>Modular programming — breaking a problem into smaller, reusable sub-functions — is a cornerstone of software engineering. Recent work on LLM-based code generation has adopted this principle, prompting models to decompose problems into helper functions before writing the final solution.</p>
+        <p>Modular programming -- constructing a final program by integrating smaller, independent building blocks -- has long been regarded as a desirable practice in software development. It reduces complexity, improves maintainability, and enables code reuse. With the rise of code generation agents built upon large language models (LLMs), recent work has naturally adopted this principle, prompting models to decompose problems into helper functions before writing the final solution. But is this traditional practice, designed for human cognition and collaboration, equally effective for these fundamentally different tools?</p>
         <div class="highlight-box">
-            <p><strong>Assumption:</strong> Modular prompting strategies (e.g., generating sub-functions first) should improve code generation quality, mirroring good human engineering practice.</p>
+            <p><strong>Conventional Wisdom:</strong> Modular code should help LLMs just as it helps human programmers -- by reducing complexity, improving reusability, and making solutions easier to reason about. Several prior studies (e.g., CodeT, Parsel, modular prompting strategies) have reported performance gains from encouraging LLMs to produce modular code. These studies assumed that the benefits of modularity for humans would straightforwardly transfer to language models.</p>
         </div>
         <div class="highlight-box">
-            <p><strong>Question:</strong> Does pursuing modularity <em>actually</em> lead to better code generation across different models, benchmarks, and problem difficulties?</p>
+            <p><strong>The Problem:</strong> Existing studies lack a principled way to <em>measure</em> modularity quantitatively. Without a proper metric, it is impossible to verify whether observed improvements actually stem from modularity itself. Prior work typically compared "modular prompting" vs. "standard prompting," but the modular transformation process introduces confounding changes -- code simplification, reformatting, variable renaming, and even subtle algorithmic changes -- that could independently affect performance.</p>
+        </div>
+        <div class="highlight-box">
+            <p><strong>Core Question:</strong> When we rigorously control for confounding factors by introducing a formal modularity metric and carefully designed code categories, does modularity <em>actually</em> improve LLM-based code generation? Or have we been attributing performance gains to the wrong cause?</p>
         </div>
     </div>
 
     <div class="section">
-        <h2>Method</h2>
-        <p>The authors systematically evaluate modular vs. non-modular code generation strategies across multiple axes:</p>
-        <ul class="key-points">
-            <li><strong>Multiple LLMs:</strong> Experiments span both open-source and proprietary models of varying sizes to test generalizability</li>
-            <li><strong>Diverse Benchmarks:</strong> Evaluation on established code generation benchmarks (HumanEval, MBPP, APPS, CodeContests) covering easy to competition-level problems</li>
-            <li><strong>Modularity Strategies:</strong> Comparison of different modular prompting approaches — including planning-then-coding, sub-function decomposition, and self-contained monolithic generation</li>
-            <li><strong>Fine-grained Analysis:</strong> Results broken down by problem difficulty, code complexity, and model capability to identify when modularity helps or hurts</li>
-        </ul>
+        <h2>Proposed Method</h2>
+        <p>The authors introduce a quantitative framework for measuring and evaluating the impact of code modularity on LLM performance. The framework consists of three components: a formal modularity metric, a controlled experimental design with four code categories, and a comprehensive evaluation protocol.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Modularity Score (MoS) Metric</div>
+                <div class="step-desc">A novel metric grounded in Cyclomatic Complexity (CC), which measures structural complexity by counting independent execution paths via the formula CC = E - N + 2, where E is the number of edges and N the number of nodes in the control-flow graph. The ideal number of modules is computed as m* = &lfloor;CC<sub>total</sub> / &tau;&rfloor; where &tau; = 5 (a widely used complexity threshold in software engineering, indicating that each module should handle at most 5 independent paths). The MoS is then: min(1, n/m*) when m* > 0, where n is the actual number of modules; 0 when both m* and n equal 0; and 1 when m* = 0 but n > 0. The metric's validity is confirmed by a strong correlation with function call frequency (Pearson = 0.41, Spearman = 0.61), verifying it captures meaningful module interactions.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Four Code Categories for Controlled Comparison</div>
+                <div class="step-desc">To disentangle the effect of modularity from transformation artifacts, the study defines four code types: <strong>MC</strong> (Modular Code -- naturally high-MoS solutions sourced from existing dataset solutions), <strong>SC</strong> (Singular Code -- MoS=0 solutions for the same problems, representing monolithic implementations), <strong>TMC</strong> (Transformed Modular Code -- SC converted to modular form via GPT-3.5-Turbo while preserving functional equivalence), and <strong>TSC</strong> (Transformed Singular Code -- TMC with helper functions manually inlined back to monolithic form). The critical comparison is TMC vs. TSC: both have undergone the same transformation pipeline, so they share any transformation side effects, but differ <em>only</em> in whether the code is modular or singular. This isolates the pure effect of modularity.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Evaluation Protocol</div>
+                <div class="step-desc">Experiments span two paradigms: <strong>In-Context Learning (ICL)</strong> with two-shot demonstrations drawn from each code category, and <strong>Fine-tuning</strong> where models are trained exclusively on MC-only or SC-only datasets (~5K problems, 61K training examples for CodeContests). Five LLMs of varying scale are evaluated: Code Llama (7B, 34B), DeepSeekCoder (6.7B, 33B), and GPT-4o-mini. Two challenging benchmarks are used: APPS (with Introductory, Interview, and Competition difficulty splits; ~2K training / ~3.7K test problems) and CodeContests (~7.3K training problems with 182 avg. solutions each, 165 test problems). Performance is measured via pass@1, pass@5, and pass@10.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Perplexity & Correlation Analysis</div>
+                <div class="step-desc">Beyond generation performance, the study conducts perplexity analysis to measure whether LLMs have an inherent preference for modular or singular code. Additionally, Pearson and Spearman correlation tests are performed on 100 CodeContests samples to quantify the direct statistical relationship between MoS values of in-context demonstrations and pass@1 scores. This multi-faceted analysis ensures the findings are not artifacts of a single evaluation lens.</div>
+            </div>
+        </div>
     </div>
 
     <div class="section">
-        <h2>Key Results</h2>
+        <h2>Experimental Results</h2>
+
+        <h3>In-Context Learning on CodeContests (pass@1 / pass@10)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>MC</th><th>SC</th><th>TMC</th><th>TSC</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Code Llama 7B</td><td>1.98 / 8.02</td><td>2.58 / 8.81</td><td>2.57 / 10.18</td><td><strong>4.35</strong> / <strong>10.67</strong></td></tr>
+                <tr><td>Code Llama 34B</td><td>4.11 / 12.78</td><td><strong>5.83</strong> / 14.10</td><td>3.39 / 13.55</td><td>5.61 / <strong>15.32</strong></td></tr>
+                <tr><td>DeepSeekCoder 6.7B</td><td>5.30 / 12.78</td><td>7.15 / 16.27</td><td>8.02 / <strong>17.88</strong></td><td><strong>8.19</strong> / 17.79</td></tr>
+                <tr><td>DeepSeekCoder 33B</td><td>6.79 / 16.14</td><td>8.87 / 20.50</td><td><strong>9.38</strong> / <strong>22.74</strong></td><td>8.78 / 22.09</td></tr>
+                <tr><td>GPT-4o-mini</td><td>14.07</td><td><strong>15.35</strong></td><td>14.29</td><td>14.40</td></tr>
+            </tbody>
+        </table>
+
+        <h3>In-Context Learning on APPS (pass@1 / pass@5)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>MC</th><th>SC</th><th>TMC</th><th>TSC</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Code Llama 7B</td><td>7.98 / 12.75</td><td>11.12 / 15.78</td><td><strong>14.67</strong> / <strong>19.63</strong></td><td>13.84 / 17.15</td></tr>
+                <tr><td>DeepSeekCoder 6.7B</td><td>24.76 / 32.59</td><td>28.93 / 36.26</td><td><strong>34.26</strong> / <strong>40.74</strong></td><td>33.24 / 39.73</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Fine-tuning on CodeContests (pass@1 / pass@10)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>MC (Fine-tuned)</th><th>SC (Fine-tuned)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Code Llama 7B</td><td>3.88 / 12.20</td><td><strong>4.42</strong> / <strong>12.56</strong></td></tr>
+                <tr><td>DeepSeekCoder 6.7B</td><td>6.06 / 13.82</td><td><strong>8.73</strong> / <strong>16.16</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>Perplexity Analysis: LLM Preference for Code Style</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>PPL(MC)</th><th>PPL(SC)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Code Llama 7B</td><td>2.20 &plusmn; 0.57</td><td>2.40 &plusmn; 1.00</td></tr>
+                <tr><td>Code Llama 34B</td><td>2.02 &plusmn; 0.45</td><td>2.00 &plusmn; 0.44</td></tr>
+                <tr><td>DeepSeekCoder 6.7B</td><td>1.93 &plusmn; 0.41</td><td>2.05 &plusmn; 0.63</td></tr>
+                <tr><td>DeepSeekCoder 33B</td><td>1.89 &plusmn; 0.42</td><td>1.89 &plusmn; 0.42</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Correlation: MoS vs. Performance (CodeContests, 100 samples)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>Pearson</th><th>Spearman</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Code Llama 7B</td><td>-0.34 (p=0)</td><td>-0.31 (p=0)</td></tr>
+                <tr><td>DeepSeekCoder 6.7B</td><td>-0.21 (p=0.04)</td><td>-0.25 (p=0.01)</td></tr>
+            </tbody>
+        </table>
+
         <ul class="key-points">
-            <li><strong>No universal benefit:</strong> Modular generation does not consistently outperform monolithic generation; in many settings it performs comparably or worse</li>
-            <li><strong>Difficulty matters:</strong> Modularity tends to help on harder, competition-level problems but can hurt on simpler tasks where decomposition introduces unnecessary complexity</li>
-            <li><strong>Model capability matters:</strong> Stronger models benefit more from modular strategies, while weaker models often struggle with the added overhead of decomposition</li>
-            <li><strong>Error propagation:</strong> Modular approaches are susceptible to cascading errors — if a sub-function is incorrect, the entire solution fails</li>
+            <li><strong>SC consistently outperforms MC:</strong> Across all five models and both benchmarks, singular (non-modular) code outperforms naturally modular code as in-context demonstrations. On APPS, DeepSeekCoder 6.7B achieves 28.93 pass@1 with SC vs. 24.76 with MC -- a gap of over 4 points.</li>
+            <li><strong>TMC vs. TSC shows no clear modularity advantage:</strong> When comparing transformed code pairs that differ <em>only</em> in modularity (isolating the pure effect), performance gaps are negligible. For example, DeepSeekCoder 6.7B scores 8.02 (TMC) vs. 8.19 (TSC) on CodeContests -- indicating prior reported benefits were artifacts of the transformation process, not modularity itself.</li>
+            <li><strong>TMC/TSC both outperform MC:</strong> Both transformed variants substantially outperform original modular code, confirming that the transformation process (code reformatting, simplification) -- not modular structure -- drives the improvement previously attributed to modularity.</li>
+            <li><strong>Fine-tuning confirms the trend:</strong> Even when models are trained exclusively on modular or singular code (~5K problems, 61K examples), SC-trained models outperform MC-trained ones. DeepSeekCoder 6.7B achieves 8.73 vs. 6.06 pass@1 -- a 44% relative improvement for singular code.</li>
+            <li><strong>Negative correlation with MoS:</strong> Statistical analysis on 100 CodeContests samples reveals a <em>weak negative</em> correlation between modularity score and code generation performance (Pearson: -0.34 to -0.21, both statistically significant), directly contradicting conventional wisdom.</li>
+            <li><strong>Perplexity reveals LLM neutrality:</strong> All four models show nearly identical perplexity for modular and singular code (PPL ~1.9--2.4 for both). DeepSeekCoder 33B scores exactly 1.89 for both styles. Unlike humans, who strongly prefer modular structure for comprehension, LLMs are genuinely indifferent to code organization.</li>
+            <li><strong>GPT-4o-mini is indifferent:</strong> The strongest model shows virtually identical performance across all four code types (14.07--15.35 pass@1), suggesting modularity has negligible impact for highly capable models that can handle either style with equal proficiency.</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>This work challenges the prevailing assumption that "modular is always better" in LLM-based code generation. By providing a nuanced, empirically grounded analysis, it helps researchers and practitioners make <strong>informed decisions</strong> about when to apply modular prompting strategies — and when simpler, monolithic generation is the better choice. The findings suggest that the optimal strategy depends on the interplay between problem difficulty and model capability, rather than a one-size-fits-all approach.</p>
+        <p>This work overturns the prevailing assumption that "modular is always better" in LLM-based code generation, delivering critical insights for both researchers and practitioners:</p>
+        <ul>
+            <li><strong>Transformation artifacts, not modularity:</strong> The paper demonstrates that previously reported effectiveness of modularity was likely due to unforeseen side effects of the code transformation process (e.g., simplification, reformatting, variable renaming) rather than modularity itself. The TMC vs. TSC comparison -- the paper's most carefully controlled experiment -- shows negligible differences, providing a critical methodological warning for future research that conflates code transformation with code structure.</li>
+            <li><strong>LLMs are not humans:</strong> Perplexity analysis reveals that LLMs exhibit nearly identical predictive ability for both modular and singular code (PPL differences within 0.2 across all models), unlike humans who benefit greatly from modular structure for comprehension and maintenance. This reveals a fundamental cognitive gap: factors influencing the usefulness of code examples differ between human and LLM perspectives, and we should not uncritically transfer human software engineering heuristics to AI systems.</li>
+            <li><strong>Practical guidance:</strong> Practitioners need not invest extra effort in modularizing code demonstrations for LLM-based code generation. The findings suggest that code quality, correctness, and the transformation process's reformatting effects matter more than structural style when constructing few-shot examples or fine-tuning datasets.</li>
+            <li><strong>Methodological template:</strong> The MoS metric and four-category experimental design provide a reusable template for future studies investigating other code properties (e.g., commenting style, naming conventions, design patterns) and their effect on LLM performance. The approach of isolating confounds through transformation-then-reversal is broadly applicable.</li>
+        </ul>
     </div>
 
     <div class="section">

@@ -22,7 +22,7 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A retrieval-augmented framework that enhances multi-step scientific reasoning in LLMs by decomposing problems and retrieving logically relevant documents at each reasoning step, rather than relying on single-query surface-level retrieval.</p>
+        <p>RAISE is a three-stage retrieval-augmented framework that decomposes scientific problems into subquestions, generates logic-enriched queries capturing reasoning intent, and retrieves step-relevant documents from open-domain corpora&mdash;achieving an average 13% improvement over baselines on graduate-level science benchmarks (GPQA, SuperGPQA, MMLU).</p>
     </div>
 
     <figure class="paper-figure">
@@ -32,62 +32,82 @@
 
     <div class="section">
         <h2>Background &amp; Motivation</h2>
-        <p>Scientific reasoning tasks require LLMs to handle <strong>long-chain reasoning processes</strong> alongside domain-specific terminology and up-to-date knowledge. Conventional RAG approaches retrieve documents using a single query, which often returns vague or superficially related content that fails to support the multi-step logic needed for graduate-level science questions.</p>
+        <p>Scientific reasoning tasks require LLMs to handle <strong>long-chain reasoning processes</strong> alongside domain-specific terminology and up-to-date knowledge. Two common strategies exist: step-wise reasoning (e.g., Chain-of-Thought decomposition) and retrieval-augmented generation (RAG). Recent work combines them, but typically targets simpler multi-hop QA or assumes curated, task-specific corpora.</p>
+        <p>Conventional RAG approaches retrieve documents using a single query derived from the full problem, which often returns vague or superficially related content that fails to support the multi-step logic needed for graduate-level science questions. The fundamental challenge is: <em>what to search for and how to retrieve the appropriate external knowledge for each step</em> when solving complex scientific reasoning tasks.</p>
         <div class="highlight-box">
-            <p><strong>Key Problem:</strong> Existing retrieval methods (e.g., standard RAG, HyDE) match documents based on surface similarity rather than logical relevance, leading to retrieved passages that share domain keywords but lack the essential scientific mechanisms needed for reasoning.</p>
+            <p><strong>Key Problem:</strong> Existing retrieval methods (e.g., standard RAG, HyDE, Step-Back) match documents based on surface similarity rather than logical relevance. Retrieved passages share domain keywords but lack the essential scientific mechanisms&mdash;such as reaction mechanisms, mathematical derivations, or physical principles&mdash;needed to actually solve each reasoning step. Neither initial search queries (which lack reasoning context) nor subquestions alone (which can be noisy or overly specific) are sufficient for effective retrieval.</p>
         </div>
     </div>
 
     <div class="section">
         <h2>Proposed Method: RAISE</h2>
-        <p>RAISE operates through three sequential phases to retrieve logically relevant documents from unstructured corpora:</p>
+        <p>RAISE (<strong>R</strong>etrieval-<strong>A</strong>ugmented framework for <strong>I</strong>mproving <strong>S</strong>cientific r<strong>E</strong>asoning) operates through three sequential phases. It uses Dense Passage Retrieval (DPR) over approximately 21 million Wikipedia passages (each ~100 words) as the retrieval backbone, with no task-specific corpus required:</p>
         <div class="method-steps">
             <div class="method-step">
                 <div class="step-num">1</div>
                 <div class="step-title">Problem Decomposition</div>
-                <div class="step-desc">Complex scientific queries are broken down into structured subquestions paired with initial search queries, creating a foundation for step-aware retrieval</div>
+                <div class="step-desc">The LLM breaks down the original question into <em>n</em> subquestions (r<sub>1</sub>, ..., r<sub>n</sub>) paired with corresponding initial search queries (q<sub>1</sub>, ..., q<sub>n</sub>). These initial queries serve as input for the next stage, not directly for retrieval. This decomposition structures the reasoning pathway and ensures different reasoning steps can access distinct pieces of information.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">2</div>
                 <div class="step-title">Logical Query Generation</div>
-                <div class="step-desc">Initial queries are reformulated into logic-enriched versions by combining both the subquestion and original search query, capturing reasoning intent beyond superficial domain similarity</div>
+                <div class="step-desc">For each subquestion, the model generates a <em>logically enriched query</em> (q<sub>i</sub>*) by combining the initial query q<sub>i</sub> with its subquestion r<sub>i</sub> through a reformulation prompt. A key insight is that even if the reformulated query contains factual inaccuracies, it tends to retrieve passages that are <strong>logically relevant</strong> and supportive of the reasoning step, because it captures the underlying reasoning intent rather than just surface keywords.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">3</div>
-                <div class="step-title">Logical Retrieval</div>
-                <div class="step-desc">Documents matching each reformulated query are retrieved from open-domain sources (e.g., Wikipedia) using a similarity threshold, supporting sequential subanswer generation</div>
+                <div class="step-title">Logical Retrieval &amp; Answer Composition</div>
+                <div class="step-desc">For each subquestion, the top-10 documents are retrieved using DPR with inner-product similarity on L2-normalized embeddings. A similarity threshold (T=0.84 for GPQA/SuperGPQA/MMLU-Pro; T=0.80 for MMLU-STEM) filters out low-relevance passages. The model then generates a subanswer using the filtered documents, original question, and all previous subanswers. Finally, all subanswers are composed to produce the final answer.</div>
             </div>
         </div>
     </div>
 
     <div class="section">
         <h2>Experimental Results</h2>
-        <p>RAISE is evaluated on multiple graduate-level scientific reasoning benchmarks, consistently outperforming baseline approaches across different LLM scales (LLaMA-8B, GPT-4o mini, Mistral-24B).</p>
+        <p>RAISE is evaluated on GPQA Diamond (198 expert-written graduate-level questions in physics, biology, and chemistry), SuperGPQA (graduate-level questions across science and engineering at multiple difficulty levels), and MMLU (college/professional-level chemistry and biology). The primary LLM is Mistral Small 3.1-Instruct-2503 (24B) for GPQA and LLaMA 3.1-8B for SuperGPQA/MMLU. Seven baselines are compared: CoT, CoT+RAG, Least-to-Most, Step-Back, Least-to-Most+RAG, Step-Back+RAG, and HyDE.</p>
 
         <table class="results-table">
             <thead>
-                <tr><th>Method</th><th>GPQA Diamond (%)</th></tr>
+                <tr><th>Method</th><th>GPQA Diamond</th><th>SuperGPQA Sci-Hard</th><th>SuperGPQA Sci-Mid</th><th>SuperGPQA Eng-Hard</th><th>MMLU College Chem</th></tr>
             </thead>
             <tbody>
-                <tr><td>CoT</td><td>42.42</td></tr>
-                <tr><td>CoT + RAG</td><td>45.96</td></tr>
-                <tr><td>Step-Back + RAG</td><td>43.43</td></tr>
-                <tr class="highlight-cell"><td class="highlight-cell">RAISE (proposed)</td><td class="highlight-cell">51.01</td></tr>
+                <tr><td>CoT</td><td>42.42</td><td>4.52</td><td>15.08</td><td>6.53</td><td>49.50</td></tr>
+                <tr><td>CoT + RAG</td><td>45.96</td><td>7.54</td><td>12.56</td><td>7.54</td><td>43.00</td></tr>
+                <tr><td>Least-to-Most</td><td>44.95</td><td>6.03</td><td>14.57</td><td>10.05</td><td>45.40</td></tr>
+                <tr><td>Step-Back</td><td>44.44</td><td>5.03</td><td>15.08</td><td>6.03</td><td>43.00</td></tr>
+                <tr><td>Least-to-Most + RAG</td><td>45.95</td><td>6.03</td><td>14.57</td><td>8.04</td><td>46.00</td></tr>
+                <tr><td>Step-Back + RAG</td><td>43.43</td><td>5.53</td><td>15.58</td><td>9.05</td><td>43.00</td></tr>
+                <tr><td>HyDE</td><td>46.46</td><td>7.54</td><td>13.07</td><td>7.04</td><td>49.00</td></tr>
+                <tr class="highlight-cell"><td class="highlight-cell"><strong>RAISE</strong></td><td class="highlight-cell"><strong>51.01</strong></td><td class="highlight-cell"><strong>10.05</strong></td><td class="highlight-cell"><strong>19.60</strong></td><td class="highlight-cell"><strong>10.55</strong></td><td class="highlight-cell"><strong>51.00</strong></td></tr>
+            </tbody>
+        </table>
+
+        <p style="margin-top:18px;"><strong>Cross-model generalization on GPQA Diamond:</strong></p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>CoT</th><th>HyDE</th><th>RAISE</th><th>Gain</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>LLaMA 3.1-8B</td><td>22.22</td><td>25.75</td><td><strong>30.30</strong></td><td>+7.1%</td></tr>
+                <tr><td>GPT-4o mini</td><td>40.91</td><td>38.89</td><td><strong>47.98</strong></td><td>+5.6%</td></tr>
+                <tr><td>Mistral-24B</td><td>42.42</td><td>46.46</td><td><strong>51.01</strong></td><td>+9.8%</td></tr>
             </tbody>
         </table>
 
         <ul class="key-points">
-            <li><strong>GPQA Diamond:</strong> RAISE achieves 51.01% accuracy, a +9.8% improvement over the best baseline</li>
-            <li><strong>SuperGPQA Science-Hard:</strong> 10.05% (+33.3% relative improvement)</li>
-            <li><strong>MMLU Professional Biology:</strong> 28.36% (+11.5% improvement)</li>
-            <li><strong>Retrieval Quality:</strong> LLM-based and human evaluation confirm RAISE retrieves documents containing essential scientific mechanisms while conventional RAG returns vague or unrelated content</li>
-            <li><strong>Generalization:</strong> Performance improvements hold across different LLM scales and model families</li>
+            <li><strong>GPQA Diamond:</strong> RAISE achieves 51.01%, a +9.8% relative improvement over the best baseline (HyDE at 46.46%), using Mistral-24B</li>
+            <li><strong>SuperGPQA Science-Hard:</strong> 10.05% accuracy, a +33.3% relative improvement over the best baseline (CoT+RAG and HyDE at 7.54%)</li>
+            <li><strong>SuperGPQA Science-Middle:</strong> 19.60%, a +25.8% relative improvement over the best baseline (Step-Back+RAG at 15.58%)</li>
+            <li><strong>MMLU College Chemistry:</strong> 51.00%, outperforming all baselines including CoT (49.50%) and HyDE (49.00%)</li>
+            <li><strong>Ablation (RAISE-Direct):</strong> Removing the problem decomposition stage and generating logical queries directly from the full question consistently degrades performance, confirming that step-wise decomposition is critical for guiding retrieval</li>
+            <li><strong>Retrieval Quality:</strong> Both LLM-as-a-judge evaluation (GPT-4o mini scoring logical relevance on a 4-point scale) and human evaluation by Ph.D. students and chemistry faculty confirm that RAISE retrieves the fewest irrelevant documents and the highest proportion of logically relevant passages across all methods</li>
+            <li><strong>Generalization:</strong> Consistent improvements across three model families (LLaMA-8B, GPT-4o mini, Mistral-24B), demonstrating the framework is model-agnostic</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>Scientific reasoning is one of the most challenging frontiers for LLMs, requiring both domain knowledge and multi-step logical deduction. RAISE demonstrates that <strong>step-wise decomposition combined with logic-enriched retrieval</strong> can substantially improve performance on graduate-level science questions, offering a practical framework for building more capable scientific reasoning systems without additional model training.</p>
+        <p>Scientific reasoning is one of the most challenging frontiers for LLMs, requiring both domain knowledge and multi-step logical deduction. RAISE demonstrates that <strong>step-wise decomposition combined with logic-enriched retrieval</strong> can substantially improve performance on graduate-level science questions, achieving an average 13% improvement across benchmarks&mdash;without requiring additional model training or curated domain-specific corpora.</p>
+        <p>The framework is practical and broadly applicable: it uses only open-domain Wikipedia as the retrieval corpus, works across different model scales (8B to 24B parameters), and generalizes across physics, chemistry, biology, and engineering. The key insight&mdash;that retrieval queries should capture <em>reasoning intent</em> rather than surface-level domain similarity&mdash;opens a promising direction for improving LLM performance on complex reasoning tasks in science, mathematics, and beyond.</p>
     </div>
 
     <div class="section">

@@ -22,31 +22,124 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A systematic evaluation of language models' ability to generate Python code from Korean natural language descriptions using the KR-HumanEval benchmark.</p>
+        <p>Introduces KR-HumanEval, a Korean-translated code generation benchmark, and reveals that few-shot prompting with English descriptions paradoxically yields the best Korean program synthesis performance &mdash; exposing a fundamental language bias in current LLMs.</p>
     </div>
+
     <div class="section">
-        <h2>Background</h2>
-        <p>Program synthesis &mdash; automatically generating code from natural language specifications &mdash; has seen dramatic progress with large language models. Benchmarks like HumanEval have become standard for evaluating code generation capability, but they are exclusively English-based. This creates a significant evaluation gap for non-English languages: can LLMs generate correct code when the task description is written in Korean? Understanding this cross-lingual code generation ability is crucial as programming becomes increasingly accessible to non-English speakers worldwide.</p>
+        <h2>Background & Motivation</h2>
+        <p>Program synthesis &mdash; automatically generating code from natural language specifications &mdash; has seen dramatic progress with large language models. Benchmarks like OpenAI's <strong>HumanEval</strong> (164 hand-crafted Python problems) have become the de facto standard for evaluating code generation, but they are <strong>exclusively English-based</strong>.</p>
+        <div class="highlight-box">
+            <p><strong>Key Problem:</strong> As LLM-powered coding assistants (GitHub Copilot, ChatGPT, etc.) are adopted globally, non-English speakers increasingly write task descriptions in their native language. Yet there is <strong>no established benchmark</strong> for evaluating whether models can correctly synthesize code from Korean natural language descriptions. This gap makes it impossible to assess or improve Korean code generation capabilities systematically.</p>
+        </div>
+        <p>Prior work on multilingual code generation has focused primarily on high-resource language pairs or simple translation of function signatures, without a comprehensive evaluation framework that accounts for the unique challenges of Korean &mdash; such as agglutinative morphology, SOV word order, and the frequent mixing of Korean text with English technical terms in real programming contexts. While HumanEval-XL explored cross-lingual code generation benchmarks, no publicly available Korean program synthesis dataset existed at the time of this work.</p>
     </div>
+
     <div class="section">
-        <h2>Method</h2>
+        <h2>Proposed Method</h2>
+        <p>The authors construct the <strong>KR-HumanEval</strong> benchmark by translating HumanEval's English docstrings into Korean, and then systematically evaluate multiple LLMs under various prompting strategies to understand how language choice in prompts affects code generation quality.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">KR-HumanEval Benchmark Construction</div>
+                <div class="step-desc">The original HumanEval's 164 English docstrings are translated into Korean via a multi-stage pipeline: first, DeepL machine translation produces initial drafts; then, human reviewers manually verify each translation and score quality on a 1&ndash;3 scale. GPT-4o-mini is subsequently used for quality inspection and refinement. The final dataset contains 155 problems rated score 3 (94.5%), 9 at score 2 (5.5%), and 0 at score 1, indicating high translation quality. Function signatures, test cases, and code structure remain identical to the original, enabling controlled comparison.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Four Types of Few-Shot Examples</div>
+                <div class="step-desc">The study defines four distinct few-shot example types that vary in language composition: <strong>[KO, PY]</strong> &mdash; Korean description with standard Python code; <strong>[KO, PY(KO var)]</strong> &mdash; Korean description with Korean variable names in Python; <strong>[KO, PY(KO doc)]</strong> &mdash; Korean description with Korean comments/annotations added to Python code; and <strong>[EN, PY]</strong> &mdash; English description with standard Python code. Each type is generated from templates and conversion instructions to ensure consistency across examples.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Scaling from 1-Shot to 5-Shot</div>
+                <div class="step-desc">For each of the four example types, experiments are run with 1 to 5 few-shot examples per prompt, yielding 20 few-shot configurations per model plus a zero-shot baseline. Up to 5 examples are used per prompt, each selected from problems crafted by an LLM (Gemini) to avoid data contamination. Instruction-tuned models (GPT-4o-mini, EXAONE-3.0-7.8B-Instruct) use a chat template format, while the base model (DeepSeek-Coder-V2-16B-Base) uses a standard completion template.</div>
+            </div>
+        </div>
+
+        <h3>Models Evaluated</h3>
         <ul class="key-points">
-            <li><strong>KR-HumanEval benchmark:</strong> Develops a Korean translation of the widely used HumanEval benchmark, enabling direct evaluation of code generation from Korean natural language descriptions.</li>
-            <li><strong>Zero-shot and few-shot evaluation:</strong> Systematically evaluates multiple language models under both zero-shot and few-shot prompting settings to assess baseline and prompted performance.</li>
-            <li><strong>Prompt design analysis:</strong> Investigates the effect of different prompt components &mdash; including Korean comments, Korean variable names, and English descriptions in few-shot examples &mdash; on code generation quality.</li>
+            <li><strong>GPT-4o-mini</strong> (closed-source): Strong general-purpose model with broad multilingual and coding capabilities.</li>
+            <li><strong>DeepSeek-Coder-V2-16B-Base</strong> (open-source): Pre-trained on large code corpora, achieving high scores on code generation benchmarks.</li>
+            <li><strong>EXAONE-3.0-7.8B-Instruct</strong> (open-source): A Korean-focused instruction-tuned model, used to analyze the impact of Korean-centric pre-training.</li>
+        </ul>
+
+        <p>The evaluation metric is <strong>pass@1</strong> with greedy decoding, the standard functional correctness metric that checks whether a single generated code sample passes all unit tests.</p>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <p>Three models are evaluated on KR-HumanEval across zero-shot and four types of few-shot configurations (1&ndash;5 shots each). The results reveal clear patterns about how language choice and example type in prompts impact Korean code generation.</p>
+
+        <h3>Zero-Shot vs. Best Few-Shot Performance (pass@1)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>Zero-Shot</th><th>[KO, PY]</th><th>[KO, PY(KO var)]</th><th>[KO, PY(KO doc)]</th><th>[EN, PY]</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>GPT-4o-mini</td><td>72.8</td><td>73.6</td><td>69</td><td>72.4</td><td class="highlight-cell"><strong>75</strong></td></tr>
+                <tr><td>DeepSeek-Coder-V2-16B-Base</td><td>37.2</td><td>50.6</td><td>48.4</td><td>46.5</td><td>49.7</td></tr>
+                <tr><td>EXAONE-3.0-7.8B-Instruct</td><td>53.6</td><td>52.3</td><td>50.2</td><td class="highlight-cell"><strong>54.4</strong></td><td>51.5</td></tr>
+            </tbody>
+        </table>
+        <p style="font-size:0.92em;color:#666;margin-top:4px;">Values shown are the best pass@1 across 1&ndash;5 shots for each example type. Bold indicates the highest score per model across all settings.</p>
+
+        <h3>Detailed Few-Shot Results by Number of Shots (pass@1)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th># Shot</th><th>[KO, PY]</th><th>[KO, PY(KO var)]</th><th>[KO, PY(KO doc)]</th><th>[EN, PY]</th></tr>
+            </thead>
+            <tbody>
+                <tr><td rowspan="5">GPT-4o-mini</td><td>1</td><td>73.2</td><td>76.2</td><td>71.3</td><td>75.6</td></tr>
+                <tr><td>2</td><td>76.8</td><td>70.1</td><td>76.8</td><td class="highlight-cell"><strong>78.7</strong></td></tr>
+                <tr><td>3</td><td>77.4</td><td>68.3</td><td>75</td><td>75.6</td></tr>
+                <tr><td>4</td><td>70.7</td><td>64</td><td>70.1</td><td>69.5</td></tr>
+                <tr><td>5</td><td>70.1</td><td>66.4</td><td>68.9</td><td>75.6</td></tr>
+                <tr><td rowspan="5">DeepSeek-Coder-V2-16B-Base</td><td>1</td><td>45.7</td><td>47</td><td>43.3</td><td>44.5</td></tr>
+                <tr><td>2</td><td>48.8</td><td>50.6</td><td>47</td><td>51.2</td></tr>
+                <tr><td>3</td><td>53.7</td><td>51.2</td><td>48.2</td><td class="highlight-cell"><strong>54.3</strong></td></tr>
+                <tr><td>4</td><td>52.4</td><td>46.3</td><td>44.5</td><td>48.2</td></tr>
+                <tr><td>5</td><td>52.4</td><td>47</td><td>49.4</td><td>50.6</td></tr>
+                <tr><td rowspan="5">EXAONE-3.0-7.8B-Instruct</td><td>1</td><td>56.1</td><td>56.7</td><td>52.4</td><td class="highlight-cell"><strong>57.3</strong></td></tr>
+                <tr><td>2</td><td>56.1</td><td>51.8</td><td>54.3</td><td>56.7</td></tr>
+                <tr><td>3</td><td>51.2</td><td>48.2</td><td>55.5</td><td>50.6</td></tr>
+                <tr><td>4</td><td>50</td><td>46.3</td><td>53</td><td>47</td></tr>
+                <tr><td>5</td><td>48.1</td><td>48.1</td><td>56.7</td><td>45.7</td></tr>
+            </tbody>
+        </table>
+        <p style="font-size:0.92em;color:#666;margin-top:4px;">Bold indicates the single best score across all few-shot configurations for each model.</p>
+
+        <h3>Key Findings</h3>
+        <ul class="key-points">
+            <li><strong>Few-shot consistently beats zero-shot:</strong> All three models show overall improvement with few-shot prompting. DeepSeek-Coder-V2-16B-Base sees the largest gain, jumping from 37.2 (zero-shot) to 54.3 (3-shot [EN, PY]) &mdash; a 17.1-point improvement.</li>
+            <li><strong>[EN, PY] achieves the highest peak scores:</strong> For both GPT-4o-mini (78.7 at 2-shot) and DeepSeek-Coder-V2-16B-Base (54.3 at 3-shot), English-description examples yield the best results, suggesting cross-lingual transfer from the models' stronger English-code alignment during pre-training.</li>
+            <li><strong>Korean-focused model benefits from Korean annotations:</strong> EXAONE-3.0-7.8B-Instruct, the Korean-centric model, uniquely benefits from [KO, PY(KO doc)] examples, achieving its best overall result of 56.7 at 5-shot &mdash; the only model where Korean-annotated code consistently helps. This indicates that Korean-focused pre-training enables models to better leverage Korean comments.</li>
+            <li><strong>Korean variables can hurt performance:</strong> GPT-4o-mini shows performance degradation with [KO, PY(KO var)] examples, indicating that the model may be sensitive to perturbations in variable naming conventions. However, EXAONE-3.0-7.8B-Instruct generates Korean variables more naturally, producing Korean-named variables in 108 out of 164 problems at 5-shot.</li>
+            <li><strong>More shots are not always better:</strong> GPT-4o-mini peaks at 2&ndash;3 shots and degrades at 4&ndash;5 shots, while DeepSeek-Coder-V2-16B-Base generally improves up to 3 shots. This suggests diminishing returns and potential interference from excessive examples in the prompt.</li>
+        </ul>
+
+        <h3>Code Analysis: Korean Variable Adoption</h3>
+        <div class="highlight-box">
+            <p>When [KO, PY(KO var)] examples are used, models differ dramatically in their adoption of Korean variables. With 5-shot examples, <strong>EXAONE-3.0-7.8B-Instruct</strong> generates code with Korean variable names for 108 of 164 problems, far more than GPT-4o-mini or DeepSeek-Coder-V2-16B-Base. Notably, while GPT-4o-mini and DeepSeek either avoid Korean variables or produce incorrect code when using them, EXAONE successfully generates correct code with Korean variables &mdash; highlighting the value of Korean-centric pre-training for code generation.</p>
+        </div>
+
+        <h3>Implications for Prompt Design</h3>
+        <ul class="key-points">
+            <li>For general-purpose models, a <strong>hybrid prompting strategy</strong> &mdash; using [EN, PY] examples with 2&ndash;3 shots for Korean target tasks &mdash; appears optimal.</li>
+            <li>For Korean-specialized models, <strong>[KO, PY(KO doc)]</strong> examples with Korean annotations provide the best performance, leveraging the model's Korean language understanding.</li>
+            <li>The finding that increasing [EN, PY] shots can degrade performance suggests the need for research into efficient prompting techniques for cross-lingual code generation.</li>
         </ul>
     </div>
+
     <div class="section">
-        <h2>Results</h2>
-        <ul class="key-points">
-            <li>Few-shot prompting consistently outperforms zero-shot approaches for Korean program synthesis across all evaluated models.</li>
-            <li>Including Python code examples with Korean comments and Korean variable names positively impacts model performance, suggesting that language-consistent context aids generation.</li>
-            <li>Interestingly, English descriptions within few-shot examples yield the strongest results, indicating that models still leverage their stronger English code generation capabilities even when the target task is in Korean.</li>
+        <h2>Why It Matters</h2>
+        <p>This work makes four important contributions to multilingual code generation research:</p>
+        <ul>
+            <li><strong>First publicly available Korean code generation benchmark:</strong> KR-HumanEval fills a critical evaluation gap with 164 high-quality Korean-translated programming problems (94.5% rated highest quality), providing the community with a standardized tool for measuring and improving Korean program synthesis capabilities. The authors plan to publicly release the dataset.</li>
+            <li><strong>Reveals language bias in code LLMs:</strong> The finding that English few-shot descriptions outperform Korean ones &mdash; even for Korean target tasks &mdash; exposes a fundamental bias in current models toward English-centric code generation, pointing to concrete directions for more balanced multilingual training.</li>
+            <li><strong>Korean-focused models show different behavior:</strong> The divergent behavior of EXAONE (Korean-centric) vs. GPT-4o-mini (general-purpose) on Korean annotations and variables demonstrates that pre-training language composition materially affects how models handle non-English code generation, motivating further research into Korean-specialized code models.</li>
+            <li><strong>Practical prompting guidelines:</strong> The systematic 60-configuration analysis (3 models x 4 example types x 5 shot counts) provides actionable guidance: use [EN, PY] with 2&ndash;3 shots for general models, or [KO, PY(KO doc)] for Korean-specialized models. Careful prompt engineering can bridge the cross-lingual performance gap by up to 17 points.</li>
         </ul>
-    </div>
-    <div class="section">
-        <h2>Significance</h2>
-        <p>This work provides the first rigorous analysis of Korean program synthesis capabilities in modern LLMs. By establishing the KR-HumanEval benchmark and revealing the nuanced interplay between language choice in prompts and code generation quality, it lays the groundwork for developing more effective multilingual code generation systems. The paper received the Best Paper Award at HCLT 2024.</p>
+        <p>The paper received the <strong>Best Paper Award</strong> at HCLT 2024, recognizing its significance for the Korean NLP community. Future directions include expanding to other programming languages and exploring Korean data augmentation and cross-lingual transfer techniques for further improvement.</p>
     </div>
     <div class="section">
         <h2>Links</h2>

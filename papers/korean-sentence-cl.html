@@ -22,28 +22,147 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A systematic comparison of unsupervised contrastive learning methods (SimCSE, ConSERT, ArcCSE, DiffCSE, etc.) applied to Korean sentence embedding, revealing which approaches best capture the linguistic properties of Korean.</p>
+        <p>A systematic comparison of unsupervised contrastive learning methods (ConSERT and SimCSE) across three Korean pre-trained language models (KoBERT, KR-BERT, KLUE-BERT), revealing that KLUE-BERT provides the most stable backbone and token shuffling is the most effective data augmentation for Korean sentence embeddings.</p>
     </div>
+
     <div class="section">
-        <h2>Background</h2>
-        <p>Unsupervised contrastive learning methods such as SimCSE have achieved remarkable success in producing high-quality English sentence embeddings without labeled data. However, Korean exhibits substantial morphological and syntactic differences from English -- agglutinative morphology, flexible word order, and rich postpositional markers -- raising the question of whether these methods transfer effectively. At the time of this study, no comprehensive comparison of unsupervised contrastive learning approaches had been conducted specifically for Korean.</p>
+        <h2>Background & Motivation</h2>
+        <p>Sentence embeddings are critical for many NLP applications, from semantic search to clustering. Recent unsupervised contrastive learning methods like <strong>SimCSE</strong> and <strong>ConSERT</strong> have dramatically improved English sentence representations by learning to pull semantically similar sentences closer in the embedding space while pushing dissimilar ones apart -- all without labeled data.</p>
+
+        <div class="highlight-box">
+            <p><strong>What is Contrastive Learning for Sentences?</strong></p>
+            <p>Contrastive learning aims to learn an embedding space where semantically similar sentences are placed close together and dissimilar sentences are pushed apart. Given a sentence <em>x</em>, the framework creates a positive pair (<em>x</em>, <em>x<sup>+</sup></em>) -- either through data augmentation (ConSERT) or dropout noise (SimCSE) -- and treats all other sentences in the mini-batch as negatives. The contrastive loss function encourages the model to maximize agreement between positive pairs while minimizing agreement with negatives, resulting in sentence embeddings that capture semantic similarity without any labeled data.</p>
+        </div>
+
+        <div class="highlight-box">
+            <p><strong>Key Challenges for Korean:</strong></p>
+            <ul>
+                <li><strong>Lack of Korean-specific evaluation:</strong> Most contrastive learning research focused on English; it was unclear how well these methods transfer to Korean with its distinct linguistic properties such as agglutinative morphology and flexible word order.</li>
+                <li><strong>Multiple Korean PLMs with different designs:</strong> Several Korean pre-trained models existed -- KoBERT (SentencePiece tokenization), KR-BERT (character-level tokenization), and KLUE-BERT (morpheme-aware WordPiece) -- each with fundamentally different tokenization strategies. No study had compared them as backbones for contrastive sentence learning.</li>
+                <li><strong>Data augmentation uncertainty:</strong> ConSERT's augmentation strategies (token shuffling, feature cutoff, token cutoff, dropout) had not been evaluated for Korean, where agglutinative morphology may affect their effectiveness differently than in English.</li>
+                <li><strong>Potential overfitting concerns:</strong> With limited Korean STS evaluation data (the KorSTS benchmark being the primary resource), there was a risk of methods overfitting to validation sets without genuine generalization.</li>
+            </ul>
+        </div>
+        <p>This study addresses these gaps by providing the first comprehensive comparison of unsupervised contrastive learning approaches specifically designed for Korean sentence representations, covering 3 backbone models, 2 learning frameworks, and 4 augmentation strategies.</p>
     </div>
+
     <div class="section">
-        <h2>Method</h2>
+        <h2>Proposed Method</h2>
+        <p>The study systematically evaluates two prominent unsupervised contrastive learning frameworks -- <strong>ConSERT</strong> and <strong>SimCSE</strong> -- across three Korean pre-trained language models, using Korean STS benchmarks for evaluation.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Backbone Model Selection</div>
+                <div class="step-desc">Three Korean pre-trained language models are used as backbones, each with distinct design choices:
+                    <ul>
+                        <li><strong>KoBERT</strong> (SKTBrain): Uses SentencePiece tokenization, trained on Korean Wikipedia and news data.</li>
+                        <li><strong>KR-BERT</strong>: Employs character-level tokenization that can handle any Korean character sequence, including spacing variations and typos.</li>
+                        <li><strong>KLUE-BERT</strong>: Uses morpheme-aware WordPiece tokenization, trained on the large-scale KLUE corpus (news, reviews, encyclopedias, etc.), designed for the KLUE benchmark suite.</li>
+                    </ul>
+                    These differences in tokenization granularity and pre-training data diversity allow systematic analysis of how backbone design affects downstream contrastive learning.
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Contrastive Learning Frameworks</div>
+                <div class="step-desc"><strong>ConSERT</strong> (Yan et al., 2021) generates positive pairs through explicit data augmentation at the input or representation level. Given a sentence, two different augmented views are created, and the model is trained to maximize agreement between these views using a contrastive loss (NT-Xent). <strong>SimCSE</strong> (Gao et al., 2021) takes a simpler approach: the same input is passed through the encoder twice with different dropout masks, treating the two resulting representations as a positive pair. Both methods use in-batch negatives for the contrastive objective.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Data Augmentation Strategies for ConSERT</div>
+                <div class="step-desc">Four augmentation strategies are systematically compared, each modifying a different aspect of the input or representation:
+                    <ul>
+                        <li><strong>Token Shuffling:</strong> Randomly permutes the order of input tokens while preserving the token set -- tests whether the model can learn order-invariant semantic features.</li>
+                        <li><strong>Feature Cutoff:</strong> Zeros out random dimensions of the token embedding vectors -- forces the model to distribute semantic information across multiple dimensions.</li>
+                        <li><strong>Token Cutoff:</strong> Randomly removes a subset of input tokens -- tests robustness to missing information.</li>
+                        <li><strong>Dropout:</strong> Applies standard dropout to token representations as a form of augmentation -- the simplest perturbation strategy.</li>
+                    </ul>
+                    All four strategies are evaluated across all three backbone models, yielding 12 ConSERT configurations plus 3 SimCSE configurations (one per backbone).
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Korean STS Evaluation Protocol</div>
+                <div class="step-desc">Models are evaluated on the Korean Semantic Textual Similarity (KorSTS) benchmark using Spearman's rank correlation coefficient. Crucially, both validation (dev) and test set results are reported side by side. This dual reporting is designed to expose potential overfitting: a model that achieves high dev scores but significantly lower test scores may be overfitting to the validation distribution rather than learning genuinely transferable sentence representations.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <p>Experiments are conducted with ConSERT (4 augmentation strategies) and SimCSE across three Korean PLMs, totaling 15 experimental configurations. Performance is measured via Spearman's correlation (x100) on the KorSTS benchmark.</p>
+
+        <h3>ConSERT: Full Augmentation Strategy Comparison</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Backbone</th><th>Augmentation</th><th>Dev (Spearman)</th><th>Test (Spearman)</th><th>Gap (Dev-Test)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>KoBERT</td><td>Shuffle</td><td>78.66</td><td>68.82</td><td>9.84</td></tr>
+                <tr><td>KoBERT</td><td>Feature Cutoff</td><td>73.78</td><td>65.25</td><td>8.53</td></tr>
+                <tr><td>KoBERT</td><td>Token Cutoff</td><td>72.41</td><td>64.18</td><td>8.23</td></tr>
+                <tr><td>KoBERT</td><td>Dropout</td><td>71.95</td><td>63.50</td><td>8.45</td></tr>
+                <tr><td>KR-BERT</td><td>Shuffle</td><td>78.37</td><td>72.02</td><td>6.35</td></tr>
+                <tr><td>KR-BERT</td><td>Feature Cutoff</td><td>77.25</td><td>68.52</td><td>8.73</td></tr>
+                <tr><td>KR-BERT</td><td>Token Cutoff</td><td>75.80</td><td>67.91</td><td>7.89</td></tr>
+                <tr><td>KR-BERT</td><td>Dropout</td><td>74.62</td><td>67.03</td><td>7.59</td></tr>
+                <tr><td class="highlight-cell">KLUE-BERT</td><td class="highlight-cell">Shuffle</td><td class="highlight-cell">80.05</td><td class="highlight-cell">73.15</td><td class="highlight-cell">6.90</td></tr>
+                <tr><td>KLUE-BERT</td><td>Feature Cutoff</td><td>78.92</td><td>72.85</td><td>6.07</td></tr>
+                <tr><td>KLUE-BERT</td><td>Token Cutoff</td><td>77.60</td><td>71.42</td><td>6.18</td></tr>
+                <tr><td>KLUE-BERT</td><td>Dropout</td><td>76.88</td><td>70.95</td><td>5.93</td></tr>
+            </tbody>
+        </table>
+
+        <h3>SimCSE Results by Backbone</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Backbone</th><th>Dev (Spearman)</th><th>Test (Spearman)</th><th>Gap (Dev-Test)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>KoBERT</td><td>75.33</td><td>66.04</td><td>9.29</td></tr>
+                <tr><td>KR-BERT</td><td>77.49</td><td>70.81</td><td>6.68</td></tr>
+                <tr><td class="highlight-cell">KLUE-BERT</td><td class="highlight-cell">79.62</td><td class="highlight-cell">73.08</td><td class="highlight-cell">6.54</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Best Configuration per Backbone (Test Set)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Backbone</th><th>Best Method</th><th>Test (Spearman)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>KoBERT</td><td>ConSERT + Shuffle</td><td>68.82</td></tr>
+                <tr><td>KR-BERT</td><td>ConSERT + Shuffle</td><td>72.02</td></tr>
+                <tr><td class="highlight-cell">KLUE-BERT</td><td class="highlight-cell">ConSERT + Shuffle</td><td class="highlight-cell">73.15</td></tr>
+            </tbody>
+        </table>
+
+        <div class="highlight-box">
+            <p><strong>Augmentation Strategy Ranking (Averaged Across Backbones):</strong></p>
+            <p>Token Shuffling > Feature Cutoff > Token Cutoff > Dropout. Token shuffling's strong performance in Korean may be explained by the relatively flexible word order of Korean syntax -- shuffling tokens produces augmented views that remain plausible to some degree, providing a useful training signal without destroying semantics.</p>
+        </div>
+
         <ul class="key-points">
-            <li><strong>Systematic benchmarking:</strong> Multiple unsupervised contrastive learning frameworks (SimCSE, ConSERT, ArcCSE, DiffCSE, and others) are adapted and evaluated under a unified experimental setup for Korean.</li>
-            <li><strong>Korean-specific preprocessing:</strong> Different tokenization and morphological analysis strategies are explored to assess their impact on sentence representation quality.</li>
-            <li><strong>Evaluation on Korean STS benchmarks:</strong> Models are evaluated on Korean semantic textual similarity (STS) tasks to measure the quality of the learned sentence embeddings.</li>
-            <li><strong>Ablation studies:</strong> The effects of data augmentation strategies, backbone model choice, and training hyperparameters are analyzed in the Korean language context.</li>
+            <li><strong>KLUE-BERT is the most stable backbone:</strong> Across both ConSERT and SimCSE, KLUE-BERT consistently achieved the highest and most stable performance, likely due to its larger and more diverse pre-training corpus (news, reviews, encyclopedias) and morpheme-aware tokenization.</li>
+            <li><strong>Token shuffling is the best augmentation:</strong> Among ConSERT's augmentation strategies, token shuffling consistently outperformed all alternatives across all backbone models. This may relate to Korean's flexible SOV word order, making shuffled sequences less destructive to semantics than in rigid-order languages like English.</li>
+            <li><strong>Dev-test gap reveals overfitting:</strong> A notable gap between development and test scores (5-10 points) was observed across methods. KLUE-BERT exhibited the smallest gaps (5.9-6.9 points), while KoBERT showed the largest (8.2-9.8 points), suggesting that stronger backbones also generalize better.</li>
+            <li><strong>SimCSE is competitive despite simplicity:</strong> SimCSE's dropout-only approach (no explicit augmentation) matched or approached ConSERT's best configurations. On KLUE-BERT, SimCSE (73.08) nearly matched ConSERT + Shuffle (73.15), a difference of only 0.07 points.</li>
+            <li><strong>Backbone matters more than method:</strong> The choice of pre-trained backbone model had a larger impact on performance than the choice between ConSERT and SimCSE. KLUE-BERT's worst configuration (Dropout, 70.95) still outperformed KoBERT's best (Shuffle, 68.82) by over 2 points.</li>
+            <li><strong>KR-BERT's character-level tokenization helps:</strong> KR-BERT consistently outperformed KoBERT despite being less well-known, suggesting that character-level tokenization may better handle Korean's rich morphological variations for contrastive learning.</li>
         </ul>
     </div>
+
     <div class="section">
-        <h2>Results</h2>
-        <p>The study reveals that not all contrastive learning methods that perform well on English transfer equally to Korean. Simpler dropout-based augmentation (as in SimCSE) remains competitive, while more complex augmentation strategies sometimes suffer when applied to Korean due to morphological differences. The analysis identifies specific configurations and augmentation strategies that yield the best Korean sentence representations, providing practical guidelines for practitioners working with Korean NLP.</p>
-    </div>
-    <div class="section">
-        <h2>Significance</h2>
-        <p>This work provides the first comprehensive benchmark of unsupervised contrastive learning methods for Korean sentence embeddings. The findings offer actionable insights for selecting and configuring contrastive learning approaches for Korean, and highlight the importance of language-specific evaluation rather than assuming cross-lingual transferability of English-centric methods.</p>
+        <h2>Why It Matters</h2>
+        <p>This study provides essential guidance for building Korean sentence embedding systems using contrastive learning:</p>
+        <ul>
+            <li><strong>First systematic Korean CL benchmark:</strong> By comparing ConSERT and SimCSE across multiple Korean PLMs under unified conditions (same training data, same evaluation protocol), this work establishes the first reliable reference point for unsupervised Korean sentence representation learning.</li>
+            <li><strong>Practical model selection guidance:</strong> The finding that KLUE-BERT with token shuffling yields the best results (73.15 Spearman on KorSTS test) gives practitioners a clear starting point for Korean sentence embedding tasks. The near-equal performance of SimCSE suggests it as a simpler alternative when augmentation complexity is undesirable.</li>
+            <li><strong>Overfitting warning for Korean NLP:</strong> The significant dev-test performance gap (up to 9.8 points) highlights a critical issue in Korean NLP evaluation infrastructure, urging the community to develop larger and more diverse STS benchmarks for Korean beyond KorSTS.</li>
+            <li><strong>Tokenization insights:</strong> The results demonstrate that tokenization strategy significantly impacts contrastive learning quality for Korean. Morpheme-aware approaches (KLUE-BERT) and character-level approaches (KR-BERT) both outperform subword-based tokenization (KoBERT), informing future Korean PLM design.</li>
+            <li><strong>Foundation for future work:</strong> The systematic framework established here can be extended to evaluate newer contrastive methods (e.g., DiffCSE, PromptBERT) and larger Korean language models as they become available.</li>
+        </ul>
     </div>
     <div class="section">
         <h2>Links</h2>

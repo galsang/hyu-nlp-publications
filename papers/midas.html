@@ -25,7 +25,7 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A systematic study that analyzes whether LLMs simply memorize idioms or genuinely understand them through reasoning, across 64,660 idioms in 6 languages.</p>
+        <p>Introduces MIDAS, a multilingual idiom dataset of 64,660 expressions across 6 languages, and reveals that LLMs process idioms through a hybrid mechanism integrating memorization, compositional reasoning, and contextual cues -- not memorization alone.</p>
     </div>
 
     <figure class="paper-figure">
@@ -35,37 +35,102 @@
 
     <div class="section">
         <h2>Background & Motivation</h2>
-        <p>Idioms such as "It's raining cats and dogs" have meanings that differ from their literal interpretation. When LLMs process such idioms, are they <strong>simply memorizing</strong> from training data, or are they <strong>reasoning</strong> from context? To answer this fundamental question, we conduct large-scale experiments across 6 languages.</p>
+        <div class="highlight-box">
+            <p>Idioms such as "It's raining cats and dogs" carry figurative meanings that diverge sharply from their literal components. When an LLM correctly interprets such an expression, is it <strong>retrieving a memorized mapping</strong> from training data, or <strong>reasoning about the expression</strong> from context and compositionality? Despite the centrality of this question to understanding LLM capabilities, prior idiom datasets have been limited to single languages, lacked verified meanings, or relied on GPT-generated definitions.</p>
+        </div>
+        <p>This work addresses three core research questions: (1) Do LLMs rely on memorization, reasoning, or both? (2) How do contextual cues and compositionality influence idiom processing? (3) What mechanisms underlie idiom understanding across typologically diverse languages? To answer these, the authors construct a large-scale, human-validated multilingual benchmark and design controlled experiments that isolate each factor.</p>
     </div>
 
     <div class="section">
-        <h2>MIDAS Dataset</h2>
+        <h2>Proposed Method</h2>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div>
+                    <div class="step-title">MIDAS Dataset Construction</div>
+                    <div class="step-desc">64,660 unique idioms (70,909 instances) collected from authoritative sources in 6 languages: English (9,766 from Wiktionary), German (10,097 from Duden), Chinese (11,851 from chinese-xinhua), Korean (11,316 from the Korean Standard Dictionary), Arabic (8,051 from the Dictionary of Arabic Idioms), and Turkish (13,579 from TDK). Each idiom is paired with a human-validated figurative meaning refined through LLM-assisted processing and native speaker verification.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div>
+                    <div class="step-title">MCQ Evaluation for Idiom Understanding</div>
+                    <div class="step-desc">5-choice multiple-choice questions are constructed for each idiom: one correct figurative meaning and four distractors (two based on surface-form similarity and two on meaning similarity, using multilingual-e5-large-instruct embeddings). Each question is administered 3 times with shuffled answer positions; correctness requires all 3 trials answered correctly, eliminating position bias.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div>
+                    <div class="step-title">Memorization Assessment via Continuation Task</div>
+                    <div class="step-desc">Models are given the beginning of an idiom and must predict the final word. Strict filtering ensures the target word is not trivially predictable: minimum idiom length of 3-4 words, context-target FastText similarity &lt;0.7, and no overlap across idioms. An idiom is classified as "memorized" if the model generates the correct first token in its top predictions (top-5 log probability for open-source; temperature-0 generation for closed-source).</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div>
+                    <div class="step-title">Compositionality Scoring</div>
+                    <div class="step-desc">Each idiom receives a compositionality score (1-5 scale) via LLM prompting, measuring how inferable the figurative meaning is from individual component words. Score 1 = completely opaque; score 5 = highly inferable. The correlation between compositionality and MCQ success rate reveals whether models exploit compositional reasoning.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">5</div>
+                <div>
+                    <div class="step-title">Context and Reasoning Analysis</div>
+                    <div class="step-desc">MCQ accuracy is compared with and without example sentences to quantify contextual cue effects. Additionally, the reasoning-specialized model QwQ-32B is compared against its base model Qwen2.5-32B, and Chain-of-Thought (CoT) prompting effects are measured to isolate the contribution of explicit reasoning.</div>
+                </div>
+            </div>
+        </div>
 
         <figure class="paper-figure">
             <img src="https://arxiv.org/html/2505.16216v1/x2.png" alt="Sample English idiom entry">
             <figcaption><strong>Figure 2.</strong> MIDAS data example: Each idiom includes the expression, figurative meaning, and example sentence.</figcaption>
         </figure>
-
-        <ul class="key-points">
-            <li><strong>Scale:</strong> 64,660 idioms across 6 languages (English, German, Chinese, Korean, Arabic, Turkish), totaling 70,909 instances</li>
-            <li><strong>Composition:</strong> Each idiom includes a figurative meaning and example sentence</li>
-            <li><strong>Evaluation:</strong> 5-choice MCQ with similarity-based distractors + continuation task</li>
-            <li><strong>Compositionality Assessment:</strong> Compositionality scores on a 1-5 scale assigned via LLM prompting</li>
-        </ul>
     </div>
 
     <div class="section">
         <h2>Experimental Results</h2>
 
+        <h3>MCQ Accuracy Across Models and Languages</h3>
         <table class="results-table">
             <thead>
-                <tr><th>Language</th><th>Best MCQ Accuracy</th><th>Memorization Rate Range</th><th>Context Effect</th></tr>
+                <tr><th>Model</th><th>EN</th><th>DE</th><th>ZH</th><th>KO</th><th>AR</th><th>TR</th></tr>
             </thead>
             <tbody>
-                <tr><td>English</td><td>91.13% (GPT-4o)</td><td>67-81%</td><td>Slight improvement</td></tr>
-                <tr><td>Chinese</td><td>95.65% (DeepSeek-V3)</td><td>High</td><td>Slight improvement</td></tr>
-                <tr><td>Korean</td><td>72.72% (GPT-4o)</td><td>26-37%</td><td class="highlight-cell">~30%p improvement</td></tr>
-                <tr><td>Turkish</td><td>71.82% (GPT-4o)</td><td>Low</td><td class="highlight-cell">~25%p improvement</td></tr>
+                <tr><td>Aya-Expanse-32B</td><td>81.71</td><td>71.77</td><td>75.45</td><td>49.89</td><td>65.62</td><td>48.94</td></tr>
+                <tr><td>Qwen2.5-32B</td><td>83.71</td><td>73.94</td><td>93.35</td><td>51.39</td><td>71.25</td><td>40.31</td></tr>
+                <tr><td>DeepSeek-V3</td><td>90.34</td><td>83.94</td><td class="highlight-cell">95.65</td><td>55.64</td><td>75.53</td><td>62.52</td></tr>
+                <tr><td>GPT-4o</td><td class="highlight-cell">91.13</td><td class="highlight-cell">88.08</td><td>91.44</td><td class="highlight-cell">72.72</td><td class="highlight-cell">72.85</td><td class="highlight-cell">71.82</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Memorization Rates (%)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>EN</th><th>DE</th><th>ZH</th><th>KO</th><th>AR</th><th>TR</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Aya-Expanse-32B</td><td>80.36</td><td>56.43</td><td>92.95</td><td>36.59</td><td>30.54</td><td>32.66</td></tr>
+                <tr><td>Qwen2.5-32B</td><td>73.72</td><td>45.27</td><td>77.97</td><td>31.61</td><td>29.87</td><td>22.28</td></tr>
+                <tr><td>DeepSeek-V3</td><td>70.83</td><td>59.28</td><td>89.51</td><td>31.06</td><td>29.45</td><td>45.82</td></tr>
+                <tr><td>GPT-4o</td><td>67.18</td><td>49.53</td><td>70.26</td><td>26.13</td><td>27.25</td><td>35.08</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Impact of Context: Accuracy Without vs. With Example Sentences</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>Language</th><th>w/o Context</th><th>w/ Context</th><th>Gain</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Aya-Expanse-32B</td><td>KO</td><td>52.78</td><td>82.81</td><td class="highlight-cell">+30.03</td></tr>
+                <tr><td>Qwen2.5-32B</td><td>TR</td><td>37.34</td><td>69.21</td><td class="highlight-cell">+31.87</td></tr>
+                <tr><td>Qwen2.5-32B</td><td>KO</td><td>51.46</td><td>82.14</td><td class="highlight-cell">+30.68</td></tr>
+                <tr><td>DeepSeek-V3</td><td>KO</td><td>57.93</td><td>83.73</td><td class="highlight-cell">+25.80</td></tr>
+                <tr><td>DeepSeek-V3</td><td>TR</td><td>63.06</td><td>88.45</td><td class="highlight-cell">+25.39</td></tr>
+                <tr><td>GPT-4o</td><td>TR</td><td>71.24</td><td>90.72</td><td>+19.48</td></tr>
+                <tr><td>GPT-4o</td><td>KO</td><td>75.93</td><td>92.42</td><td>+16.49</td></tr>
+                <tr><td>GPT-4o</td><td>EN</td><td>91.53</td><td>95.22</td><td>+3.69</td></tr>
+                <tr><td>DeepSeek-V3</td><td>ZH</td><td>95.44</td><td>95.87</td><td>+0.43</td></tr>
             </tbody>
         </table>
 
@@ -83,18 +148,20 @@
         <div class="section" style="margin-top:20px;">
             <h2>Key Findings</h2>
             <ul class="key-points">
-                <li><strong>Hybrid Processing:</strong> LLMs process idioms through a <strong>hybrid approach</strong> that combines contextual cues and reasoning, rather than pure memorization or pure reasoning</li>
-                <li><strong>Impact of Memorization:</strong> 3.82-15.83% higher accuracy on memorized idioms — with gaps exceeding 10%p for Korean/Turkish</li>
-                <li><strong>Compositionality and Performance:</strong> Correctly answered idioms have 14-44% higher compositionality scores, suggesting that component meanings are leveraged for reasoning</li>
-                <li><strong>Superiority of Reasoning Models:</strong> The reasoning-specialized model (QwQ) consistently outperforms the base model (Qwen2.5)</li>
-                <li><strong>Double-Edged Nature of Chain-of-Thought:</strong> CoT can be detrimental for high-performing languages, suggesting trade-offs in reasoning model training</li>
+                <li><strong>Hybrid Processing:</strong> LLMs process idioms through a <strong>hybrid mechanism</strong> that integrates memorization, compositional reasoning, and contextual cues -- not pure memorization alone. All three factors contribute statistically significantly across all model-language combinations.</li>
+                <li><strong>Memorization Matters but is Not Sufficient:</strong> Memorized idioms achieve 3.82-15.83%p higher accuracy (all differences statistically significant), with the largest gap being Qwen2.5 on English (+15.83%p). However, even unmemorized idioms are frequently answered correctly, confirming the role of reasoning.</li>
+                <li><strong>Compositionality Enables Reasoning:</strong> Correctly answered idioms have 1.63-44.00% higher compositionality scores (Mann-Whitney U, all significant). Qwen2.5 shows the strongest effect: +44.00% in Arabic and +42.86% in English, indicating heavy reliance on compositional inference.</li>
+                <li><strong>Context is Critical for Low-Resource Languages:</strong> Providing example sentences yields 25-32%p gains for Korean and Turkish, compared to only 0.4-4.7%p for Chinese with top models. Context compensates for lower memorization in underrepresented languages.</li>
+                <li><strong>Reasoning Models Outperform Consistently:</strong> QwQ-32B's Thinking mode outperforms across all 6 languages. However, CoT prompting on the base Qwen2.5 model is a double-edged sword: it helps low-resource languages (+2-5%p) but hurts high-resource ones (-1-4%p).</li>
+                <li><strong>Downstream Impact:</strong> Providing idiom meanings to GPT-4o as an evaluator increases alignment with human judgment from 0.118 to 0.739 (Kendall's tau) for sentence generation, confirming that idiom knowledge is critical for practical NLP tasks.</li>
             </ul>
         </div>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>Idiom understanding serves as a litmus test for deep language comprehension. The <strong>finding that LLMs utilize reasoning rather than mere memorization</strong> provides evidence that these models "understand" language meaning to some extent. At the same time, the large performance gaps in low-resource languages point to directions for advancing multilingual AI.</p>
+        <p>Idiom understanding is one of the most revealing tests of whether LLMs genuinely comprehend language or merely pattern-match. This study provides the first large-scale, controlled, multilingual evidence that <strong>LLMs employ a hybrid mechanism combining memorization, compositional reasoning, and contextual inference</strong> for idiom processing. The finding that unmemorized idioms can still be understood through reasoning demonstrates genuine linguistic capability beyond rote retrieval.</p>
+        <p>Practically, the dramatic performance gaps between high-resource languages (EN/ZH: 91-96%) and low-resource ones (KO/TR: 40-73%) highlight an urgent need for better multilingual idiom resources. The MIDAS dataset itself -- 64,660 human-validated idioms across 6 typologically diverse languages -- fills a critical gap and enables future research on figurative language understanding. The downstream experiments further show that explicit idiom knowledge can substantially improve real-world tasks like translation and sentence generation.</p>
     </div>
 
     <div class="section">

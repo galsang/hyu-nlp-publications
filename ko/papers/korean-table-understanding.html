@@ -22,31 +22,154 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>언어 모델의 한국어 표 셀 설명 생성 능력을 향상시키기 위한 전처리 형식과 학습 전략을 체계적으로 탐구한 연구.</p>
+        <p>4가지 표 직렬화 형식을 비교하고 4가지 합성 보조 과제를 설계하여, Pandas DataFrame 전처리가 한국어 표 셀 설명 생성에서 기준 대비 19.6% 성능 향상과 토큰 비용 절감을 동시에 달성함을 보인 연구.</p>
     </div>
+
     <div class="section">
-        <h2>배경</h2>
-        <p>표는 구조화된 데이터의 보편적 형식이지만, 특정 표 셀에 대한 자연어 설명 생성은 언어 모델에게 여전히 어려운 과제입니다 &mdash; 특히 한국어에서는 더욱 그렇습니다. 표와 대상 셀이 주어졌을 때, 해당 셀 값이 맥락에서 무엇을 의미하는지 유창한 한국어 설명을 생성하는 것이 목표입니다. 이 능력은 표 기반 질의응답, 접근성 도구, 자동 보고서 생성 등에 필수적입니다. 그러나 표를 텍스트로 직렬화하는 전처리 형식과 보조 학습 과제의 선택이 성능에 결정적 영향을 미칩니다.</p>
+        <h2>배경 및 동기</h2>
+        <p>표는 구조화된 데이터를 정리하는 가장 보편적인 형식 중 하나이지만, 특정 표 셀에 대한 자연어 설명을 자동으로 생성하는 것은 언어 모델에게 여전히 어려운 과제입니다 &mdash; 특히 자원과 벤치마크가 부족한 한국어에서는 더욱 그렇습니다. 표와 대상 셀이 주어졌을 때, 해당 셀 값이 행, 열, 그리고 표 전체 맥락에서 무엇을 의미하는지 유창한 한국어 문장으로 설명하는 것이 목표입니다.</p>
+        <div class="highlight-box">
+            <p><strong>핵심 과제:</strong></p>
+            <ul>
+                <li><strong>직렬화 모호성:</strong> 표를 언어 모델에 입력하려면 텍스트로 변환해야 하지만, Markdown, HTML, DataFrame, JSON 등 형식에 따라 구조적 단서의 전달 방식이 크게 달라지며, 한국어에 대한 체계적 비교 연구가 부재합니다.</li>
+                <li><strong>구조 이해 부족:</strong> 모델이 셀을 해당 열 헤더나 행 맥락과 정확히 연결하지 못해, 사실과 맞지 않거나 의미가 통하지 않는 설명을 생성하는 경우가 빈번합니다.</li>
+                <li><strong>토큰 효율성:</strong> HTML과 같은 장황한 형식은 구조적 명확성의 향상 없이 많은 토큰을 소비하여, 학습과 추론 모두에서 계산 비용을 증가시킵니다.</li>
+                <li><strong>한국어 표 데이터 부족:</strong> 대부분의 표 이해 연구가 영어를 대상으로 하며, 한국어 전용 학습 데이터와 평가 벤치마크가 매우 제한적입니다.</li>
+            </ul>
+        </div>
+        <p>본 논문은 이러한 과제들을 해결하기 위해 직렬화 형식의 통제된 비교와 합성 데이터 기반의 목표 지향적 보조 학습 과제를 제안하여, 처음부터 표 이해 능력을 체계적으로 구축합니다.</p>
     </div>
+
     <div class="section">
-        <h2>방법</h2>
+        <h2>제안 방법</h2>
+        <p>본 연구의 접근법은 두 가지 핵심 구성요소로 이루어집니다: (1) 최적의 표-텍스트 직렬화 형식 탐색, (2) 표 구조 이해를 점진적으로 학습시키는 합성 데이터 기반 보조 과제 설계.</p>
+
+        <div class="highlight-box">
+            <p><strong>전체 파이프라인:</strong> 학습 절차는 2단계 커리큘럼을 따릅니다. 먼저, 합성 보조 과제로 모델을 학습시켜 기초적인 표 이해 능력을 구축합니다(구조적 기반 학습). 이후, 사전 학습된 모델을 표 셀 설명 생성이라는 최종 과제에 맞춰 미세 조정합니다. 이러한 커리큘럼 접근법은 모델이 복잡한 생성 목표를 시도하기 전에 구조적 이해를 먼저 습득하도록 보장합니다.</p>
+        </div>
+
+        <h3>표 직렬화 형식</h3>
+        <p>표를 언어 모델이 처리할 수 있는 텍스트 문자열로 변환하는 4가지 형식을 비교합니다:</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>형식</th><th>특징</th><th>인코딩 예시</th><th>토큰 효율성</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Markdown</td><td>파이프(|)로 구분된 열과 헤더 구분선</td><td><code>| Col1 | Col2 |\n|---|---|\n| val | val |</code></td><td>보통</td></tr>
+                <tr><td>HTML</td><td>&lt;table&gt;/&lt;tr&gt;/&lt;td&gt; 마크업으로 구조 보존</td><td><code>&lt;table&gt;&lt;tr&gt;&lt;td&gt;val&lt;/td&gt;...&lt;/tr&gt;&lt;/table&gt;</code></td><td>낮음 (장황한 태그)</td></tr>
+                <tr><td><strong>Pandas DataFrame</strong></td><td>인덱스 기반 행/열 표현과 정렬된 간격</td><td><code>&nbsp;&nbsp;Col1&nbsp;&nbsp;Col2\n0&nbsp;&nbsp;val&nbsp;&nbsp;&nbsp;val</code></td><td><strong>높음</strong></td></tr>
+                <tr><td>JSON</td><td>행 단위 중첩된 키-값 쌍</td><td><code>[{"Col1":"val","Col2":"val"}]</code></td><td>보통</td></tr>
+            </tbody>
+        </table>
+        <p>DataFrame 형식의 핵심적인 장점은, 공백 정렬 레이아웃이 열 정렬을 자연스럽게 보존하여, 명시적인 구조 마크업 없이도 모델이 셀 값을 해당 헤더와 쉽게 연결할 수 있다는 점입니다.</p>
+
+        <h3>보조 학습 과제</h3>
+        <p>특정 표 이해 능력을 구축하기 위해 4가지 보조 과제를 설계하며, 각각 자동 생성된 합성 데이터셋으로 뒷받침됩니다. 이 과제들은 국소적인 셀 수준 이해에서 전체 표 수준 이해로 점진적으로 확장되는 커리큘럼을 형성합니다:</p>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">HPOS &mdash; 셀 위치 인식</div>
+                <div class="step-desc">표와 대상 셀 값이 주어졌을 때, 모델이 해당 셀의 정확한 행과 열 위치를 식별해야 합니다. 이를 통해 모델은 셀 값을 표 내 구조적 좌표에 매핑하는 능력을 학습합니다. <strong>핵심 능력:</strong> 셀 수준 위치 파악, 좌표 매핑.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">HROW &mdash; 행 정보 인식</div>
+                <div class="step-desc">표와 특정 행 인덱스가 주어졌을 때, 모델이 해당 행의 모든 셀 값을 나열해야 합니다. 이 과제는 직렬화된 표에서 수평(행 수준) 정보를 정확히 파싱하고 추출하는 능력을 훈련합니다. <strong>핵심 능력:</strong> 행 수준 파싱, 수평 탐색.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">HCOL &mdash; 열 정보 인식</div>
+                <div class="step-desc">표와 특정 열 헤더가 주어졌을 때, 모델이 해당 열의 모든 값을 추출해야 합니다. 이를 통해 수직(열 수준) 관계를 파악하는 능력을 구축하며, 셀을 올바른 열 헤더와 연결하는 데 핵심적입니다. <strong>핵심 능력:</strong> 열 수준 파싱, 헤더-값 연결.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">CRCR &mdash; 표 구조 재배치</div>
+                <div class="step-desc">모델이 표를 한 직렬화 형식에서 다른 형식으로 변환합니다 (예: Markdown에서 DataFrame). 충실한 형식 변환을 위해 모든 셀, 행, 열 관계를 정확히 파싱해야 하므로 표의 전체 구조에 대한 깊은 이해를 촉진합니다. <strong>핵심 능력:</strong> 전체적 구조 이해, 형식 비의존적 표 표현.</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <p><strong>합성 데이터 생성:</strong> 모든 보조 과제 데이터셋은 기존 표로부터 자동으로 구축되며, 수동 주석 작업이 필요 없습니다. 각 표에 대해 대상 셀(HPOS), 행 인덱스(HROW), 열 헤더(HCOL), 원본/대상 형식 쌍(CRCR)을 변경하여 다수의 학습 인스턴스를 생성합니다. 이를 통해 새로운 도메인과 언어로의 확장이 용이합니다.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>실험 설정</h2>
+        <p>실험은 직렬화 형식 선택과 보조 과제 학습이 한국어 표 셀 설명 생성이라는 하류 과제에 미치는 기여를 분리하여 측정하도록 설계되었습니다.</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>구성요소</th><th>세부사항</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>목표 과제</strong></td><td>한국어 표 셀 설명 생성 &mdash; 강조된 셀을 맥락에 맞게 유창한 한국어 문장으로 설명</td></tr>
+                <tr><td><strong>직렬화 형식</strong></td><td>Markdown (기준), HTML, Pandas DataFrame, JSON</td></tr>
+                <tr><td><strong>보조 과제</strong></td><td>HPOS (셀 위치), HROW (행 정보), HCOL (열 정보), CRCR (형식 변환)</td></tr>
+                <tr><td><strong>학습 전략</strong></td><td>2단계 커리큘럼: 보조 과제 사전 학습 후 목표 과제 미세 조정</td></tr>
+                <tr><td><strong>평가</strong></td><td>형식별, 보조 과제 조합별 설명 품질 비교</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>실험 결과</h2>
+        <p>실험은 직렬화 형식 선택과 보조 과제 학습이 한국어 표 셀 설명 생성 품질에 미치는 영향을 평가합니다.</p>
+
+        <h3>직렬화 형식별 성능</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>형식</th><th>상대 성능</th><th>토큰 수</th><th>구조적 명확성</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Baseline (Markdown)</td><td>기준</td><td>높음</td><td>보통 &mdash; 파이프 구분자에 의존</td></tr>
+                <tr><td>HTML</td><td>기준 이하</td><td>최다</td><td>높은 마크업 오버헤드가 내용을 가림</td></tr>
+                <tr><td>JSON</td><td>기준 이상</td><td>보통</td><td>명시적 키-값 쌍이 헤더 연결을 보조</td></tr>
+                <tr><td class="highlight-cell"><strong>Pandas DataFrame</strong></td><td class="highlight-cell"><strong>+19.6% 향상</strong></td><td class="highlight-cell"><strong>최소</strong></td><td class="highlight-cell"><strong>자연스러운 정렬이 열 구조를 보존</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>보조 과제의 효과</h3>
         <ul class="key-points">
-            <li><strong>표 형식 비교:</strong> Markdown, HTML, Pandas DataFrame, JSON 등 4가지 직렬화 형식을 평가하여, 어떤 표현이 언어 모델에게 표 구조를 가장 효과적으로 전달하는지 파악합니다.</li>
-            <li><strong>합성 데이터 기반 보조 과제:</strong> 셀 위치 인식, 행 정보 인식, 열 정보 인식, 표 구조 재배치 등 4가지 목표 지향적 보조 과제를 설계하고, 각각에 맞는 합성 데이터셋을 구축하여 표 이해 능력을 점진적으로 향상시킵니다.</li>
-            <li><strong>토큰 효율적 학습:</strong> 구조적 정보를 보존하면서 토큰 수를 최소화하는 전처리 형식을 파악하여, 학습과 추론 단계 모두에서 계산 비용을 절감합니다.</li>
+            <li><strong>셀 위치 인식(HPOS)과 열 정보 인식(HCOL)</strong>이 최종 설명 품질에 가장 크게 기여하여, 정확한 구조적 인식이 핵심 병목임을 확인하였습니다.</li>
+            <li><strong>행 정보 인식(HROW)</strong>은 중간 정도의 향상을 제공하며, 행 수준 맥락은 명시적 학습 없이도 부분적으로 포착됨을 시사합니다.</li>
+            <li><strong>표 구조 재배치(CRCR)</strong>는 모델에게 표 레이아웃에 대한 전체적 이해를 강제함으로써 보완적인 성능 향상을 제공합니다.</li>
+            <li><strong>4가지 보조 과제를 모두 결합</strong>하고 Pandas DataFrame 형식을 사용할 때 가장 우수한 결과를 달성하며, 다양한 표 크기와 도메인에서 일관된 향상을 보였습니다.</li>
+        </ul>
+
+        <h3>보조 과제 기여도 분석</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>보조 과제 조합</th><th>습득되는 핵심 능력</th><th>기여 수준</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>HPOS 단독</td><td>셀-좌표 매핑</td><td>높음</td></tr>
+                <tr><td>HCOL 단독</td><td>열 헤더-값 연결</td><td>높음</td></tr>
+                <tr><td>HROW 단독</td><td>행 수준 맥락 추출</td><td>보통</td></tr>
+                <tr><td>CRCR 단독</td><td>전체적 구조 이해</td><td>보통</td></tr>
+                <tr><td class="highlight-cell"><strong>4가지 모두 결합</strong></td><td class="highlight-cell"><strong>완전한 구조적 기반</strong></td><td class="highlight-cell"><strong>최고</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>핵심 발견</h3>
+        <ul class="key-points">
+            <li><strong>형식의 중요성:</strong> Pandas DataFrame이 Markdown 기준 대비 19.6% 향상을 달성하면서 동시에 더 적은 입력 토큰을 사용하여, 간결한 구조적 표현이 모델의 관련 정보 집중에 도움이 됨을 보여줍니다.</li>
+            <li><strong>토큰 효율성과 성능의 상관관계:</strong> 가장 토큰 효율적인 형식(DataFrame)이 가장 좋은 결과를, 가장 장황한 형식(HTML)이 가장 나쁜 결과를 보여 &mdash; 추가 마크업이 유용한 구조적 신호가 아닌 노이즈로 작용합니다.</li>
+            <li><strong>합성 보조 과제 데이터의 효과:</strong> 실제 표 설명 학습 데이터 없이도, 합성 데이터로 구축된 보조 과제만으로 모델의 구조적 이해를 상당히 향상시킬 수 있음을 입증합니다.</li>
+            <li><strong>커리큘럼 순서의 중요성:</strong> 구조적 보조 과제 사전 학습 후 설명 생성 미세 조정을 하는 것이 동시 학습이나 역순 학습보다 우수하여, 구조적 기반이 정확한 설명 생성의 전제 조건임을 확인합니다.</li>
         </ul>
     </div>
-    <div class="section">
-        <h2>결과</h2>
-        <ul class="key-points">
-            <li>Pandas DataFrame 형식이 가장 우수한 성능을 달성하여, HTML이나 Markdown 대비 더 적은 토큰으로 기준 성능 대비 19.6%의 향상을 보였습니다.</li>
-            <li>합성 데이터 기반 보조 과제가 일관된 성능 향상을 제공하며, 특히 셀 위치 인식과 열 정보 인식이 최종 표 설명 품질에 가장 크게 기여하였습니다.</li>
-            <li>토큰 효율적 형식이 계산 비용을 줄일 뿐만 아니라 모델 성능도 향상시켜, 간결한 구조적 표현이 모델의 관련 정보 집중에 도움이 됨을 시사합니다.</li>
-        </ul>
-    </div>
+
     <div class="section">
         <h2>의의</h2>
-        <p>본 연구는 한국어 표 이해 시스템 구축을 위한 실용적이고 구체적인 가이드라인을 제공합니다. 적절한 전처리 형식과 목표 지향적 보조 학습의 조합이 상당한 성능 향상을 이끌어낼 수 있음을 보여주며, 한국어 표-텍스트 생성을 위한 튼튼한 기반을 마련합니다. HCLT 2024 최우수논문상을 수상하여, 아직 충분히 탐구되지 않았지만 실용적으로 중요한 한국어 NLP 영역에 대한 기여를 인정받았습니다.</p>
+        <p>본 연구는 구조화된 데이터가 비즈니스 및 공공 분야에서 점점 더 중요해지는 시점에서, 한국어 표 이해 시스템 구축을 위한 실용적이고 구체적인 가이드라인을 제공합니다. 기여는 세 가지로 요약됩니다:</p>
+        <ul>
+            <li><strong>한국어 표에 대한 최초의 체계적 형식 비교:</strong> 통제된 조건에서 4가지 직렬화 형식을 엄밀하게 평가하여, 실무자들에게 실증적 근거에 기반한 명확한 권고(Pandas DataFrame)를 제시합니다.</li>
+            <li><strong>재사용 가능한 보조 과제 프레임워크:</strong> 4가지 보조 과제(HPOS, HROW, HCOL, CRCR)와 합성 데이터 생성 방법론은 셀 설명 생성 외의 다른 표 이해 과제와 다른 언어에도 적용 가능합니다.</li>
+            <li><strong>효율성과 성능의 동시 달성:</strong> 가장 토큰 효율적인 형식이 가장 좋은 성능을 보인다는 발견은, 계산 비용 절감과 품질 향상을 동시에 달성할 수 있다는 실무적으로 매우 가치 있는 결과입니다.</li>
+        </ul>
+        <div class="highlight-box">
+            <p><strong>실무적 시사점:</strong> 한국어 표-텍스트 시스템을 구축하는 실무자에게 본 논문은 명확한 레시피를 제공합니다: 토큰 효율성과 구조적 명확성의 최적 균형을 위해 표를 Pandas DataFrame으로 직렬화하고, 목표 과제 미세 조정 전에 자동 생성된 합성 데이터로 HPOS/HROW/HCOL/CRCR 보조 과제 커리큘럼을 사전 학습하십시오.</p>
+        </div>
+        <p>본 논문은 <strong>HCLT 2024 최우수논문상</strong>을 수상하였으며 (학술대회 논문집 pp. 635&ndash;640 게재), 아직 충분히 탐구되지 않았지만 실용적으로 중요한 한국어 NLP 영역에 대한 기여를 인정받았습니다.</p>
     </div>
     <div class="section">
         <h2>링크</h2>

@@ -22,32 +22,146 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A bilingual (Korean-English) large language model optimized for the plant construction engineering domain, presented at ACL 2025 Industry Track. Addresses the gap between general-purpose LLMs and domain-specific needs in industrial engineering.</p>
-        <figure class="paper-figure">
-            <img src="../images/enginius/figure1.png" alt="Comparison of general LLMs vs ENGinius">
-            <figcaption><strong>Figure 1.</strong> General LLMs (top) often struggle with domain-specific terminology and knowledge. ENGinius (below) delivers optimized responses for plant construction engineering.</figcaption>
-        </figure>
+        <p>ENGinius is the first large language model specifically designed for plant construction engineering (PCE), built on SOLAR-10.7B with a four-stage bilingual training pipeline and 16.5B tokens of domain data, achieving 67.5% on the Professional Engineer benchmark -- surpassing GPT-4 (64.0%) -- and scoring 58.91 on KOPIA, outperforming all open-source and proprietary baselines by 3-17%.</p>
     </div>
+
+    <figure class="paper-figure">
+        <img src="../images/enginius/figure1.png" alt="Comparison of general LLMs vs ENGinius">
+        <figcaption><strong>Figure 1.</strong> General LLMs (top) often struggle with domain-specific terminology and knowledge -- e.g., ChatGPT misinterprets "NGS" as "Next-Generation Sequencing" instead of "Natural Gas System." ENGinius (below) correctly handles PCE-specific acronyms and delivers optimized responses.</figcaption>
+    </figure>
+
     <div class="section">
-        <h2>Key Points</h2>
-        <ul class="key-points">
-            <li>Domain-specific optimization for plant construction engineering</li>
-            <li>Bilingual capability (Korean-English) for cross-lingual industrial applications</li>
-            <li>Industry track paper demonstrating real-world applicability</li>
-        </ul>
+        <h2>Background & Motivation</h2>
+        <p>Recent advances in large language models have drawn attention for their potential to automate and optimize processes across various sectors. However, the adoption of LLMs in <strong>plant construction engineering (PCE)</strong> -- covering oil refineries, power plants, chemical facilities, and large-scale infrastructure -- remains severely limited, mainly due to its highly specialized nature and the lack of resources for domain-specific training and evaluation.</p>
+        <div class="highlight-box">
+            <p><strong>Key Challenges in Plant Construction Engineering:</strong></p>
+            <ul>
+                <li><strong>Highly specialized domain:</strong> PCE involves complex technical terminology across mechanical, electrical, piping, civil, architectural, and instrumentation disciplines that general-purpose LLMs fail to handle accurately. For example, ChatGPT's accuracy on PCE-specific acronyms is only <strong>48.4-55.6%</strong>, compared to 86-100% on medical, financial, and legal terms.</li>
+                <li><strong>Lack of training resources:</strong> Unlike medicine or law, PCE has virtually no publicly available domain-specific corpora or instruction datasets for LLM training. Authoritative information is often copyrighted by professional associations and accessible only through subscription-based text search services.</li>
+                <li><strong>No evaluation benchmarks:</strong> Prior to this work, there were no benchmarks tailored to assess LLM performance on PCE tasks, making it impossible to measure domain competency.</li>
+                <li><strong>Bilingual requirements:</strong> Korean engineering firms operate globally, requiring seamless Korean-English communication for technical documents, specifications, and cross-border collaboration. Domain-specific language often appears in multilingual or code-switching environments.</li>
+            </ul>
+        </div>
+        <p>ENGinius addresses all of these challenges by presenting end-to-end procedures for <strong>domain data construction</strong> (16.5B tokens), a <strong>multi-stage model training pipeline</strong> scaling SOLAR-10.7B to 14.4B parameters, and the <strong>first benchmarks</strong> (KOPIA and PE) tailored to the plant construction engineering domain.</p>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method: Four-Stage Training Pipeline</h2>
+
         <figure class="paper-figure">
             <img src="../images/enginius/figure2.png" alt="ENGinius training procedure">
-            <figcaption><strong>Figure 2.</strong> Training procedure of ENGinius: (1) Base model expansion with WECHSEL and LLaMA PRO, (2) Domain-Adaptive Pre-Training, (3) Instruction tuning, (4) DPO alignment to produce ENGinius-14.4B.</figcaption>
+            <figcaption><strong>Figure 2.</strong> Training procedure of ENGinius: (1) SOLAR-10.7B is expanded to 14.4B using WECHSEL and LLaMA PRO (ENGinius-BasePT), (2) Domain-Adaptive Pre-Training on PCE corpora (ENGinius-PlantPT), (3) Instruction tuning with ENGine-QA (ENGinius-PlantFT), (4) DPO alignment to produce the final ENGinius-14.4B.</figcaption>
         </figure>
+
+        <p>ENGinius employs a four-stage training pipeline that transforms <strong>SOLAR-10.7B</strong> -- selected after evaluating Llama-2 13B and Mistral 7B for its best balance of model size and cross-lingual adaptability -- into a domain-specialized bilingual model, ultimately producing <strong>ENGinius-14.4B</strong>.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Bilingual Base Model Expansion (WECHSEL + LLaMA PRO)</div>
+                <div class="step-desc">SOLAR-10.7B's vocabulary and architecture are expanded to accommodate Korean language capabilities. <strong>WECHSEL</strong> integrates new Korean tokens by initializing their embeddings from semantically similar English tokens, while <strong>LLaMA PRO</strong> augments the model with additional transformer blocks, scaling from 10.7B to <strong>14.4B parameters</strong> without degrading existing English capabilities. Continued pre-training on a Korean-English bilingual corpus produces <strong>ENGinius-BasePT</strong>, which achieves 78.09 on a Korean benchmark (vs. 59.57 for SOLAR-10.7B) while maintaining English performance.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Domain-Adaptive Pre-Training (DAPT)</div>
+                <div class="step-desc">ENGinius-BasePT undergoes continual pre-training on a curated corpus of <strong>16.5 billion tokens</strong> covering PCE documents: plant journals (7.75M tokens), engineering books on civil/architectural/electrical/mechanical/piping/HVAC topics (89M-173M tokens each), plant commercial materials (14.2M tokens), regulation and standard handbooks (41.4M tokens), national competency standards (160.5M tokens), news articles (1.52B tokens), research papers (5.53B tokens), and plant articles (8.87B tokens) -- all in English and/or Korean. This produces <strong>ENGinius-PlantPT</strong>, which consistently outperforms ENGinius-BasePT on both KOPIA and PE benchmarks.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Instruction Tuning with ENGine-QA</div>
+                <div class="step-desc">The domain-adapted model is fine-tuned on <strong>ENGine-QA</strong>, a suite of <strong>93,662 instruction-response pairs</strong> covering six task types: Plant Expert QA from ENG-TIPS forum discussions (58,834 KO + 29,417 EN), Plant Discipline Classification (595 EN/KO), Plant Multiple Choice (1,002 KO), Plant Terminology Dictionaries (3,276 EN), and Deviation Report Generation (538 EN/KO). This is supplemented with a Korean-translated Alpaca-GPT4 dataset for general fluency, producing <strong>ENGinius-PlantFT</strong>.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">DPO Alignment</div>
+                <div class="step-desc"><strong>Direct Preference Optimization (DPO)</strong> is applied using Q&As from ENG-TIPS with two alternative responses per question generated via GPT-4o and Mixture-of-Experts prompting. <strong>Three senior specialists</strong> across mechanical, piping, electrical, and architectural disciplines evaluated response pairs and assigned preference scores, labeling responses as "Chosen" or "Rejected." This produces the final <strong>ENGinius-14.4B</strong>, trained to generate answers aligned with expert expectations.</div>
+            </div>
+        </div>
+
+        <h3>Domain-Specific Benchmarks: KOPIA and PE</h3>
+        <p>The paper introduces two novel multiple-choice question (MCQ) benchmarks -- the first evaluation tools for plant construction engineering:</p>
+        <div class="highlight-box">
+            <ul>
+                <li><strong>KOPIA Benchmark (Korean):</strong> Developed in collaboration with the Korea Plant Industries Association (KOPIA). It covers <strong>mechanical and piping engineering</strong> with <strong>1,000 expert-validated test questions</strong> on terminology, technical standards, and process knowledge. Planned for public release.</li>
+                <li><strong>Professional Engineer (PE) Benchmark (English):</strong> Based on actual PE certification exams, comprising <strong>80 questions</strong> across three categories: PE Code knowledge, PE Calculation (advanced engineering calculations), and PE General (conceptual understanding). A score of ~65 is generally regarded as the passing threshold.</li>
+            </ul>
+        </div>
     </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <p>The authors evaluate ENGinius against general-purpose LLMs using the LLM-as-a-judge framework (LLaMA3-70B as judge), conducting <strong>20 independent runs</strong> per model and averaging the top 5 for final scores.</p>
+
+        <h3>KOPIA Benchmark (Korean, Plant Engineering)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>Mech.</th><th>Pipe</th><th>Avg.</th><th>Diff. from ENGinius</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Gemma2-9B-it</td><td>58.64</td><td>59.39</td><td>57.89</td><td>-2.13 (-3.6%)</td></tr>
+                <tr><td>Orion-14B-Chat</td><td>51.96</td><td>52.32</td><td>51.61</td><td>-8.41 (-15.0%)</td></tr>
+                <tr><td>SOLAR-10.7B</td><td>50.65</td><td>53.13</td><td>48.17</td><td>-10.12 (-17.2%)</td></tr>
+                <tr><td class="highlight-cell"><strong>ENGinius-14.4B</strong></td><td class="highlight-cell"><strong>60.77</strong></td><td class="highlight-cell"><strong>62.63</strong></td><td class="highlight-cell"><strong>58.91</strong></td><td class="highlight-cell">-</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Professional Engineer (PE) Benchmark (English)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>PE Code</th><th>PE Cal</th><th>PE General</th><th>Average</th><th>Diff. from ENGinius</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Orion-14B-Chat</td><td>41.33</td><td>20.00</td><td>52.26</td><td>36.50</td><td>-31.0 (-45.9%)</td></tr>
+                <tr><td>GPT-3.5-turbo</td><td>60.00</td><td>47.06</td><td>45.16</td><td>48.75</td><td>-18.75 (-27.8%)</td></tr>
+                <tr><td>Gemma2-9B-it</td><td>72.00</td><td>34.71</td><td>59.99</td><td>51.50</td><td>-16.0 (-23.7%)</td></tr>
+                <tr><td>SOLAR-10.7B</td><td>72.00</td><td>40.59</td><td>54.83</td><td>52.00</td><td>-15.5 (-23.0%)</td></tr>
+                <tr><td>GPT-4</td><td>66.67</td><td><strong>52.94</strong></td><td><strong>74.84</strong></td><td>64.00</td><td>-3.5 (-5.2%)</td></tr>
+                <tr><td class="highlight-cell"><strong>ENGinius-14.4B</strong></td><td class="highlight-cell"><strong>100</strong></td><td class="highlight-cell">46.47</td><td class="highlight-cell"><strong>74.84</strong></td><td class="highlight-cell"><strong>67.5</strong></td><td class="highlight-cell">-</td></tr>
+            </tbody>
+        </table>
+
+        <ul class="key-points">
+            <li><strong>Surpasses GPT-4 on PE:</strong> ENGinius-14.4B achieves an average of <strong>67.5</strong> on the PE benchmark, exceeding GPT-4's 64.0 and surpassing the ~65 passing threshold for Professional Engineer certification. Notably, ENGinius achieves a <strong>perfect 100 on PE Code</strong>, demonstrating exceptional mastery of engineering code knowledge.</li>
+            <li><strong>Dominant on KOPIA:</strong> ENGinius outperforms all baselines on the Korean KOPIA benchmark by <strong>3-17%</strong>, confirming strong bilingual domain competency across both mechanical and piping engineering subcategories.</li>
+            <li><strong>GPT-4's edge in calculation:</strong> GPT-4 scores higher on PE Calculation (52.94 vs. 46.47), likely due to its stronger mathematical reasoning capabilities -- a trade-off of ENGinius's more compact 14.4B architecture.</li>
+            <li><strong>DAPT is critical:</strong> Ablation results show ENGinius-PlantPT consistently outperforms ENGinius-BasePT after domain-adaptive pre-training, with KOPIA Pipe scores jumping from 44.85 to <strong>54.36</strong> and PE General from 38.71 to <strong>54.84</strong>.</li>
+            <li><strong>Each stage contributes:</strong> The four-stage pipeline shows cumulative improvements -- bilingual expansion provides the language foundation, DAPT infuses domain knowledge, instruction tuning aligns behavior to practical tasks, and DPO refines output quality based on expert feedback.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Real-World Applications</h2>
+        <p>ENGinius is actively deployed by a major company across real-world PCE workflows, demonstrating tangible industrial impact:</p>
+        <ul>
+            <li><strong>Expert System:</strong> ENGinius functions as a domain expert by retrieving accurate answers to technical questions using Retrieval-Augmented Generation (RAG), referencing internal design standards and technical codes to generate informed recommendations aligned with engineering standards such as EPA and CFR regulations.</li>
+            <li><strong>Automated Document Analysis:</strong> ENGinius streamlines review of complex Invitations to Bid (ITB) documents through contract risk assessment -- retrieving semantically similar clauses from historical data -- and change detection to identify shifts in client requirements.</li>
+            <li><strong>Client Letter & Deviation Report Generation:</strong> The model drafts official project correspondence by referencing previously approved documents, generating drafts aligned with project standards.</li>
+            <li><strong>Document Translation:</strong> ENGinius leverages its bilingual capabilities for cross-lingual translation of technical PCE documentation, handling domain-specific terminology that general translation tools frequently mistranslate.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>ENGinius represents a pioneering effort to bring large language model capabilities to the plant construction engineering industry, an economically significant but technically underrepresented domain in NLP research. Its contributions extend beyond a single model:</p>
+        <ul>
+            <li><strong>First domain-specific LLM for plant construction:</strong> Opens the door for AI-assisted engineering workflows in an industry that handles large-scale infrastructure projects worldwide, from oil refineries to power plants. ENGinius is already actively deployed in real-world PCE operations.</li>
+            <li><strong>Reproducible methodology:</strong> The systematic procedures for data construction (16.5B tokens from 10 source categories) and four-stage model training provide a blueprint that can be adapted to other specialized industrial domains facing similar data scarcity challenges.</li>
+            <li><strong>First domain benchmarks:</strong> KOPIA (1,000 Korean MCQs) and PE (80 English certification-level questions) fill a critical gap, enabling the community to measure and compare LLM performance on plant construction tasks for the first time.</li>
+            <li><strong>Bilingual industrial NLP:</strong> Demonstrates how to build effective bilingual domain models using WECHSEL and LLaMA PRO, particularly relevant for Korean companies operating in global markets where technical communication spans multiple languages.</li>
+            <li><strong>Certification-level competency:</strong> ENGinius surpasses the PE exam passing threshold and outperforms GPT-4, demonstrating that a well-optimized 14.4B-parameter domain model can exceed much larger general-purpose models on specialized tasks.</li>
+        </ul>
+    </div>
+
     <div class="section">
         <h2>Links</h2>
         <div class="links-section">
             <a href="https://aclanthology.org/2025.acl-industry.95/" target="_blank" class="paper-link">ACL Anthology</a>
+            <a href="https://aclanthology.org/2025.acl-industry.95.pdf" target="_blank" class="paper-link">PDF</a>
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-domain">Domain LLM</span>
+        <span class="tag tag-multilingual">Multilingual</span>
     </div>
 </div>
 <div class="footer">

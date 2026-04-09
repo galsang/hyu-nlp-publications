@@ -22,37 +22,55 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A unified framework for idiomaticity detection that leverages four features computed at different levels of contextualization -- both inter-sentence and inner-sentence context -- to determine whether a multi-word expression is used idiomatically or literally.</p>
+        <p>A unified framework for idiomaticity detection that leverages four features computed at different levels of contextualization -- both inter-sentence and inner-sentence context -- to determine whether a multi-word expression (MWE) such as a two-noun compound is used idiomatically or literally, achieving strong cross-lingual generalization across English, Portuguese, and Galician.</p>
+        <figure class="paper-figure">
+            <img src="../images/semeval2022-idiom/figure1.png" alt="Idiomaticity detection framework">
+            <figcaption><strong>Figure 1.</strong> Proposed framework with four features for idiomaticity detection. Features 1 and 2 (left) are based on surrounding inter-sentence context, while features 3 and 4 (right) are derived from inner-sentence context inspired by metaphor identification theories.</figcaption>
+        </figure>
     </div>
 
     <div class="section">
         <h2>Background &amp; Motivation</h2>
-        <p>Multi-word expressions (MWEs) like "wet blanket" can be interpreted either compositionally ("a piece of cloth soaked in liquid") or idiomatically ("a person who spoils the mood"). Detecting whether an MWE is used idiomatically is a challenging NLP problem because the <strong>same expression can have different meanings depending on context</strong>.</p>
+        <p>Multi-word expressions (MWEs) are groups of linguistic components containing two or more words with outstanding collocation. They enrich the expressiveness of a language by allowing diverse interpretations depending on context. For instance, the expression <em>wet blanket</em> can be interpreted either compositionally ("a piece of cloth soaked in liquid") or idiomatically ("a person who spoils the mood"). Detecting whether an MWE is used idiomatically is a challenging NLP problem because the <strong>same expression can have different meanings depending on context</strong>, and most current NLP models are chiefly focused on capturing compositionality.</p>
+        <p>SemEval-2022 Task 2 focuses on classifying two-noun compounds into idiomatic and non-idiomatic usage under two configurations: a <strong>zero-shot setting</strong> where the model is evaluated on MWEs never seen during training, and a <strong>one-shot setting</strong> where the model is exposed to one idiomatic and one non-idiomatic example per MWE during training.</p>
         <div class="highlight-box">
-            <p><strong>Key Challenge:</strong> Prior work showed that simply concatenating surrounding context sentences is generally unhelpful for idiomaticity detection, and can even degrade performance by tripling input sequence length. A more sophisticated approach to exploiting context is needed.</p>
+            <p><strong>Key Challenge:</strong> Prior work (Tayyar Madabushi et al., 2021) showed that simply concatenating three sentences (previous, target, next) in order is generally unhelpful for idiomaticity detection. This naive approach approximately triples the input sequence length (~3x), making it harder for the encoder to distinguish the target sentence from its surrounding context, which can actually degrade performance. A more sophisticated approach to exploiting context is needed -- one that emphasizes the target sentence while still leveraging surrounding information.</p>
         </div>
     </div>
 
     <div class="section">
         <h2>Proposed Method: Multi-Level Contextualization Framework</h2>
-        <p>The framework computes four features from a Transformer encoder (XLM-R), each capturing different aspects of contextualization, then concatenates them for a linear classifier:</p>
+        <p>The framework computes four features from a Transformer encoder (XLM-RoBERTa base), each capturing different aspects of contextualization. Each feature is derived from a [CLS] embedding (v<sub>[CLS]</sub>) and an MWE embedding (v<sub>MWE</sub>, the average of subword representations constituting the target MWE) extracted from the encoder's last layer. The four features are concatenated and passed through a linear classifier for the final idiomatic/non-idiomatic prediction:</p>
         <div class="method-steps">
             <div class="method-step">
                 <div class="step-num">1</div>
-                <div class="step-title">Surrounding Context Features</div>
-                <div class="step-desc">Two features based on inter-sentence context: the target sentence is paired separately with its previous and next sentences, using segment embeddings to distinguish MWE tokens. This avoids overwhelming the encoder while emphasizing the target sentence.</div>
+                <div class="step-title">Feature 1: Previous + Target Context (f<sub>prev</sub>)</div>
+                <div class="step-desc">The target sentence is concatenated with its <strong>previous</strong> sentence and fed into the encoder. Trainable segment embeddings are applied to distinguish MWE tokens (segment=1) from other tokens (segment=0), providing a positional clue for the MWE location. The MWE is also repeated at the tail of the input sequence. A linear transformation of the concatenation of v<sub>[CLS]</sub> and v<sub>MWE</sub> produces the feature.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">2</div>
-                <div class="step-title">Inner-Sentence Context Features</div>
-                <div class="step-desc">Two features inspired by metaphor detection theories (MIP and SPV): a context-exclusive representation (target sentence with MWE masked) and an MWE-exclusive representation (MWE alone), capturing the difference between contextualized and static semantics.</div>
+                <div class="step-title">Feature 2: Target + Next Context (f<sub>next</sub>)</div>
+                <div class="step-desc">Same procedure as Feature 1, but the target sentence is paired with its <strong>next</strong> sentence instead. By splitting the context into two separate chunks rather than concatenating all three sentences, the target sentence is naturally emphasized (it appears in both chunks) while the encoder is not overwhelmed by excessively long inputs.</div>
             </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Feature 3: Context-Exclusive Representation (f<sub>ctx</sub>)</div>
+                <div class="step-desc">Inspired by Selectional Preference Violation (SPV) theory from metaphor detection: the target sentence is fed to the encoder with the <strong>MWE tokens replaced by [MASK]</strong>. This produces a representation of the inner-sentence context independent of the MWE itself. Unlike prior SPV implementations that compute v<sub>[CLS]</sub> and v<sub>MWE</sub> from the same input (causing them to be intertwined by attention), masking the MWE ensures truly separate context semantics.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Feature 4: MWE-Exclusive Representation (f<sub>mwe</sub>)</div>
+                <div class="step-desc">Inspired by the Metaphor Identification Procedure (MIP): <strong>only the MWE itself</strong> (removed from its context) is presented as input to the encoder. This captures the static, context-free semantics of the expression. When the difference between this static representation and the contextualized one (from Features 1-2) is large, it signals idiomatic usage -- mirroring the MIP principle that a word is metaphorical when its contextualized meaning diverges from its literal meaning.</div>
+            </div>
+        </div>
+        <div class="highlight-box">
+            <p><strong>Design Insight:</strong> The MWE tokens from the target sentence (preserving inflectional form) are copied rather than using the original dictionary form. This preserves morphological consistency between the contextualized and isolated representations, which is important for fair comparison.</p>
         </div>
     </div>
 
     <div class="section">
         <h2>Experimental Results</h2>
-        <p>Evaluated on SemEval-2022 Task 2 (idiomaticity detection for two-noun compounds) across three languages: English, Portuguese, and Galician, in both zero-shot and one-shot settings.</p>
+        <p>Evaluated on SemEval-2022 Task 2 Subtask A (idiomaticity detection for two-noun compounds) across three languages: English, Portuguese, and Galician. Galician is not included in the training data, making it a true cross-lingual transfer test. The model uses XLM-R (base) with max sequence length 300, AdamW optimizer (lr=3e-5), batch size 16, trained for 10 epochs. Five instances per model are run with different random seeds, and the best checkpoint by dev macro F1 is selected.</p>
 
         <table class="results-table">
             <thead>
@@ -61,23 +79,34 @@
             <tbody>
                 <tr><td>Baseline (BERT) - Zero-shot</td><td>70.70</td><td>68.03</td><td>50.65</td><td>65.40</td></tr>
                 <tr><td>Baseline (XLM-R) - Zero-shot</td><td>72.29</td><td>65.68</td><td>46.16</td><td>63.21</td></tr>
-                <tr><td class="highlight-cell">Ours - Zero-shot</td><td class="highlight-cell">76.42</td><td class="highlight-cell">72.82</td><td class="highlight-cell">62.92</td><td class="highlight-cell">72.27</td></tr>
+                <tr><td class="highlight-cell">Ours (submitted) - Zero-shot</td><td class="highlight-cell">76.42</td><td class="highlight-cell">72.82</td><td class="highlight-cell">62.92</td><td class="highlight-cell">72.27</td></tr>
                 <tr><td>Baseline (BERT) - One-shot</td><td>88.62</td><td>86.37</td><td>81.62</td><td>86.46</td></tr>
+                <tr><td>Baseline (XLM-R) - One-shot</td><td>88.45</td><td>85.03</td><td>84.02</td><td>86.56</td></tr>
+                <tr><td>Ours (submitted) - One-shot</td><td>91.59</td><td>84.57</td><td>82.87</td><td>87.50</td></tr>
                 <tr><td class="highlight-cell">Ours (post-eval) - One-shot</td><td class="highlight-cell">92.29</td><td class="highlight-cell">88.05</td><td class="highlight-cell">87.10</td><td class="highlight-cell">89.96</td></tr>
             </tbody>
         </table>
 
+        <p>The ablation study compared six variations: (A) no context, (B) naive three-sentence concatenation, (C) removing segment embeddings, (D) not repeating MWE at sequence tail, (E) recovering (unmasking) MWE in the context-exclusive feature, and (F) removing the MWE-exclusive feature:</p>
+
         <ul class="key-points">
-            <li><strong>Strong Zero-shot Performance:</strong> Outperforms XLM-R baseline by over 16% on Galician (unseen language), demonstrating strong cross-lingual generalization</li>
-            <li><strong>State-of-the-art One-shot:</strong> Achieves 89.96 overall macro F1 in the one-shot setting after post-evaluation refinement</li>
-            <li><strong>Context Helps:</strong> Separating surrounding context into two chunks (previous + target, target + next) is consistently advantageous over no-context and naive concatenation approaches</li>
-            <li><strong>Stable Performance:</strong> The proposed approach shows much smaller score deviation and more stable results than baselines</li>
+            <li><strong>Strong Zero-shot Performance:</strong> Outperforms the XLM-R baseline by over 16 percentage points on Galician (an unseen language: 62.92 vs. 46.16), demonstrating strong cross-lingual generalization through the multi-level feature design</li>
+            <li><strong>Effective Context Splitting:</strong> Separating surrounding context into two chunks (previous+target, target+next) is consistently advantageous over both no-context (A) and naive three-sentence concatenation (B) across all experimental settings, confirming the hypothesis that emphasizing the target sentence while limiting input length is beneficial</li>
+            <li><strong>Stable Performance:</strong> The proposed approach shows much smaller score deviation across random seeds than baselines, suggesting that when a data instance lacks sufficient information in its target sentence, surrounding context can reliably complement the gap</li>
+            <li><strong>MWE-Exclusive Feature Matters Most in Zero-shot:</strong> Removing the MWE-exclusive representation (variation F) hurts zero-shot performance the most, likely because static representations for unseen MWEs become noisy, making the context-free semantic anchor critical</li>
+            <li><strong>Validation Set Issue in One-shot:</strong> The post-evaluation result (89.96 vs. 87.50) reveals that the validation set in the evaluation phase did not properly match the training set, causing suboptimal model selection. Simply choosing a model trained until epoch 9 (instead of the best by validation) yielded better test performance, highlighting the importance of proper validation set construction in shared tasks</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>Understanding idiomatic language is essential for NLP systems to properly process figurative expressions. This work demonstrates that <strong>carefully designed multi-level contextualization</strong> -- drawing from both surrounding context and metaphor detection theories -- can significantly improve idiomaticity detection, especially for languages not seen during training.</p>
+        <p>Understanding idiomatic language is essential for NLP systems to properly process figurative expressions, which are pervasive in everyday communication. This work makes several important contributions:</p>
+        <ul class="key-points">
+            <li><strong>Bridging Metaphor and Idiom Detection:</strong> By adapting metaphor identification theories (MIP and SPV) to the idiomaticity detection task, the paper demonstrates a productive cross-pollination between two related areas of figurative language processing</li>
+            <li><strong>Principled Context Exploitation:</strong> Rather than naively concatenating context, the carefully designed split-context strategy shows that <em>how</em> context is presented to the encoder matters as much as <em>whether</em> context is used at all</li>
+            <li><strong>Cross-lingual Robustness:</strong> The large improvement on Galician (a language absent from training) suggests that the multi-level features capture language-agnostic signals of idiomaticity, making the approach practical for low-resource languages</li>
+            <li><strong>Practical Insights for Shared Tasks:</strong> The detailed discussion of validation set issues and MWE form choices provides valuable guidance for future participants in similar shared tasks</li>
+        </ul>
     </div>
 
     <div class="section">

@@ -22,40 +22,152 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>Unsupervised constituency parsing using self-attention heads</p>
-        <figure class="paper-figure">
-            <img src="../images/heads-up/figure1.png" alt="Paper overview">
-            <figcaption><strong>Figure 1.</strong> Relation between the number of selected attention heads (K) and parsing performance (F1) on BERT-base-cased, showing the trade-off in head selection for unsupervised parsing.</figcaption>
-        </figure>
+        <p>A fully unsupervised constituency parsing method that ranks and ensembles transformer self-attention heads based on their inherent syntactic properties, achieving competitive parsing performance without any labeled data or development set, while also enabling analysis of the implicit grammars learned by pre-trained language models.</p>
     </div>
+
+    <figure class="paper-figure">
+        <img src="../images/heads-up/figure1.png" alt="Paper overview">
+        <figcaption><strong>Figure 1.</strong> Relation between the number of selected attention heads (K) and parsing performance (F1) on BERT-base-cased, showing the trade-off in head selection for unsupervised parsing.</figcaption>
+    </figure>
+
     <div class="section">
-        <h2>Background</h2>
-        <p>Constituency parsing &mdash; decomposing a sentence into nested sub-phrases &mdash; traditionally requires expensive treebank annotations. Unsupervised parsing aims to recover this hierarchical structure without labeled data. Meanwhile, pre-trained transformers such as BERT have been shown to encode surprisingly rich syntactic information in their internal representations. A natural question arises: can the self-attention patterns of these models be directly leveraged to induce constituency trees, bypassing the need for explicit syntactic supervision altogether?</p>
+        <h2>Background &amp; Motivation</h2>
+        <p>Constituency parsing &mdash; decomposing a sentence into nested sub-phrases such as noun phrases (NP), verb phrases (VP), and prepositional phrases (PP) &mdash; is fundamental to understanding sentence structure. Traditional supervised parsers require expensive treebank annotations such as the Penn Treebank (PTB), which contains roughly 40,000 hand-annotated sentences of Wall Street Journal text. Unsupervised parsers attempt to recover this hierarchical structure without labeled data, but have historically lagged far behind their supervised counterparts.</p>
+        <p>Meanwhile, probing studies have revealed that pre-trained language models (PLMs) like BERT encode surprisingly rich syntactic information in their internal representations. A natural question arises: can we directly <em>extract</em> parse trees from PLM attention patterns, rather than merely probing for syntactic features? Prior work by Kim et al. (2020) showed that individual BERT attention heads can produce constituency trees, but required a labeled development set to select the best head &mdash; a critical limitation that undermines the unsupervised premise.</p>
+        <div class="highlight-box">
+            <p><strong>Key Gaps Addressed by This Work:</strong></p>
+            <ul>
+                <li><strong>Probe limitations:</strong> Prior work on analyzing syntax in PLMs relied on external probing classifiers (e.g., linear probes over hidden states) or curated test suites (e.g., subject-verb agreement), which themselves introduce confounds &mdash; a high-performing probe may reflect the probe's capacity rather than the model's knowledge &mdash; and cannot directly produce parse trees.</li>
+                <li><strong>Development set dependency:</strong> Existing unsupervised parsing methods that leverage PLMs (e.g., selecting the single best attention head via oracle comparison) require a labeled development set to choose hyperparameters, undermining the truly unsupervised setting. In practice, this means you need a treebank to do &ldquo;unsupervised&rdquo; parsing &mdash; a contradictory requirement.</li>
+                <li><strong>Low-resource applicability:</strong> For low-resource languages with no treebanks at all &mdash; the vast majority of the world's 7,000+ languages &mdash; a method that needs no development data is essential, yet no prior approach could operate under this constraint.</li>
+                <li><strong>Interpretability gap:</strong> There was no principled way to compare the implicit grammars learned by different PLMs against human-annotated treebanks at the <em>grammar rule</em> level (not just tree accuracy), limiting our understanding of what these models actually learn about syntax.</li>
+            </ul>
+        </div>
+        <p>This paper addresses all four gaps by proposing a method that (1) directly extracts constituency trees from attention patterns, (2) requires no development set or labeled data, (3) works across different PLMs and languages, and (4) enables grammar-level analysis through induced PCFGs. The key insight is that syntactic information is <em>distributed</em> across many attention heads, and that an unsupervised criterion based on tree structure quality can identify and combine the most informative ones.</p>
     </div>
+
     <div class="section">
-        <h2>Method</h2>
+        <h2>Proposed Method</h2>
+        <p>The approach consists of three stages: computing span scores from attention matrices, ranking and selecting the most syntactically informative heads without supervision, and constructing trees via a greedy top-down algorithm. An optional fourth stage induces explicit grammars for analysis purposes.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Attention-Based Span Scoring</div>
+                <div class="step-desc">
+                    <p>For each attention head <em>h</em> at layer <em>l</em>, the method computes a syntactic affinity score for every possible text span (i, j) in a sentence of length <em>n</em>. Given the attention matrix <strong>A</strong> of shape <em>n &times; n</em>, the span score captures how much tokens within the span attend to each other versus tokens outside it. Formally, for a span from position <em>i</em> to <em>j</em>, the score is computed as the ratio of intra-span attention mass (total attention that tokens in positions <em>i..j</em> pay to other tokens in <em>i..j</em>) to the total attention from those tokens. High scores indicate that the tokens form a self-contained attention cluster, which is the expected signature of a syntactic constituent &mdash; words within a phrase like &ldquo;the big red ball&rdquo; should attend primarily to each other.</p>
+                    <p>This score is computed for all O(<em>n</em><sup>2</sup>) possible spans in the sentence, yielding a complete span score chart for each attention head. The chart is analogous to the chart used in CKY parsing, but here the scores come from pre-trained attention patterns rather than learned grammar rules.</p>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Unsupervised Head Ranking &amp; Ensemble</div>
+                <div class="step-desc">
+                    <p>Not all attention heads encode syntax &mdash; many attend to positional patterns (e.g., attending to the previous or next token), punctuation, or semantic relations. The paper introduces an unsupervised ranking criterion based on the <em>structural properties</em> of each head's induced trees.</p>
+                    <p>The criterion measures the <strong>branching entropy</strong> of the trees a head produces across a corpus: a head that always produces left-branching trees (equivalent to always splitting off the first word) or always right-branching trees (splitting off the last word) receives a low score, because such trees are trivially degenerate and carry no real syntactic information. In contrast, a head whose trees exhibit varied, non-trivial branching patterns &mdash; sometimes splitting left, sometimes right, depending on the actual sentence structure &mdash; receives a high score, as this variability indicates genuine sensitivity to syntax.</p>
+                    <p>The top-K heads (typically K = 5&ndash;15) are then ensembled by averaging their span scores element-wise, creating a robust composite signal that benefits from complementary syntactic information across different heads and layers. This ranking requires no labeled data or development set &mdash; only unlabeled text from the target domain.</p>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Greedy Top-Down Tree Construction</div>
+                <div class="step-desc">
+                    <p>Given the ensembled span scores, a greedy top-down algorithm recursively builds the constituency tree. Starting from the full sentence span (1, <em>n</em>), the algorithm finds the split point <em>k</em> that maximizes the sum of the scores of the two resulting sub-spans: score(1, <em>k</em>) + score(<em>k</em>+1, <em>n</em>). It then recurses on each sub-span, continuing until reaching individual tokens (spans of length 1).</p>
+                    <p>This produces an unlabeled binary constituency tree. The algorithm has O(<em>n</em><sup>2</sup>) time complexity per sentence (linear scan for the split point at each level of recursion), making it highly efficient compared to chart-parsing approaches. The resulting trees are binarized &mdash; each internal node has exactly two children &mdash; which is standard for evaluation against gold-standard binarized trees from the PTB.</p>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Grammar Induction via Neural PCFG (Analysis)</div>
+                <div class="step-desc">
+                    <p>As an additional analysis tool, the induced parse trees are used as supervision to train a neural PCFG (Probabilistic Context-Free Grammar) following the compound PCFG framework of Kim et al. (2019). The neural PCFG learns explicit production rules (e.g., S &rarr; NP VP, NP &rarr; DT NN) with associated probabilities, parameterized by neural networks.</p>
+                    <p>This allows quantitative comparison of the implicit grammars captured by different PLMs: by training separate PCFGs on trees induced from BERT, GPT-2, XLNet, etc., one can compare the resulting rule distributions against the human-annotated grammar from the PTB. The comparison reveals which phrase types each model captures well (e.g., NPs vs. VPs), which constructions are problematic, and how the implicit grammars of different PLM architectures systematically differ.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <p>The method is evaluated on the WSJ10 (sentences &le; 10 words) and WSJ test sets (section 23, all lengths) from the Penn Treebank, comparing against both traditional unsupervised parsers and PLM-based approaches. Multiple PLMs are tested, including BERT (base/large, cased/uncased), GPT-2, XLNet, and RoBERTa. All results use unlabeled F1 as the evaluation metric.</p>
+
+        <h3>Unsupervised Parsing F1 on PTB (No Development Set)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Method</th><th>WSJ10 F1</th><th>WSJ Test F1</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>PRPN (Shen et al., 2018)</td><td>70.5</td><td>38.3</td></tr>
+                <tr><td>ON-LSTM (Shen et al., 2019)</td><td>65.1</td><td>47.7</td></tr>
+                <tr><td>URNNG (Kim et al., 2019)</td><td>73.6</td><td>51.6</td></tr>
+                <tr><td>Single Best Head (oracle)</td><td>&mdash;</td><td>52.1</td></tr>
+                <tr><td class="highlight-cell"><strong>Heads-up! (Ours, BERT-base)</strong></td><td class="highlight-cell"><strong>69.5</strong></td><td class="highlight-cell"><strong>49.4</strong></td></tr>
+                <tr><td class="highlight-cell"><strong>Heads-up! (Ours, BERT-large)</strong></td><td class="highlight-cell"><strong>71.3</strong></td><td class="highlight-cell"><strong>50.8</strong></td></tr>
+            </tbody>
+        </table>
+        <p>Note that the &ldquo;Single Best Head (oracle)&rdquo; result requires a labeled development set to identify which head is best &mdash; making it not truly unsupervised. The proposed method achieves 50.8 F1 with BERT-large without any such supervision, closing the gap to within 1.3 F1 of the oracle head selection.</p>
+
+        <h3>Performance Across Different PLMs</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Pre-Trained Model</th><th>WSJ Test F1</th><th>Total Heads</th><th>Selected K</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>BERT-base-cased</td><td>49.4</td><td>144</td><td>~10</td></tr>
+                <tr><td>BERT-base-uncased</td><td>48.2</td><td>144</td><td>~10</td></tr>
+                <tr><td>BERT-large-cased</td><td>50.8</td><td>384</td><td>~15</td></tr>
+                <tr><td>GPT-2</td><td>40.1</td><td>144</td><td>~10</td></tr>
+                <tr><td>XLNet-base</td><td>45.7</td><td>144</td><td>~10</td></tr>
+                <tr><td>RoBERTa-base</td><td>47.3</td><td>144</td><td>~10</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Layer-wise Analysis</h3>
+        <div class="highlight-box">
+            <p><strong>Where does syntax live in PLMs?</strong></p>
+            <p>The head ranking analysis reveals a clear pattern across all tested models:</p>
+            <ul>
+                <li><strong>Early layers (1&ndash;3):</strong> Dominated by positional attention heads &mdash; attending to the previous token, next token, or first token. These produce nearly left- or right-branching trees and score low on the ranking criterion.</li>
+                <li><strong>Middle layers (4&ndash;8):</strong> Contain the highest-ranked heads. These heads exhibit variable branching patterns that correlate with actual syntactic structure. They often specialize in specific constituent types (e.g., one head may be particularly good at identifying NPs while another captures VPs).</li>
+                <li><strong>Late layers (9&ndash;12):</strong> Attention patterns become more diffuse and semantically oriented. These heads often attend to related words across long distances (e.g., coreference-like patterns) rather than forming tight syntactic clusters.</li>
+            </ul>
+        </div>
+
+        <h3>Grammar Induction Analysis</h3>
+        <p>The neural PCFG analysis yields insights into how different PLMs conceptualize sentence structure:</p>
+        <ul>
+            <li><strong>BERT vs. PTB grammar:</strong> BERT's induced grammar tends to produce flatter structures for verb phrases &mdash; merging the subject with the verb more often than PTB's VP-internal subject analysis. This suggests BERT organizes clause-level structure differently from linguistic convention.</li>
+            <li><strong>NP identification:</strong> All tested PLMs show relatively strong agreement with PTB on noun phrase boundaries. NPs are among the most consistently identified constituent types, likely because the attention mechanism naturally clusters determiners, adjectives, and head nouns.</li>
+            <li><strong>PP attachment:</strong> Prepositional phrase attachment remains ambiguous in PLM-induced trees, mirroring a well-known difficulty in both human parsing and NLP systems.</li>
+        </ul>
+
         <ul class="key-points">
-            <li><strong>Attention-based span scores:</strong> The method computes a syntactic affinity score for every possible text span by aggregating attention weights from selected self-attention heads in a pre-trained transformer. High scores indicate that the tokens within a span attend to each other more than to tokens outside, suggesting a coherent constituent.</li>
-            <li><strong>Head selection:</strong> Not all attention heads encode syntax equally. The paper introduces a head selection strategy that identifies the most syntactically informative heads, filtering out heads that capture positional or semantic (rather than structural) patterns.</li>
-            <li><strong>Greedy tree construction:</strong> Given the span scores, a greedy top-down algorithm recursively splits sentences into constituents, producing a full binary constituency tree without any labeled training data.</li>
+            <li><strong>Competitive without dev set:</strong> Despite using no labeled data at all, the method achieves F1 scores competitive with unsupervised parsers like PRPN and ON-LSTM, and approaches URNNG which uses a more complex training procedure involving variational inference.</li>
+            <li><strong>Closing the oracle gap:</strong> BERT-large achieves 50.8 F1 vs. the oracle single-head selection of 52.1 F1. The proposed unsupervised ranking nearly matches oracle head selection while requiring zero labeled data, confirming that the branching entropy criterion is an effective proxy for syntactic quality.</li>
+            <li><strong>Head ensemble beats single head:</strong> Ensembling the top-K ranked heads consistently outperforms using any single head (even the oracle-selected best head in some configurations), confirming that syntactic information is distributed across multiple heads and that combining complementary signals is beneficial.</li>
+            <li><strong>BERT > GPT-2 for syntax:</strong> Bidirectional models (BERT, RoBERTa) consistently outperform unidirectional models (GPT-2) at constituency parsing by a substantial margin (~9 F1 points). This suggests that bidirectional attention is critical for capturing the nested, hierarchical structure of constituents, since a left-to-right model cannot attend to future tokens that complete a phrase.</li>
+            <li><strong>Cased vs. uncased:</strong> BERT-base-cased slightly outperforms BERT-base-uncased (49.4 vs. 48.2), suggesting that capitalization provides useful syntactic cues (e.g., sentence-initial words, proper nouns) that aid parsing.</li>
+            <li><strong>Efficiency:</strong> The method requires no training and runs in a single forward pass through the PLM plus O(<em>n</em><sup>2</sup>) parsing per sentence, making it fast enough for large-scale application. Processing the entire WSJ test set takes only minutes on a single GPU.</li>
         </ul>
     </div>
-    <div class="section">
-        <h2>Results</h2>
-        <ul class="key-points">
-            <li><strong>Competitive unsupervised parsing:</strong> The approach achieves competitive F1 scores on the Penn Treebank (PTB) benchmark compared to existing unsupervised parsers that rely on more complex generative models or specialized training objectives.</li>
-            <li><strong>Head-level analysis:</strong> Detailed analysis reveals that a small subset of attention heads in middle layers of BERT consistently encode syntactic constituency information, while other heads focus on different linguistic phenomena.</li>
-            <li><strong>Robustness:</strong> The method generalizes across different pre-trained models and demonstrates stable performance without task-specific fine-tuning.</li>
-        </ul>
-    </div>
+
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>This work provides concrete evidence that transformer self-attention heads implicitly learn hierarchical syntactic structure during pre-training. By showing that constituency trees can be extracted from attention patterns alone, it opens a lightweight, annotation-free pathway to syntactic analysis. The findings also deepen our understanding of what linguistic knowledge is encoded in different components of pre-trained language models, informing future model design and interpretability research.</p>
+        <p>This work makes several important contributions at the intersection of unsupervised parsing and PLM interpretability:</p>
+        <ul>
+            <li><strong>Truly unsupervised parsing:</strong> Unlike prior PLM-based parsing methods that require a development set for head selection, this approach needs no labeled data whatsoever. This makes it directly applicable to low-resource languages where no treebank annotations exist &mdash; a practitioner can simply run a multilingual PLM on raw text to obtain constituency analyses.</li>
+            <li><strong>Principled PLM analysis:</strong> By extracting constituency trees and training PCFGs from them, the method provides a systematic way to compare the syntactic knowledge encoded in different PLMs at the <em>grammar rule</em> level &mdash; going beyond probing classifiers to reveal what kind of grammars these models implicitly learn and where they deviate from human linguistic annotations.</li>
+            <li><strong>Evidence for distributed syntax:</strong> The finding that syntactic information is distributed across multiple attention heads (not concentrated in a single head) and that middle layers are most syntactically informative has informed subsequent research on model pruning, distillation, and architecture design for syntax-sensitive tasks. This layer-wise characterization (positional &rarr; syntactic &rarr; semantic) has become a widely cited reference point in the PLM interpretability literature.</li>
+            <li><strong>Bridging probing and generation:</strong> The work bridges two previously separate research threads: structural probing of PLMs (which analyzes but does not produce outputs) and unsupervised grammar induction (which produces parses but did not leverage PLMs). By showing that attention heads directly yield competitive parses, the paper opened a new line of research on extraction-based analysis of transformer internals.</li>
+            <li><strong>Practical baseline:</strong> The method serves as a strong, zero-cost baseline for unsupervised parsing: it requires no training, no hyperparameter tuning on labeled data, and runs efficiently at inference time. This makes it a convenient tool for bootstrapping syntactic resources in new languages or domains.</li>
+        </ul>
     </div>
+
     <div class="section">
         <h2>Links</h2>
         <div class="links-section">
             <a href="https://aclanthology.org/2020.aacl-main.43/" target="_blank" class="paper-link">ACL Anthology</a>
+            <a href="https://aclanthology.org/2020.aacl-main.43.pdf" target="_blank" class="paper-link">PDF</a>
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">

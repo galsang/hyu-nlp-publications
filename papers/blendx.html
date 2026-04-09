@@ -22,42 +22,132 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A rigorous benchmark for multi-intent detection that goes beyond simple concatenation by blending single-intent utterances with diverse, complex linguistic patterns.</p>
+        <p>BlendX is a suite of refined multi-intent detection datasets that exposes the fragility of existing benchmarks by constructing linguistically diverse blended utterances via rule-based heuristics and ChatGPT-assisted generation, revealing up to 40%p accuracy drops in state-of-the-art models.</p>
     </div>
     <figure class="paper-figure">
         <img src="https://arxiv.org/html/2403.18277v1/x1.png" alt="Limitations of existing multi-intent detection datasets and the need for BlendX">
         <figcaption><strong>Figure 1.</strong> Motivation for BlendX: existing multi-intent detection datasets (MixX) rely on overly simple concatenation patterns, highlighting the need for a more rigorous testbed for multi-intent detection.</figcaption>
     </figure>
     <div class="section">
-        <h2>Background</h2>
-        <p>Multi-intent detection (MID) addresses the realistic scenario where a single user utterance conveys multiple intents at once &mdash; studies show that over half of utterances in production dialogue systems contain more than one intent. However, dominant MID benchmarks such as MixATIS and MixSNIPS construct multi-intent examples using only four coordinating conjunctions (<em>"and," "and then," "and also,"</em> and a comma). This overly simplistic construction allows models to exploit superficial concatenation cues rather than genuinely understanding semantics, inflating reported performance.</p>
+        <h2>Background &amp; Motivation</h2>
+        <div class="highlight-box">
+            <strong>Core Problem:</strong> Dominant multi-intent detection benchmarks (MixATIS, MixSNIPS) construct examples using only four conjunction templates &mdash; <em>"and," "and then," "and also,"</em> and a comma &mdash; allowing models to achieve high accuracy by exploiting shallow concatenation cues rather than truly understanding compositional semantics.
+        </div>
+        <p>Multi-intent detection (MID) addresses the realistic scenario where a single user utterance conveys multiple intents at once. Studies show that over half of utterances in production dialogue systems contain more than one intent, making MID a critical capability for real-world task-oriented dialogue systems.</p>
+        <p>However, existing MID benchmarks suffer from two fundamental limitations:</p>
+        <ul class="key-points">
+            <li><strong>Limited concatenation patterns:</strong> MixATIS and MixSNIPS use only four conjunctions to combine single-intent utterances, creating highly predictable multi-intent examples that do not reflect the diversity of natural language.</li>
+            <li><strong>Narrow dataset scope:</strong> Prior work has been limited to only two source datasets (ATIS and SNIPS), restricting the diversity of intents and domains evaluated.</li>
+            <li><strong>Inflated performance:</strong> The overly simplistic construction allows models to achieve near-perfect scores by detecting surface-level concatenation cues (e.g., the word "and") rather than genuinely decomposing complex utterances into their constituent intents.</li>
+        </ul>
+        <p>These limitations motivate BlendX, which aims to provide a more rigorous and linguistically diverse benchmark that truly tests a model's ability to handle multi-intent utterances as they appear in real conversations.</p>
     </div>
     <figure class="paper-figure">
         <img src="https://arxiv.org/html/2403.18277v1/x3.png" alt="Illustration of the complexity and methodology aspects of concatenation in BlendX">
         <figcaption><strong>Figure 3.</strong> Illustration of the complexity (Left) and methodology (Right) aspects of concatenation. Each approach triggers a distinct part of the possible variations (Middle) arising in the process of concatenation.</figcaption>
     </figure>
     <div class="section">
-        <h2>Method</h2>
-        <p>BlendX constructs its benchmark along two orthogonal dimensions:</p>
-        <ul class="key-points">
-            <li><strong>Complexity &mdash; Explicit vs. Implicit:</strong> Explicit concatenation employs diverse conjunctions (e.g., <em>and, or, before, after, additionally</em>). Implicit concatenation removes conjunctions entirely, using omissions, coreferences, and gerund phrases to create seamless blends that mirror natural speech.</li>
-            <li><strong>Methodology &mdash; Na&iuml;ve, Manual, Generative:</strong> Na&iuml;ve replicates the original MixX recipe; Manual applies rule-based heuristics with varied connectors and implicit patterns; Generative leverages ChatGPT with SBERT-based similarity filtering (cosine &ge; 0.7) to produce natural multi-intent utterances.</li>
-            <li><strong>Complexity Metrics:</strong> Three novel statistical measures &mdash; word-count reduction (omissions), conjunction absence, and pronoun introduction (coreferences) &mdash; quantify how much harder a dataset is than simple concatenation baselines.</li>
-        </ul>
-        <p>Four widely used single-intent datasets (ATIS, SNIPS, Banking77, CLINC150) are extended into multi-intent versions with a 3:5:2 ratio of single / double / triple-intent utterances.</p>
+        <h2>Proposed Method</h2>
+        <p>BlendX constructs its benchmark along two orthogonal dimensions &mdash; <strong>complexity</strong> (explicit vs. implicit) and <strong>methodology</strong> (Na&iuml;ve, Manual, Generative) &mdash; and introduces three novel complexity metrics to quantify dataset difficulty.</p>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div>
+                    <div class="step-title">Na&iuml;ve Concatenation (Baseline)</div>
+                    <div class="step-desc">Replicates the original MixX recipe by combining single-intent utterances using only the four standard AND-variant conjunctions (<em>and, and then, and also,</em> comma). Serves as a direct comparison baseline with zero word reduction (W = 0%) across all datasets.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div>
+                    <div class="step-title">Manual Concatenation (Rule-Based Heuristics)</div>
+                    <div class="step-desc">Applies diverse linguistic transformations through explicit patterns (varied conjunctions: <em>or, before, after, additionally, meanwhile</em>) and implicit patterns (omissions that reduce word count, coreferences via pronoun introduction, and gerund phrases). Achieves the highest complexity: 37&ndash;48% word reduction across datasets.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div>
+                    <div class="step-title">Generative Concatenation (ChatGPT + Similarity Selection)</div>
+                    <div class="step-desc">Leverages ChatGPT to produce natural multi-intent utterances, augmented with SBERT-based similarity filtering (cosine similarity threshold &tau; = 0.7) to ensure semantic fidelity. This similarity-driven selection reduces the ChatGPT error rate dramatically (e.g., from 41% to 10% on ATIS). Achieves 18&ndash;37% word reduction.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div>
+                    <div class="step-title">Novel Complexity Metrics</div>
+                    <div class="step-desc">Three binary metrics quantify dataset difficulty: <strong>W(utt, n)</strong> measures word-count reduction after concatenation (detecting omissions), <strong>C(utt, n)</strong> measures conjunction absence (detecting implicit joins), and <strong>P(utt, n)</strong> measures pronoun introduction (detecting coreferences). These metrics objectively demonstrate BlendX's superiority over MixX.</div>
+                </div>
+            </div>
+        </div>
+        <p>Four widely used single-intent datasets are extended into multi-intent versions with a 3:5:2 ratio of single / double / triple-intent utterances:</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Dataset</th><th>Intents</th><th>Train</th><th>Dev</th><th>Test</th><th>Total</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>SNIPS</td><td>7</td><td>50,625</td><td>2,613</td><td>2,615</td><td>55,853</td></tr>
+                <tr><td>ATIS</td><td>18</td><td>20,250</td><td>1,125</td><td>1,125</td><td>22,500</td></tr>
+                <tr><td>Banking77</td><td>77</td><td>36,390</td><td>2,009</td><td>2,021</td><td>40,420</td></tr>
+                <tr><td>CLINC150</td><td>147</td><td>54,896</td><td>2,889</td><td>2,977</td><td>60,762</td></tr>
+            </tbody>
+        </table>
     </div>
     <div class="section">
-        <h2>Results</h2>
+        <h2>Experimental Results</h2>
+        <p>Three representative models are evaluated: <strong>TFMN</strong> (threshold-based multi-intent detection), <strong>SLIM</strong> (binary classification approach), and <strong>ChatGPT</strong> (in-context learning). The cross-evaluation paradigm (train on MixX, test on BlendX) reveals critical weaknesses.</p>
+        <h3>TFMN Performance (Accuracy %)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Train</th><th>Test</th><th>SNIPS</th><th>ATIS</th><th>Banking77</th><th>CLINC150</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>MixX</td><td>MixX</td><td>95.68</td><td>77.98</td><td>76.61</td><td>85.88</td></tr>
+                <tr><td>MixX</td><td><strong>BlendX</strong></td><td><strong>52.51</strong></td><td><strong>42.51</strong></td><td><strong>37.31</strong></td><td><strong>42.45</strong></td></tr>
+                <tr><td>BlendX</td><td>BlendX</td><td>94.93</td><td>76.50</td><td>63.99</td><td>77.96</td></tr>
+            </tbody>
+        </table>
+        <h3>SLIM Performance (Accuracy %)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Train</th><th>Test</th><th>SNIPS</th><th>ATIS</th><th>Banking77</th><th>CLINC150</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>MixX</td><td>MixX</td><td>95.97</td><td>77.10</td><td>83.71</td><td>88.67</td></tr>
+                <tr><td>MixX</td><td><strong>BlendX</strong></td><td><strong>93.51</strong></td><td><strong>72.80</strong></td><td><strong>69.89</strong></td><td><strong>73.39</strong></td></tr>
+                <tr><td>BlendX</td><td>BlendX</td><td>95.73</td><td>76.92</td><td>75.30</td><td>85.62</td></tr>
+            </tbody>
+        </table>
+        <h3>Ablation: TFMN Trained on MixX, Tested on BlendX Subsets (Accuracy %)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Method</th><th>SNIPS</th><th>ATIS</th><th>Banking77</th><th>CLINC150</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Na&iuml;ve</td><td>95.32</td><td>73.23</td><td>62.30</td><td>80.73</td></tr>
+                <tr><td>Manual</td><td><strong>25.32</strong></td><td><strong>42.40</strong></td><td><strong>8.05</strong></td><td><strong>25.73</strong></td></tr>
+                <tr><td>Generative</td><td>81.58</td><td>53.93</td><td>27.95</td><td>60.17</td></tr>
+            </tbody>
+        </table>
         <ul class="key-points">
-            <li><strong>Dramatic performance drops:</strong> Models trained on MixX and tested on BlendX suffer accuracy decreases of up to 40 percentage points (e.g., TFMN on Banking77: 76.61% &rarr; 37.31%), revealing that existing models heavily exploit superficial concatenation cues.</li>
-            <li><strong>Models evaluated:</strong> TFMN (threshold-based), SLIM (binary classification), and ChatGPT (in-context learning). All struggle significantly on BlendX compared to MixX.</li>
-            <li><strong>Ablation insights:</strong> Among the three construction methodologies, Manual concatenation (implicit patterns) is the most challenging, followed by Generative, then Na&iuml;ve, confirming that implicit blending is the primary source of difficulty.</li>
-            <li><strong>Training on BlendX helps but does not close the gap:</strong> Even when models are both trained and tested on BlendX, performance remains substantially below MixX-only evaluation, demonstrating BlendX's inherent complexity.</li>
+            <li><strong>Dramatic cross-evaluation drops:</strong> TFMN accuracy plummets by up to 43%p when moving from MixX to BlendX evaluation (e.g., SNIPS: 95.68% &rarr; 52.51%; Banking77: 76.61% &rarr; 37.31%), exposing heavy reliance on superficial concatenation cues.</li>
+            <li><strong>Manual patterns are most challenging:</strong> The ablation reveals that Manual concatenation (implicit patterns) devastates model performance &mdash; TFMN drops to just 8.05% on Banking77 and 25.32% on SNIPS &mdash; confirming that implicit blending without conjunction markers is the primary source of difficulty.</li>
+            <li><strong>SLIM is more robust but still affected:</strong> SLIM shows smaller drops (e.g., Banking77: 83.71% &rarr; 69.89%) due to its binary classification approach, but still suffers meaningfully on BlendX, especially on Banking77 and CLINC150.</li>
+            <li><strong>Training on BlendX helps but does not close the gap:</strong> Even when models are both trained and tested on BlendX (e.g., TFMN: 63.99% on Banking77), performance remains substantially below MixX-only evaluation (76.61%), demonstrating BlendX's inherent complexity beyond simple distributional shift.</li>
+            <li><strong>Similarity-based selection improves generation quality:</strong> SBERT-based similarity filtering reduces ChatGPT's error rate from 41% to 10% on ATIS (cosine similarity jumps from 0.214 to 0.758), validating the importance of controlled generation.</li>
         </ul>
     </div>
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>BlendX exposes a critical blind spot in multi-intent detection research: published state-of-the-art results on MixATIS/MixSNIPS substantially overestimate real-world capability. By providing a more linguistically diverse and rigorous benchmark, BlendX redirects the field toward models that must truly understand compositional semantics rather than rely on shallow concatenation patterns. This has direct implications for building more robust task-oriented dialogue systems in production settings.</p>
+        <div class="highlight-box">
+            <strong>Key Takeaway:</strong> State-of-the-art MID results on MixATIS/MixSNIPS substantially overestimate real-world capability. BlendX provides the community with a more honest evaluation framework for multi-intent detection.
+        </div>
+        <p>BlendX makes three significant contributions to the field of multi-intent detection:</p>
+        <ul class="key-points">
+            <li><strong>Exposes benchmark weakness:</strong> By demonstrating performance drops of up to 40%p, BlendX reveals that existing models rely on shallow pattern matching rather than genuine semantic understanding, challenging the perceived progress in the MID field.</li>
+            <li><strong>Broader evaluation scope:</strong> Extending from 2 to 4 source datasets (adding Banking77 and CLINC150 with 77 and 147 intent types) provides a far more comprehensive evaluation that covers diverse domains and intent granularities.</li>
+            <li><strong>Principled complexity framework:</strong> The two-dimensional construction framework (complexity x methodology) and three novel statistical metrics give researchers systematic tools for understanding and measuring dataset difficulty, enabling future benchmark development.</li>
+            <li><strong>Practical implications:</strong> For production dialogue systems, BlendX's findings suggest that deployed models may perform far worse on real user utterances than lab evaluations indicate, motivating the development of more robust multi-intent detection approaches.</li>
+        </ul>
     </div>
     <div class="section">
         <h2>Links</h2>

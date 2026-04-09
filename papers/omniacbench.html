@@ -25,7 +25,7 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A benchmark that evaluates omni-modal models' ability to generate contextually appropriate tone and speech given voice instructions, text scripts, and images, across 6 acoustic dimensions.</p>
+        <p>OmniACBench is a 3,559-instance benchmark that systematically evaluates whether omni-modal models can generate speech with acoustically appropriate delivery -- covering speech rate, phonation, pronunciation, emotion, accent, and timbre -- by grounding in multimodal context (spoken instructions, text scripts, and images), revealing that all eight tested models fall drastically short of human-level acoustic control.</p>
     </div>
 
     <figure class="paper-figure">
@@ -35,31 +35,55 @@
 
     <div class="section">
         <h2>Background & Motivation</h2>
-        <p>While state-of-the-art AI models can respond with voice, there is a critical difference between simply reading text aloud and speaking <strong>with a tone appropriate to the situation</strong>. Just as one's tone should differ when delivering sad news versus offering congratulations, AI must also generate speech that matches the context.</p>
+        <p>Omni-modal models have made remarkable strides in processing text, vision, and audio inputs simultaneously while generating speech outputs. However, existing evaluation frameworks (e.g., OmniBench, AnyBench) have focused almost exclusively on the <em>textual content</em> of model responses, ignoring a critical dimension: <strong>how the speech sounds</strong>. Speech responses encode meaning through both linguistic content and paralinguistic cues -- the same sentence can convey comfort, urgency, or indifference depending on tone, speed, and vocal quality.</p>
+        <p>This gap means we have no systematic way to evaluate whether a model that scores well on text-output benchmarks can actually <em>speak</em> appropriately when the situation demands it. For instance, can a model whisper when shown an image of a sleeping baby, or speak with urgency when shown an emergency scene?</p>
         <div class="highlight-box">
-            <p><strong>Key Question:</strong> Can a model that understands text well and recognizes images also respond appropriately to a request to "read this in the right tone"?</p>
+            <p><strong>Key Question:</strong> Can omni-modal models go beyond generating semantically correct speech to producing acoustically appropriate delivery that matches multimodal context -- combining what they see, hear, and read into natural-sounding vocalization?</p>
         </div>
+        <p>The authors define <strong>"context-grounded acoustic control"</strong> as the ability to generate speech with appropriate acoustic characteristics inferred from the combination of text, visual, and audio inputs. To address this, they introduce OmniACBench, targeting six acoustic features selected by two criteria: <em>multimodal groundability</em> (features naturally inferable from visual scenes) and <em>evaluation diversity</em> (a mixture of objectively measurable and perceptually abstract properties).</p>
     </div>
 
     <div class="section">
-        <h2>Benchmark Design</h2>
+        <h2>Proposed Method</h2>
 
         <figure class="paper-figure">
             <img src="https://arxiv.org/html/2603.23938v1/x2.png" alt="Construction pipeline">
             <figcaption><strong>Figure 2.</strong> OmniACBench construction pipeline: Illustrates the 3-stage process with representative examples.</figcaption>
         </figure>
 
-        <p>6 evaluation dimensions:</p>
-        <ul class="key-points">
-            <li><strong>Speech Rate:</strong> Ability to control speaking speed (fast/slow)</li>
-            <li><strong>Phonation:</strong> Phonation types such as whispering and shouting</li>
-            <li><strong>Pronunciation:</strong> Pronunciation characteristics such as emphasis and intonation</li>
-            <li><strong>Emotion:</strong> Emotional expression including joy, sadness, anger, etc.</li>
-            <li><strong>Global Accent:</strong> Accents such as British English, American English, etc.</li>
-            <li><strong>Timbre:</strong> Voice quality characteristics such as child-like or elderly voices</li>
-        </ul>
+        <p>OmniACBench is built through a rigorous 3-stage pipeline that produces tri-modal test instances (spoken instruction + text script + image), each targeting a specific acoustic feature value.</p>
 
-        <p style="margin-top: 16px;">Benchmark scale: 3,559 instances (97.78% retained from an initial 3,640 after 2-stage quality verification)</p>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div>
+                    <div class="step-title">Acoustic Feature Selection</div>
+                    <div class="step-desc">Six features are defined with specific target values: <strong>Speech Rate</strong> (fast/slow), <strong>Phonation</strong> (whisper), <strong>Pronunciation</strong> (heteronyms -- words spelled the same but pronounced differently), <strong>Emotion</strong> (joy, surprise, anger, disgust, fear, sadness), <strong>Global Accent</strong> (India, UK, Australia), and <strong>Timbre</strong> (adult male/female, elderly male/female). For each target value, image keywords are manually curated as visual concepts (e.g., "emergency scene" for fast speech rate, "sleeping baby" for whisper).</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div>
+                    <div class="step-title">Tri-Modal Instance Generation</div>
+                    <div class="step-desc">
+                        <strong>Text scripts:</strong> LLM-generated neutral scripts explicitly designed to avoid encoding acoustic cues -- remaining agnostic regarding emotion, nationality, gender, and age.<br>
+                        <strong>Speech instructions:</strong> Control signal templates paraphrased by LLMs for linguistic diversity (Word Position Deviation = 0.11, Lexical Deviation = 0.69), then synthesized via TTS.<br>
+                        <strong>Images:</strong> A meta-prompting strategy expands image keywords into 5-8 element visual descriptions before image generation, yielding significantly greater diversity (CLIP distance 0.124 vs. 0.067; LPIPS 0.466 vs. 0.373) compared to direct keyword prompting.
+                    </div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div>
+                    <div class="step-title">Two-Stage Quality Control</div>
+                    <div class="step-desc">
+                        <strong>LLM-based filtering</strong> checks three criteria: semantic preservation of paraphrases, text neutrality (removing scripts that leak target acoustic values), and image-keyword alignment. <strong>Human verification</strong> then validates each surviving instance. Starting from 3,640 candidates, 3,586 passed LLM filtering and 3,559 passed human review (<strong>97.78% retention rate</strong>). Speech quality is verified with near-perfect fidelity: WER = 0.004, CER = 0.001, STOI = 0.994. The final dataset contains approximately 600 instances per feature.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p style="margin-top: 16px;"><strong>Evaluation metrics</strong> are split by feature type. <em>Measurable features</em> use signal-level metrics: Speech Rate via delta Words Per Minute (DWPM) between fast/slow conditions, Pronunciation via Phoneme Error Rate (PER), and Phonation via Voiced Frame Ratio (VFR@0.3). <em>Abstract features</em> use WavLM-Large-based classifiers trained on curated datasets, achieving strong reference accuracies: 89.43% (Emotion), 97.29% (Global Accent), and 96.67% (Timbre). Semantic fidelity is measured via WER using Whisper-large-v3 transcription.</p>
     </div>
 
     <div class="section">
@@ -70,24 +94,35 @@
             <figcaption><strong>Figure 3.</strong> Results across all evaluation metrics: Most models fall significantly short of baseline performance, particularly on abstract acoustic properties (emotion, accent).</figcaption>
         </figure>
 
+        <p>Eight omni-modal models were evaluated: MiniCPM-o 4.5, InteractiveOmni (8B/4B), Qwen3-Omni 30B, Qwen2.5-Omni (7B/3B), Uni-MoE-2.0-Omni, and MGM-Omni 7B.</p>
+
         <table class="results-table">
             <thead>
-                <tr><th>Metric</th><th>MiniCPM-o 4.5 (Best)</th><th>Random Baseline</th></tr>
+                <tr><th>Model</th><th>Semantic WER ↓</th><th>DWPM ↑</th><th>Pronunciation PER ↓</th><th>Emotion Acc ↑</th><th>Accent Acc ↑</th><th>Timbre Acc ↑</th></tr>
             </thead>
             <tbody>
-                <tr><td>WER (↓)</td><td class="highlight-cell">1.04</td><td>-</td></tr>
-                <tr><td>Emotion Accuracy</td><td>21.44%</td><td>16.7%</td></tr>
-                <tr><td>Global Accent</td><td>39.34%</td><td>25.0%</td></tr>
+                <tr><td><strong>Reference</strong></td><td>0.05</td><td>65.87</td><td>1.21</td><td>89.43%</td><td>97.29%</td><td>96.67%</td></tr>
+                <tr><td><strong>MiniCPM-o 4.5</strong></td><td class="highlight-cell">1.04</td><td class="highlight-cell">6.42</td><td class="highlight-cell">5.46</td><td class="highlight-cell">21.44%</td><td class="highlight-cell">39.34%</td><td>24.66%</td></tr>
+                <tr><td>Qwen3-Omni 30B</td><td>2.14</td><td>-1.81</td><td>7.40</td><td>17.09%</td><td>31.33%</td><td>25.17%</td></tr>
+                <tr><td>Qwen2.5-Omni 7B</td><td>4.15</td><td>0.76</td><td>10.27</td><td>19.10%</td><td>28.96%</td><td>24.66%</td></tr>
             </tbody>
         </table>
 
+        <ul class="key-points">
+            <li><strong>Massive performance gap:</strong> Even the best model (MiniCPM-o 4.5) achieves only DWPM 6.42 vs. the reference 65.87 for speech rate, and 21.44% vs. 89.43% for emotion -- roughly 10x and 4x gaps respectively.</li>
+            <li><strong>Near-zero speech rate modulation:</strong> Most models show DWPM values near zero (Qwen3-Omni even has -1.81), indicating virtually no ability to adjust speaking speed based on context.</li>
+            <li><strong>Timbre is essentially uncontrollable:</strong> All models cluster around the 25% random baseline for timbre, meaning they cannot adjust voice characteristics (male/female, young/old) at all.</li>
+            <li><strong>Phonation control absent:</strong> Near-zero VFR@0.3 detection rates across all models indicate an inability to produce whispered speech.</li>
+            <li><strong>Emotion relatively strongest but still limited:</strong> Emotion shows the best relative performance among abstract features, but even MiniCPM-o 4.5's 21.44% is only slightly above the 16.7% random baseline for 6-class classification.</li>
+        </ul>
+
         <div class="highlight-box">
-            <p><strong>3 Failure Patterns:</strong></p>
+            <p><strong>Three Distinct Failure Types Identified via Controlled Input Decomposition:</strong></p>
         </div>
         <ul class="key-points">
-            <li><strong>Direct Control Failure:</strong> Some properties like timbre cannot be controlled even with explicit instructions</li>
-            <li><strong>Implicit Reasoning Failure:</strong> Failure to infer appropriate acoustic properties from context</li>
-            <li><strong>Multimodal Grounding Failure:</strong> Success with text alone but failure in multimodal contexts — the core bottleneck</li>
+            <li><strong>Type I -- Lack of Direct Acoustic Control:</strong> Performance stays at chance even under Oracle conditions (explicit target specification). Timbre exhibits this completely; Global Accent and Phonation show it for most models except MiniCPM-o 4.5.</li>
+            <li><strong>Type II -- Failure of Implicit Inference:</strong> Models can execute acoustic control with explicit instructions (Oracle) but fail to infer the correct target from context. Observed in Speech Rate for Qwen models and Phonation for MiniCPM-o 4.5 -- sharp Oracle improvement without corresponding context-based improvement.</li>
+            <li><strong>Type III -- Failure in Multimodal Grounding:</strong> Models infer correctly from textualized context but fail when information is distributed across modalities. MiniCPM-o 4.5's Speech Rate shows strong text-only performance degrading significantly with speech-only or image-only cues.</li>
         </ul>
 
         <figure class="paper-figure">
@@ -95,12 +130,19 @@
             <figcaption><strong>Figure 4.</strong> Linear probing analysis: Visualizes how context-related information is processed across internal model layers.</figcaption>
         </figure>
 
-        <p>Diagnostic findings: Individually, text generation is perfect (WER 0.09-0.14) and visual cue reasoning achieves 92-97.5% accuracy, but failures occur in the process of <strong>integrating these into speech output</strong>.</p>
+        <p><strong>Architectural insight from context flow analysis:</strong> Linear probing of hidden states reveals that MiniCPM-o 4.5 retains acoustic context information throughout its language model backbone into the TTS decoder, maintaining high probing accuracy. In contrast, Qwen3-Omni 30B shows high decodability in its "Thinker" (language understanding) component but drops to chance in its "Talker" (speech generation) component -- suggesting that <strong>tighter integration between language understanding and speech generation</strong> is a key architectural factor for better acoustic control.</p>
+
+        <p><strong>Fundamental capability assessment:</strong> Testing components in isolation shows script-only generation WER is uniformly low (0.09-0.15) and visual cue selection accuracy reaches 92-97%. The bottleneck is not any individual capability but the <strong>integration of these capabilities into coherent context-grounded speech generation</strong>.</p>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>As voice AI assistants become ubiquitous, not only "what is said" but also <strong>"how it is said"</strong> becomes important. This benchmark is the first to provide systematic evaluation criteria for generating natural speech that matches the context, and reveals fundamental limitations in current models' "multimodal grounding" capabilities.</p>
+        <p>As voice AI assistants become ubiquitous in daily life, the quality of speech generation extends far beyond getting the words right. <strong>"How it is said"</strong> matters as much as <strong>"what is said"</strong> -- imagine a medical assistant delivering a cancer diagnosis in a cheerful tone, or a navigation system calmly announcing an emergency detour. OmniACBench makes three key contributions:</p>
+        <ul class="key-points">
+            <li><strong>First systematic evaluation of acoustic control:</strong> It fills a critical gap in omni-modal evaluation by moving beyond text-output metrics to assess whether models can actually <em>speak</em> appropriately.</li>
+            <li><strong>Precise diagnosis of failure modes:</strong> The three identified failure types (direct control, implicit inference, multimodal grounding) provide clear and actionable directions for model improvement.</li>
+            <li><strong>Architectural guidance:</strong> The finding that tighter LM-TTS integration correlates with better acoustic control offers a concrete design principle for next-generation omni-modal architectures.</li>
+        </ul>
     </div>
 
     <div class="section">

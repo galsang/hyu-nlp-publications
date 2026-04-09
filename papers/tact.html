@@ -25,72 +25,150 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>We propose the TACT dataset and novel evaluation metrics (Switch, Recovery) that model natural transitions between task-oriented dialogues (TOD) and chitchat, enabling more flexible and proactive conversational AI.</p>
+        <p>TACT is a large-scale dataset (9,936 dialogues from SLURP + 7,109 from MultiWOZ) with structurally diverse mode transitions between task-oriented dialogue and chitchat, paired with novel Switch/Recovery metrics and a DPO-based training framework that achieves 75.74% joint mode-intent accuracy and a 70.1% human win rate against GPT-4o.</p>
         <figure class="paper-figure">
             <img src="../images/tact/figure2.png" alt="TACT dialogue scenario">
-            <figcaption><strong>Figure 2.</strong> A scenario demonstrating that an Agent-Trained model on TACT exhibits transition-awareness and proactivity by successfully returning to the task after a chitchat.</figcaption>
+            <figcaption><strong>Figure 2.</strong> Only the TACT-trained agent exhibits transition-awareness and proactivity by successfully returning to the original train-booking task after a chitchat interruption about scenic routes. Models trained on FusedChat, InterfereChat, and GPT-4o-mini all fail to recover the original context.</figcaption>
         </figure>
     </div>
 
     <div class="section">
         <h2>Background & Motivation</h2>
-        <p>In human conversation, we naturally transition from "Book me a flight" (task-oriented) to "The weather's been great lately" (chitchat). However, existing dialogue AI systems were designed to handle <strong>only one or the other</strong>.</p>
+        <p>Conversational agents have traditionally been developed for either task-oriented dialogue (TOD) systems or open-ended chitchat, with limited progress in unifying the two. Yet real-world conversations naturally involve fluid transitions between these modes -- for example, a user booking a train ticket might casually mention enjoying scenic routes, then expect the agent to return to the booking task seamlessly.</p>
         <div class="highlight-box">
-            <p><strong>Limitation:</strong> Existing systems are specialized for either task-oriented dialogue (TOD) or chitchat, and cannot handle the mode transitions that naturally occur in real conversations.</p>
+            <p><strong>Problem with Existing Datasets:</strong> Prior mode-switching datasets like FusedChat and InterfereChat allow only a single transition between TOD and chitchat (at most 1 switch point), and lack structural diversity. They adhere to a TOD-centric perspective, inserting chitchat at fixed points as single exchanges. This makes them unsuitable for modeling the dynamic, multi-turn transitions that occur in real conversations.</p>
         </div>
         <div class="highlight-box">
-            <p><strong>Innovation:</strong> TACT recognizes that not only users but also <strong>agents should proactively</strong> be able to switch conversation modes.</p>
+            <p><strong>Two Missing Capabilities:</strong> Current systems lack (1) <strong>transition-awareness</strong> -- the ability to detect and adapt to mode changes, and (2) <strong>proactivity</strong> -- the ability to plan ahead and guide the conversation flow when appropriate. TACT is the first dataset that requires agents to both initiate and recover from mode transitions across multiple turns.</p>
         </div>
     </div>
 
     <div class="section">
-        <h2>TACT Dataset</h2>
-        <ul class="key-points">
-            <li><strong>User-Initiated Transitions:</strong> Patterns where users suddenly switch to chitchat or return to task-oriented dialogue</li>
-            <li><strong>Agent-Initiated Transitions:</strong> Patterns where agents proactively switch conversation modes — a scenario not covered by existing datasets</li>
-            <li><strong>Structural Diversity:</strong> Includes diverse transition flows to support modeling of complex dialogue dynamics</li>
-        </ul>
-    </div>
+        <h2>Proposed Method</h2>
 
-    <div class="section">
-        <h2>Novel Evaluation Metrics</h2>
+        <h3>Dataset Construction</h3>
+        <p>TACT (TOD-And-Chitchat Transition) is built by augmenting two established TOD corpora -- MultiWOZ 2.2 and SLURP -- with structurally diverse chitchat transitions. Two core dialogue flow types are defined:</p>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">TCT Flow (TOD → Chitchat → TOD)</div>
+                <div class="step-desc">Extract task segments of 4+ turns from MultiWOZ 2.2, and insert a chitchat block at a natural boundary between intents. The chitchat briefly diverges from the task before the dialogue returns to its original goal.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">CTC Flow (Chitchat → TOD → Chitchat)</div>
+                <div class="step-desc">Begin with a short TOD segment (2-3 turns) and attach chitchat before and after the task, forming a wrap-around flow that simulates users casually engaging in a task during a social exchange.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Automatic Validation</div>
+                <div class="step-desc">A hybrid validation pipeline combines human-aligned criteria (from G-Eval) with model-based reasoning (from Active-Critic), scoring each dialogue on Intent Accuracy, Transition Quality, and Dialogue Naturalness using GPT-4o-mini as judge.</div>
+            </div>
+        </div>
+
+        <h3>Dataset Statistics</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Statistic</th><th>TACT<sub>MultiWOZ</sub></th><th>TACT<sub>SLURP</sub></th></tr>
+            </thead>
+            <tbody>
+                <tr><td># Intents</td><td>11</td><td>50+</td></tr>
+                <tr><td># Dialogues</td><td>7,109</td><td>9,936</td></tr>
+                <tr><td># Avg. Turns</td><td>15.04</td><td>16.42</td></tr>
+                <tr><td># Avg. Switch</td><td>1.93</td><td>2.06</td></tr>
+                <tr><td># Avg. Recovery</td><td>0.93</td><td>1.07</td></tr>
+                <tr><td># Unique Flow Types</td><td>11</td><td>12</td></tr>
+                <tr><td>Flow Patterns</td><td colspan="2">TCT, CTC, TCTCT, etc.</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Training Framework</h3>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">SFT with FnCTOD</div>
+                <div class="step-desc">Supervised fine-tuning using the FnCTOD architecture on LLaMA-3.1-8B-Instruct. The model reinterprets function-calling as structured intent representation: at each turn, it first predicts an intent, then generates a response conditioned on that intent -- enabling unified intent prediction and response generation in a single auto-regressive pass.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">DPO (Direct Preference Optimization)</div>
+                <div class="step-desc">Applied on top of SFT to align model outputs with human preferences. Preference pairs (3,009 instances) are generated by comparing FnCTOD and GPT-4o-mini outputs, with Gemini-2.5-Pro judging on sensibleness, specificity, interestingness, and transition naturalness. This is the first application of DPO in a unified dialogue generation setting combining structured function-calling with TOD and chitchat.</div>
+            </div>
+        </div>
+
+        <h3>Evaluation Metrics: Switch & Recovery</h3>
         <div class="method-steps">
             <div class="method-step">
                 <div class="step-num">S</div>
                 <div class="step-title">Switch</div>
-                <div class="step-desc">Ability to accurately detect mode transition points and respond appropriately</div>
+                <div class="step-desc">Measures when the agent shifts from one mode to another (e.g., TOD→Chitchat). Reported as <strong>Attempt</strong> (average number of agent-driven mode shifts per dialogue) and <strong>Success</strong> (average number of transitions accepted by the user). A switch is successful only when the user subsequently accepts the agent-suggested mode transition.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">R</div>
                 <div class="step-title">Recovery</div>
-                <div class="step-desc">Ability to naturally return to the original mode after a transition</div>
+                <div class="step-desc">Measures when the agent returns to a previously suspended mode (e.g., TCT, CTC). Also reported as <strong>Attempt</strong> and <strong>Success</strong>. Only about 34% of successful recoveries return to the exact previous intent -- the rest initiate a new but relevant intent within the correct mode, showing that recovery does not always mean returning to the same task.</div>
             </div>
         </div>
     </div>
 
     <div class="section">
         <h2>Experimental Results</h2>
+        <p>All SFT models are initialized with LLaMA-3.1-8B-Instruct and trained for 3 epochs with a learning rate of 1e-5 and batch size of 256. Four methods are compared: ICL (zero-shot and few-shot with GPT-4o), SFT, SFT-DPO, and a generative-classifier-based Pipeline.</p>
+
+        <h3>Method Comparison (Table 4)</h3>
         <table class="results-table">
             <thead>
-                <tr><th>Metric</th><th>Performance</th></tr>
+                <tr><th>Method</th><th>Mode Sel. Acc.</th><th>Mode Sel. F1</th><th>Intent Acc./turn</th><th>Joint Acc./turn</th><th>Joint Acc./dlg</th><th>Switch Att.</th><th>Switch Suc.</th><th>Recov. Att.</th><th>Recov. Suc.</th><th>Chitchat Win-Rate</th></tr>
             </thead>
             <tbody>
-                <tr><td>Joint Mode-Intent Accuracy</td><td class="highlight-cell">75.74%</td></tr>
-                <tr><td>Human Eval Win Rate vs GPT-4o</td><td class="highlight-cell">70.1%</td></tr>
+                <tr><td>ICL-ZS</td><td>90.46</td><td>86.21</td><td>87.57</td><td>85.01</td><td>30.00</td><td>0.879</td><td>0.374</td><td>0.880</td><td>0.099</td><td>-</td></tr>
+                <tr><td>ICL-FS</td><td>91.45</td><td>88.98</td><td>84.09</td><td>86.89</td><td>36.76</td><td>1.577</td><td>0.865</td><td>1.571</td><td>0.652</td><td>-</td></tr>
+                <tr><td>SFT</td><td>98.95</td><td>98.50</td><td>96.35</td><td>96.41</td><td>75.59</td><td>1.322</td><td>1.300</td><td>0.977</td><td>0.856</td><td>23.16</td></tr>
+                <tr><td class="highlight-cell">SFT-DPO</td><td>98.82</td><td>98.32</td><td>96.03</td><td>96.21</td><td class="highlight-cell">75.74</td><td>1.343</td><td class="highlight-cell">1.322</td><td>0.977</td><td class="highlight-cell">0.859</td><td class="highlight-cell">40.86</td></tr>
+                <tr><td>Pipeline</td><td>98.95</td><td>98.50</td><td>96.35</td><td>96.41</td><td>75.59</td><td>1.322</td><td>1.300</td><td>0.977</td><td>0.856</td><td>24.32</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Human Preference Evaluation (Figure 8)</h3>
+        <p>Human annotators (10 evaluators) assessed DPO vs. GPT-4o (few-shot) on 77 dialogues without a tie option:</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Criterion</th><th>DPO Win %</th><th>DPO Lose %</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Sensibleness</td><td>71.4</td><td>28.6</td></tr>
+                <tr><td>Specificity</td><td>77.9</td><td>22.1</td></tr>
+                <tr><td>Interestingness</td><td>71.4</td><td>28.6</td></tr>
+                <tr><td>Transition Naturalness</td><td class="highlight-cell">81.9</td><td>18.2</td></tr>
+                <tr><td><strong>Overall</strong></td><td class="highlight-cell"><strong>70.1</strong></td><td>14.3</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Cross-Dataset Comparison (Table 3)</h3>
+        <p>Only the TACT-trained agent achieves non-zero transition-aware scores. Models trained on FusedChat and InterfereChat produce zero switch and recovery attempts due to their lack of multi-turn transition structures:</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Training Set</th><th>Avg. Joint Acc./turn</th><th>Avg. Joint Acc./dlg</th><th>Switch Att.</th><th>Switch Suc.</th><th>Recov. Suc.</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>FusedChat</td><td>92.25</td><td>56.13</td><td>0.000</td><td>0.000</td><td>-</td></tr>
+                <tr><td>InterfereChat</td><td>84.82</td><td>35.39</td><td>0.000</td><td>0.000</td><td>-</td></tr>
+                <tr><td class="highlight-cell">TACT<sub>MultiWOZ</sub></td><td class="highlight-cell">92.11</td><td class="highlight-cell">58.60</td><td class="highlight-cell">1.322</td><td class="highlight-cell">1.300</td><td class="highlight-cell">0.856</td></tr>
             </tbody>
         </table>
 
         <ul class="key-points">
-            <li><strong>Effect of DPO:</strong> Applying Direct Preference Optimization on top of a model trained with TACT data further improves performance</li>
-            <li><strong>Intent Detection:</strong> Outperforms existing baselines in both intent detection and mode transition handling</li>
-            <li><strong>Human Evaluation:</strong> Beats GPT-4o with a 70.1% win rate, receiving high marks for both response quality and transition control</li>
-            <li><strong>Synergy of Structural Diversity + DPO:</strong> The combination of data diversity and DPO training is key — neither alone is sufficient</li>
+            <li><strong>Only TACT enables transitions:</strong> Models trained on FusedChat and InterfereChat achieve zero switch/recovery attempts across all test sets, while the TACT-trained model consistently handles multi-turn transitions with 1.322 switch attempts and 0.977 recovery attempts per dialogue</li>
+            <li><strong>DPO doubles chitchat quality:</strong> SFT-DPO achieves a 40.86% chitchat win rate against GPT-4o, nearly doubling the SFT-only rate of 23.16%, while maintaining competitive TOD performance</li>
+            <li><strong>Transition Naturalness is the biggest gain:</strong> In human evaluation, DPO achieves 81.9% win rate on Transition Naturalness vs. GPT-4o, compared to SFT's 11.3% -- the largest improvement across all criteria</li>
+            <li><strong>DPO is the first to surpass GPT-4o on Transition Naturalness:</strong> With a win rate of 33.7% in LLM-based evaluation, DPO surpasses GPT-4o for the first time on this criterion, compared to SFT's 11.3%</li>
+            <li><strong>Recovery analysis:</strong> Only ~34% of successful recoveries return to the exact previous intent; the rest initiate a new but relevant intent in the correct mode, showing realistic recovery behavior</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>To create truly natural conversational AI, we must move beyond viewing task-oriented and casual dialogue as separate domains. TACT is the first dataset to model <strong>conversational fluidity</strong>, enabling AI assistants to learn to flexibly switch conversation modes like humans while not losing track of the original task.</p>
+        <p>Real-world deployed dialogue systems frequently encounter users who shift between task-oriented requests and casual conversation within a single session. TACT is the first dataset to model this <strong>conversational fluidity</strong> with structurally diverse, multi-turn transitions and recoverable dialogue structures. By combining TACT's diverse training data with preference optimization via DPO, the resulting agent learns soft conversational skills -- engagement, flow continuity, and transition smoothness -- that go beyond mere response accuracy. The open-source dataset (<a href="https://huggingface.co/datasets/HYU-NLP/TACT" target="_blank">HuggingFace</a>) and code (<a href="https://github.com/HYU-NLP/TACT" target="_blank">GitHub</a>) pave the way for building more autonomous and predictive conversational agents.</p>
     </div>
 
     <div class="section">

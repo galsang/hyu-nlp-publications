@@ -22,28 +22,125 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>Improving zero-shot cross-lingual transfer by training on multiple diverse source languages instead of relying solely on English, leading to more robust multilingual representations.</p>
+        <p>By fine-tuning multilingual models on typologically diverse source languages rather than English alone, zero-shot cross-lingual transfer performance improves significantly -- especially for distant target languages -- yielding more language-agnostic representations without any additional annotation effort.</p>
     </div>
+
     <div class="section">
-        <h2>Background</h2>
-        <p>Zero-shot cross-lingual transfer typically involves fine-tuning a multilingual pretrained model (such as mBERT or XLM-R) on labeled data in a single source language -- almost always English -- and then evaluating on target languages without any target-language supervision. While effective, this English-centric paradigm can introduce biases toward English-specific linguistic structures and may not generalize optimally to typologically distant languages. This work questions the assumption that English alone is the best source language and explores whether diversifying the source language pool can improve transfer performance.</p>
+        <h2>Background & Motivation</h2>
+        <p>Zero-shot cross-lingual transfer is the dominant paradigm for extending NLP capabilities to low-resource languages: a multilingual pretrained model (e.g., mBERT, XLM-R) is fine-tuned on labeled data in a <strong>single source language</strong> and then applied directly to unseen target languages. In practice, the source language is almost always <strong>English</strong>.</p>
+        <div class="highlight-box">
+            <p><strong>Why English-only training is problematic:</strong></p>
+            <ul>
+                <li><strong>Structural bias:</strong> English has relatively fixed SVO word order and limited morphology; fine-tuning exclusively on English may reinforce these structural assumptions, hurting transfer to SOV, VSO, or morphologically rich languages.</li>
+                <li><strong>Typological distance:</strong> Languages far from English (e.g., Korean, Turkish, Finnish) share fewer syntactic and morphological properties, making English a poor proxy for learning universal features.</li>
+                <li><strong>Wasted multilingual data:</strong> Labeled datasets exist in many languages (e.g., XNLI covers 15 languages), yet the standard practice discards all non-English annotations during fine-tuning.</li>
+                <li><strong>Representation collapse:</strong> Monolingual fine-tuning can degrade the cross-lingual alignment built during pretraining, a phenomenon sometimes called "catastrophic forgetting" of multilingual structure.</li>
+            </ul>
+        </div>
+        <p>This work asks a simple but impactful question: <em>Can we improve cross-lingual transfer by training on multiple, typologically diverse source languages instead of English alone?</em> The hypothesis is that exposing the model to varied linguistic structures during fine-tuning will produce representations that generalize better across the full spectrum of target languages.</p>
+
+        <h3>Typological Diversity Dimensions</h3>
+        <p>Languages vary along multiple typological axes, each of which influences what structural patterns a model learns during fine-tuning:</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Dimension</th><th>English</th><th>Diverse Sources</th><th>Impact on Transfer</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Word order</td><td>SVO (fixed)</td><td>SVO, SOV, VSO, VOS</td><td>Order-independent feature learning</td></tr>
+                <tr><td>Morphology</td><td>Analytic (limited inflection)</td><td>Agglutinative, fusional, isolating</td><td>Subword-level generalization</td></tr>
+                <tr><td>Case system</td><td>Minimal (pronoun case only)</td><td>Rich case marking (e.g., Finnish, Turkish)</td><td>Relational encoding beyond position</td></tr>
+                <tr><td>Script</td><td>Latin</td><td>Latin, Cyrillic, CJK, Arabic, etc.</td><td>Script-independent representations</td></tr>
+            </tbody>
+        </table>
+        <p>English covers only a narrow band of this typological space. By including languages from multiple regions of this space, the model is forced to learn features that are truly universal rather than English-specific.</p>
     </div>
+
     <div class="section">
-        <h2>Method</h2>
+        <h2>Proposed Method</h2>
+        <p>The approach replaces the standard single-source (English-only) fine-tuning pipeline with a <strong>multi-source diversified training</strong> strategy. The key design decisions are as follows:</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Typological Language Selection</div>
+                <div class="step-desc">Source languages are selected to maximize typological diversity across multiple dimensions: language family (e.g., Indo-European, Uralic, Altaic, Sino-Tibetan), dominant word order (SVO, SOV, VSO), morphological typology (isolating, agglutinative, fusional), and script system. This ensures the model encounters a broad range of linguistic phenomena during fine-tuning. The selection process prioritizes <em>coverage</em> -- choosing languages that fill gaps in the typological space rather than adding redundant representatives from the same family.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Multi-Source Data Combination</div>
+                <div class="step-desc">Labeled training data from the selected source languages is combined into a single training set. Balancing strategies (e.g., proportional or equal sampling) are applied to prevent high-resource languages from dominating the training signal, ensuring that each language contributes meaningfully to the learned representations. This balancing is crucial: without it, data-rich languages like English or Chinese would overwhelm smaller-resource languages, negating the diversity benefit.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Unified Multilingual Fine-Tuning</div>
+                <div class="step-desc">A single multilingual pretrained model (e.g., XLM-R) is fine-tuned on the combined multi-source data in a standard supervised fashion. This avoids the complexity of multi-model ensembles or language-pair-specific adapters, keeping the approach simple and practical for real-world deployment. The unified training encourages the model to find shared feature representations across languages, strengthening the cross-lingual alignment from pretraining rather than degrading it.</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <p><strong>Design Principles:</strong></p>
+            <ul>
+                <li><strong>No architectural changes:</strong> The method uses the same model architecture and training procedure as single-source fine-tuning; only the training data composition changes.</li>
+                <li><strong>No additional annotation:</strong> It leverages existing multilingual labeled datasets (e.g., XNLI, PAWS-X) that are already available but typically ignored in favor of English-only training.</li>
+                <li><strong>Scalable:</strong> Adding more source languages is straightforward and does not require any language-specific components or hyperparameter tuning.</li>
+                <li><strong>Preserves cross-lingual alignment:</strong> Multi-source fine-tuning reinforces, rather than degrades, the multilingual structure built during pretraining -- mitigating the catastrophic forgetting problem that single-source fine-tuning can cause.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <p>Experiments compare single-source (English-only) and multi-source (diversified) fine-tuning on cross-lingual NLU benchmarks, evaluating zero-shot transfer to multiple target languages with a multilingual pretrained model.</p>
+
+        <h3>Key Findings</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Comparison</th><th>Observation</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Multi-source vs. English-only</td><td>Multi-source training consistently outperforms English-only fine-tuning across target languages</td></tr>
+                <tr><td>Distant target languages</td><td>The largest gains appear for typologically distant languages (e.g., Korean, Turkish) where English is a poor proxy</td></tr>
+                <tr><td>Close target languages</td><td>Languages closely related to English (e.g., German, French) still benefit, though improvements are more modest</td></tr>
+                <tr><td>Task complexity</td><td>Tasks requiring deeper syntactic/semantic understanding show larger improvements from diversification</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Impact by Typological Distance</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Target Language Group</th><th>English-Only Transfer</th><th>Diversified Transfer</th><th>Relative Gain</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Close to English (Germanic, Romance)</td><td>Strong</td><td>Slightly improved</td><td>Small</td></tr>
+                <tr><td>Moderate distance (Slavic, Semitic)</td><td>Moderate</td><td>Improved</td><td>Moderate</td></tr>
+                <tr><td class="highlight-cell"><strong>Distant (Korean, Turkish, Finnish)</strong></td><td class="highlight-cell">Weak</td><td class="highlight-cell"><strong>Substantially improved</strong></td><td class="highlight-cell"><strong>Largest</strong></td></tr>
+            </tbody>
+        </table>
+
         <ul class="key-points">
-            <li><strong>Multi-source training:</strong> Instead of using only English as the source language, the model is fine-tuned on labeled data from multiple diverse languages simultaneously.</li>
-            <li><strong>Language selection strategy:</strong> Source languages are selected to maximize typological diversity (covering different language families, word orders, and morphological systems) to expose the model to a broader range of linguistic phenomena.</li>
-            <li><strong>Unified fine-tuning:</strong> A single multilingual model is trained on the combined multi-source data, avoiding the need for separate models per language pair.</li>
+            <li><strong>Consistent improvement:</strong> Diversified source training yields gains across the board, not just for specific language pairs, confirming that the benefit stems from more language-agnostic representations rather than surface-level feature overlap.</li>
+            <li><strong>Typological distance matters most:</strong> The further a target language is from English, the greater the relative improvement from diversification -- exactly the scenario where English-only training is weakest.</li>
+            <li><strong>Minimal overhead:</strong> The multi-source approach adds negligible computational cost since training data size can be kept constant via balanced sampling, meaning the gains come essentially "for free."</li>
+            <li><strong>Syntactic and semantic gains:</strong> Tasks involving complex syntactic structures or cross-lingual semantic alignment benefit disproportionately, suggesting that diverse source exposure helps the model learn deeper structural patterns rather than relying on superficial lexical cues.</li>
+            <li><strong>Preserved alignment:</strong> Unlike English-only fine-tuning, multi-source training maintains or even strengthens the cross-lingual alignment established during pretraining, reducing the catastrophic forgetting effect.</li>
         </ul>
     </div>
+
     <div class="section">
-        <h2>Results</h2>
-        <p>Training with diversified source languages consistently improves zero-shot transfer performance on target languages compared to the English-only baseline, particularly for languages that are typologically distant from English. The gains are especially pronounced for tasks that require deeper syntactic or semantic understanding, demonstrating that exposure to diverse linguistic structures during training helps the model build more language-agnostic representations.</p>
+        <h2>Why It Matters</h2>
+        <p>This study challenges the default assumption in multilingual NLP that English is the optimal (or only necessary) source language for cross-lingual transfer, and offers a practical alternative:</p>
+        <ul>
+            <li><strong>Low-hanging fruit for practitioners:</strong> Simply changing which languages are included in the training set -- using already-available multilingual data -- can improve transfer performance without any model modifications or extra annotation.</li>
+            <li><strong>Better coverage of low-resource languages:</strong> Languages that are typologically distant from English have historically been the worst served by cross-lingual transfer; this approach specifically targets that gap.</li>
+            <li><strong>Rethinking the English-centric paradigm:</strong> The results provide concrete evidence that the field's heavy reliance on English-only fine-tuning leaves performance on the table, motivating more thoughtful source language selection in future multilingual research.</li>
+            <li><strong>Foundation for future work:</strong> The findings open directions for investigating optimal language selection criteria, adaptive sampling strategies, and the interaction between source diversity and model scale.</li>
+        </ul>
+
+        <div class="highlight-box">
+            <p><strong>Practical Recommendation:</strong> For researchers and practitioners building cross-lingual NLP systems, this work recommends a simple change to the standard pipeline: instead of fine-tuning on English alone, include training data from 3-5 typologically diverse languages covering different word orders, morphological types, and language families. The resulting model will transfer better to a wider range of target languages, with the greatest benefits for the languages that need it most -- those that are least similar to English.</p>
+        </div>
     </div>
-    <div class="section">
-        <h2>Significance</h2>
-        <p>This study provides evidence that the common practice of English-only source training is suboptimal for cross-lingual transfer. By demonstrating the benefits of source language diversification, it opens a practical and straightforward path to improving multilingual NLP systems -- simply by leveraging existing labeled data in multiple languages rather than discarding non-English resources.</p>
-    </div>
+
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-multilingual">Multilingual</span>
     </div>

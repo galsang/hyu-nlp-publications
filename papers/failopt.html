@@ -25,36 +25,42 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>We reveal that AI-generated text detectors are vulnerable to "prompt-specific shortcuts" caused by limited prompt diversity in training data, and propose both the FAILOpt attack that exploits this vulnerability and a defense method that leverages it.</p>
+        <p>We reveal that AI-generated text detectors learn prompt-specific shortcut features rather than genuine AI writing patterns, and propose FAILOpt (Feedback-based Adversarial Instruction List Optimization) -- an attack that discovers deceptive instructions exploiting these shortcuts, which also doubles as a data augmentation strategy that dramatically improves detector robustness.</p>
     </div>
 
     <figure class="paper-figure">
         <img src="https://arxiv.org/html/2406.16275v1/x1.png" alt="Detection failure from prompt-specific shortcuts">
-        <figcaption><strong>Figure 1.</strong> Detection failure due to prompt-specific shortcuts: The detector relies on specific prompt patterns rather than text content for its judgments, revealing a critical vulnerability.</figcaption>
+        <figcaption><strong>Figure 1.</strong> Detection failure due to prompt-specific shortcuts: When AI text is generated with different prompts than those used in the detector's training data, the detector fails because it relies on prompt-specific surface features rather than genuine AI writing characteristics.</figcaption>
     </figure>
 
     <div class="section">
-        <h2>Background & Motivation</h2>
-        <p>With the emergence of ChatGPT and similar tools, detecting AI-written text has become a critical challenge for academia and education. However, if the training data for detectors <strong>lacks prompt diversity</strong>, "shortcuts" can form where detectors rely on prompt characteristics rather than text content.</p>
+        <h2>Background &amp; Motivation</h2>
+        <p>The rapid advancement of large language models (LLMs) has raised serious concerns about misuse, including academic dishonesty and misinformation. AI-Generated Text (AIGT) detectors have emerged as a critical countermeasure, but they suffer from a fundamental yet overlooked vulnerability: standard AIGT datasets use <strong>only a small number of prompts</strong> for text generation, despite the countless prompt variations available to LLM users.</p>
+        <p>This narrow data collection introduces what the authors term <strong>"prompt-specific shortcut features"</strong> -- spurious correlations present in training data from a limited set of prompts that fail to represent genuine AI generation patterns across diverse instructions. Since LLMs exhibit high instruction-following capacity, different prompts can dramatically alter the stylistic characteristics of generated text, rendering detectors trained on single-prompt data fundamentally brittle.</p>
         <div class="highlight-box">
-            <p><strong>Key Insight:</strong> Detectors were not actually judging "whether this text was written by AI" but rather responding to "whether this text was generated with a specific prompt."</p>
+            <p><strong>Key Insight:</strong> Detectors were not actually learning to distinguish "AI-written text from human-written text." Instead, they were learning to recognize "text generated with a specific prompt" -- a much narrower and easily exploitable signal. This distinction has been largely overlooked in prior AIGT detection literature.</p>
         </div>
     </div>
 
     <div class="section">
         <h2>Proposed Method: FAILOpt</h2>
-        <p>FAILOpt is a 2-stage technique that iteratively searches for prompts that fool detectors:</p>
+        <p>FAILOpt (Feedback-based Adversarial Instruction List Optimization) is an iterative optimization algorithm that automatically discovers deceptive instructions capable of fooling AIGT detectors. It operates through two phases per iteration over 6 total iterations:</p>
 
         <div class="method-steps">
             <div class="method-step">
                 <div class="step-num">1</div>
                 <div class="step-title">Candidate Generation</div>
-                <div class="step-desc">Analyze differences between LLM and human outputs to generate instructions that make AI text more human-like</div>
+                <div class="step-desc">The system analyzes small batches of LLM outputs paired with human writings to identify approximately 10 distinguishing characteristics between the two styles. Each characteristic is converted into a specific instruction that guides the LLM to produce more human-like text without altering the core task requirements (e.g., "Include witty remarks and irony," "Use specific examples and technical terminology").</div>
             </div>
             <div class="method-step">
                 <div class="step-num">2</div>
-                <div class="step-title">Instruction Selection</div>
-                <div class="step-desc">Select the most effective instructions at fooling detectors from generated candidates (6 iterations, top-2 selection per iteration)</div>
+                <div class="step-title">Instruction Selection &amp; Refinement</div>
+                <div class="step-desc">Candidate instructions generate new text samples that are evaluated against the target detector. The top-performing deceptive instructions -- those that minimize detection accuracy the most -- advance to the next iteration. Instructions also undergo paraphrasing to optimize phrasing while maintaining semantic content, exploring the instruction space more effectively.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Iterative Optimization</div>
+                <div class="step-desc">The algorithm iterates 6 times, selecting the top-2 instruction lists per iteration. Each iteration builds on the previous best instructions, progressively discovering more effective deceptive prompts. The final output is the instruction list demonstrating maximum evasion effectiveness.</div>
             </div>
         </div>
 
@@ -64,43 +70,63 @@
             <li>"Provide structured and systematic answers"</li>
             <li>"Use specific examples and technical terminology"</li>
         </ul>
-        <p style="margin-top:8px;">These instructions serve to remove the characteristic markers of AI text that detectors relied upon.</p>
+        <p style="margin-top:8px;">These instructions remove the characteristic markers of AI text that detectors relied upon. Crucially, the same FAILOpt-generated texts can then be used as <strong>training data augmentation</strong> to build more robust detectors -- turning the attack into a defense.</p>
     </div>
 
     <div class="section">
         <h2>Experimental Results</h2>
+        <p>Experiments were conducted on three datasets -- ELI5 (long-form QA), XSum (summarization), and SQuAD (reading comprehension) -- using GPT-3.5-turbo (versions 0301 and 0613) as generators. The target detector was a RoBERTa-base model fine-tuned on the HC3 dataset. FAILOpt was compared against four baselines: PARA (self-paraphrasing), DIPPER (T5-XXL paraphraser), SICO (adversarial in-context examples), and IP (instruction-prompt optimization).</p>
 
         <figure class="paper-figure">
             <img src="https://arxiv.org/html/2406.16275v1/x2.png" alt="FAILOpt first iteration">
-            <figcaption><strong>Figure 2.</strong> Results on the ELI5 dataset from FAILOpt's first iteration: Demonstrates a significant drop in detector performance.</figcaption>
+            <figcaption><strong>Figure 2.</strong> Results on the ELI5 dataset from FAILOpt's first iteration: The detector's AUROC drops dramatically as FAILOpt discovers effective deceptive instructions.</figcaption>
         </figure>
 
+        <h3>Attack Performance (ChatGPT Detector)</h3>
         <table class="results-table">
             <thead>
-                <tr><th>Model</th><th>Dataset</th><th>Attack Success Rate (ASR)</th><th>AUROC Change</th></tr>
+                <tr><th>Model</th><th>Dataset</th><th>AUROC (Before)</th><th>AUROC (After)</th><th>ASR</th></tr>
             </thead>
             <tbody>
-                <tr><td>gpt-3.5-turbo-0301</td><td>ELI5</td><td>46.55%</td><td>93.33% → 78.17%</td></tr>
-                <tr><td>gpt-3.5-turbo-0613</td><td>ELI5</td><td class="highlight-cell">95.72%</td><td class="highlight-cell">98.23% → 62.49%</td></tr>
+                <tr><td>gpt-3.5-turbo-0301</td><td>ELI5</td><td>93.33%</td><td>78.17%</td><td>46.55%</td></tr>
+                <tr><td>gpt-3.5-turbo-0613</td><td>ELI5</td><td>98.23%</td><td class="highlight-cell">62.49%</td><td class="highlight-cell">95.72%</td></tr>
+                <tr><td>gpt-3.5-turbo-0613</td><td>XSum</td><td>86.16%</td><td>63.96%</td><td>55.75%</td></tr>
+                <tr><td>gpt-3.5-turbo-0613</td><td>SQuAD</td><td>91.84%</td><td class="highlight-cell">44.52%</td><td class="highlight-cell">90.93%</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Defense via Data Augmentation</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Setting</th><th>ELI5 (0613)</th><th>XSum (0613)</th><th>SQuAD (0613)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Original Detector</td><td>62.49%</td><td>63.96%</td><td>44.52%</td></tr>
+                <tr><td class="highlight-cell">Augmented Detector</td><td class="highlight-cell">100.00%</td><td class="highlight-cell">~100%</td><td class="highlight-cell">~100%</td></tr>
             </tbody>
         </table>
 
         <figure class="paper-figure">
             <img src="https://arxiv.org/html/2406.16275v1/x3.png" alt="Defense via augmentation">
-            <figcaption><strong>Figure 3.</strong> Defense effectiveness: Augmenting training data with FAILOpt-generated text consistently improves detector robustness.</figcaption>
+            <figcaption><strong>Figure 3.</strong> Defense effectiveness over training: Augmented training with FAILOpt data produces monotonic improvement against various attacks, while single-source training shows degradation over time.</figcaption>
         </figure>
 
         <ul class="key-points">
-            <li><strong>Attack Success:</strong> 95.72% ASR on gpt-3.5-turbo-0613, with AUROC dropping from 98.23% to 62.49%, effectively neutralizing the detector</li>
-            <li><strong>Supervised Detector Vulnerability:</strong> Perplexity-based and non-learning methods like DetectGPT are less vulnerable — learning-based detectors rely more on shortcuts</li>
-            <li><strong>Defense Effectiveness:</strong> Augmenting with FAILOpt data improves performance across all datasets and attack types</li>
-            <li><strong>Generalization:</strong> Effectiveness confirmed across various generation models, tasks, and attack types</li>
+            <li><strong>Devastating Attack on Supervised Detectors:</strong> On SQuAD with gpt-3.5-turbo-0613, FAILOpt dropped AUROC below chance level (44.52%), meaning the detector would be better off flipping its predictions. On ELI5, 95.72% of previously detected AI texts escaped detection after the attack.</li>
+            <li><strong>Metric-based Detectors Are More Robust:</strong> Perplexity-based detectors and DetectGPT showed inconsistent and reduced degradation from FAILOpt, confirming that the attack specifically exploits prompt-specific shortcuts in learning-based detectors rather than universal text features.</li>
+            <li><strong>Near-Perfect Defense:</strong> Augmenting the detector's training data with FAILOpt-generated texts restored AUROC to nearly 100% across all datasets and both GPT-3.5 versions, demonstrating the dual-use nature of the attack.</li>
+            <li><strong>Cross-Attack Generalization:</strong> The augmented detector showed improved robustness not only against FAILOpt but also against other attack methods (PARA, DIPPER, SICO), indicating that diverse prompt exposure helps detectors learn more generalizable features.</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>AI text detection is central to academic integrity and information trustworthiness. This study reveals a <strong>fundamental vulnerability</strong> of current detectors while also presenting a <strong>dual-purpose solution</strong> that leverages the same attack technique for defense. It applies the security principle of "know your enemy to defend yourself" to AI detection.</p>
+        <p>AI text detection is central to academic integrity and information trustworthiness, yet this study reveals that current detectors suffer from a <strong>fundamental vulnerability</strong> that has been largely overlooked: dependence on prompt-specific artifacts rather than genuine AI writing characteristics. The practical implications are twofold:</p>
+        <ul class="key-points">
+            <li><strong>For Detection Research:</strong> The findings establish that reliable AIGT detection requires training datasets with comprehensive prompt diversity, not merely varied content inputs. This reframes how the community should approach dataset construction.</li>
+            <li><strong>Dual-Purpose Solution:</strong> FAILOpt demonstrates the security principle of "know your enemy to defend yourself" -- the same adversarial attack that exposes detector weaknesses also produces the training data needed to fix them, achieving near-perfect robustness through augmentation.</li>
+            <li><strong>Broader Impact:</strong> As LLM-generated content becomes ubiquitous, understanding and addressing shortcut learning in detectors is essential for maintaining trust in written communication across education, journalism, and public discourse.</li>
+        </ul>
     </div>
 
     <div class="section">

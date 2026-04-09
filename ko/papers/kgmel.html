@@ -22,40 +22,172 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>지식그래프 구조를 활용하여 멀티모달 엔티티 링킹 성능을 향상시키는 방법</p>
+        <p>VLM 기반 트리플 생성, 게이트 융합을 활용한 대조 검색, LLM 기반 재순위화의 3단계 프레임워크를 통해 지식그래프 트리플을 멀티모달 엔티티 링킹에 체계적으로 통합하여, 세 가지 벤치마크에서 HITS@1 기준 최대 19.13% 성능 향상을 달성한 연구입니다.</p>
     </div>
+
     <figure class="paper-figure">
         <img src="https://arxiv.org/html/2504.15135v1/x1.png" alt="KGMEL을 활용한 멀티모달 엔티티 링킹 예시">
-        <figcaption><strong>Figure 1.</strong> KGMEL을 활용한 멀티모달 엔티티 링킹(MEL) 예시. KGMEL은 멘션에 대한 트리플을 생성하여 지식 베이스(KB)의 지식그래프(KG) 트리플과 매칭함. 파란색과 노란색 화살표는 각각 시각적, 텍스트 컨텍스트에서 도출된 트리플을 가리킴.</figcaption>
+        <figcaption><strong>Figure 1.</strong> KGMEL을 활용한 멀티모달 엔티티 링킹(MEL) 예시. KGMEL은 멘션에 대한 트리플을 생성하여 지식 베이스(KB)의 지식그래프(KG) 트리플과 매칭합니다. 파란색과 노란색 화살표는 각각 시각적, 텍스트 컨텍스트에서 도출된 트리플을 가리킵니다.</figcaption>
     </figure>
-    <figure class="paper-figure">
-        <img src="https://arxiv.org/html/2504.15135v1/x3.png" alt="KGMEL 프레임워크 개요: 생성, 검색, 재순위화의 3단계">
-        <figcaption><strong>Figure 3.</strong> KGMEL 개요. 프레임워크는 세 단계로 구성됨: (1) 생성: VLM을 사용하여 멘션에 대한 트리플 생성. (2) 검색: 텍스트, 시각, 트리플 기반 임베딩을 통합한 결합 임베딩으로 K개의 후보를 검색. (3) 재순위화: 관련 없는 KG 트리플을 필터링한 후 LLM을 사용하여 최적 매칭 엔티티를 결정.</figcaption>
-    </figure>
+
     <div class="section">
         <h2>배경 및 동기</h2>
-        <p>멀티모달 엔티티 링킹(MEL)은 이미지와 같은 시각적 맥락을 동반한 텍스트 멘션을 지식 베이스의 해당 엔티티에 연결하는 것을 목표로 합니다. 기존 접근법들은 주로 텍스트 및 시각적 유사성에 의존하지만, 지식그래프(KG)에 저장된 풍부한 구조적 정보는 대부분 활용하지 못했습니다. 트리플로 인코딩된 관계와 속성 정보는 시각적으로나 텍스트적으로 유사한 엔티티를 구별하는 데 매우 유용합니다. KGMEL은 MEL 파이프라인의 모든 단계에 KG 트리플을 체계적으로 통합하여 이 한계를 해결합니다.</p>
+        <p>엔티티 링킹(EL)은 텍스트 내의 멘션을 지식 베이스의 해당 엔티티에 연결하는 과제로, 시맨틱 검색, 질의응답, 지식 기반 대화 등 다양한 응용을 가능하게 합니다. 최근 <strong>멀티모달 엔티티 링킹(MEL)</strong> 연구에서 텍스트와 이미지를 결합하면 모호성을 줄이고 정확도를 높일 수 있음이 밝혀졌으나, 대부분의 기존 MEL 방법은 지식그래프(KG) 트리플에 담긴 풍부한 구조적 정보를 활용하지 못하고 있습니다. KG 트리플은 간결한 텍스트 설명보다 수 배 이상 풍부한 정보원입니다.</p>
+        <div class="highlight-box">
+            <p><strong>기존 MEL 방법의 핵심 한계:</strong></p>
+            <ul>
+                <li><strong>표면적 단서에 대한 의존:</strong> 기존 접근법은 주로 텍스트 및 시각적 유사성에 의존하며, 엔티티가 시각적 또는 텍스트적으로 유사한 경우 구별이 어렵습니다. 예를 들어, 외모와 설명이 유사한 두 농구 선수를 구별하려면 더 깊은 구조적 지식이 필요합니다.</li>
+                <li><strong>미활용된 KG 구조:</strong> Wikidata 같은 지식 베이스에서 엔티티는 평균 수백 개의 트리플을 보유하고 있어 단일 텍스트 설명보다 훨씬 풍부하지만, 이 구조적 정보는 MEL 연구에서 거의 활용되지 않았습니다.</li>
+                <li><strong>의미적 가교 가능성:</strong> 트리플 임베딩은 잠재 공간에서 멀리 떨어진 멘션-엔티티 텍스트 임베딩을 가깝게 만들 수 있어, 표면적 특징만으로는 제공할 수 없는 의미적 가교 역할을 합니다. BERT 임베딩의 t-SNE 시각화가 이 가교 효과를 실증적으로 확인합니다.</li>
+                <li><strong>종단간 KG 통합 부재:</strong> 기존 연구 중 MEL 파이프라인의 모든 단계(생성, 검색, 재순위화)에 걸쳐 KG 트리플을 체계적으로 활용한 사례는 없었습니다.</li>
+            </ul>
+        </div>
+        <div class="highlight-box">
+            <p><strong>KG 강화 MEL의 두 가지 핵심 과제:</strong></p>
+            <ul>
+                <li><strong>멘션에 고유 트리플 부재:</strong> 지식 베이스의 엔티티와 달리, 자연어 텍스트에 등장하는 멘션은 구조화된 트리플 표현을 갖고 있지 않습니다. KG 기반 매칭이 가능하려면 이 비대칭성을 해소해야 합니다.</li>
+                <li><strong>엔티티의 노이즈 트리플:</strong> 각 엔티티는 수백 개의 KG 트리플을 가질 수 있으며, 그 중 상당수는 특정 멘션과 무관합니다. 모든 트리플을 무차별적으로 사용하면 성능이 오히려 저하될 수 있습니다.</li>
+            </ul>
+        </div>
+        <p>KGMEL은 (1) VLM을 활용하여 멀티모달 컨텍스트로부터 멘션 트리플을 생성하고, (2) 의미적 필터링을 통해 가장 관련성 높은 엔티티 트리플만 선별하여 매칭 및 재순위화에 활용함으로써 두 가지 과제를 모두 해결합니다.</p>
     </div>
+
     <div class="section">
-        <h2>방법론: 3단계 프레임워크</h2>
-        <ul class="key-points">
-            <li><strong>1단계 -- 생성:</strong> 비전-언어 모델(VLM)이 텍스트와 시각적 맥락을 분석하여 각 멘션에 대한 지식그래프 트리플을 생성합니다. 이 트리플은 멘션이 참조하는 엔티티에 대한 구조화된 사실을 포착합니다.</li>
-            <li><strong>2단계 -- 검색:</strong> 텍스트, 시각, 트리플 기반 임베딩을 융합한 대조 학습을 통해 결합 멘션-엔티티 표현을 구축하고, 이를 사용하여 지식 베이스에서 K개의 후보 엔티티를 검색합니다.</li>
-            <li><strong>3단계 -- 재순위화:</strong> 관련 없는 KG 트리플을 필터링한 후, 대규모 언어 모델(LLM)을 적용하여 멘션 트리플과 후보 엔티티 트리플을 비교함으로써 최적의 매칭 엔티티를 결정합니다.</li>
-        </ul>
+        <h2>제안 방법: 3단계 KG 강화 프레임워크</h2>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2504.15135v1/x3.png" alt="KGMEL 프레임워크 개요: 생성, 검색, 재순위화의 3단계">
+            <figcaption><strong>Figure 3.</strong> KGMEL 개요. 프레임워크는 세 단계로 구성됩니다: (1) 생성: VLM을 사용하여 멘션에 대한 트리플 생성. (2) 검색: 텍스트, 시각, 트리플 기반 임베딩을 통합한 결합 임베딩으로 K개의 후보를 검색. (3) 재순위화: 관련 없는 KG 트리플을 필터링한 후 LLM을 사용하여 최적 매칭 엔티티를 결정.</figcaption>
+        </figure>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">트리플 생성 (VLM 기반)</div>
+                <div class="step-desc">비전-언어 모델(GPT-4o-mini)이 각 멘션의 텍스트와 시각적 맥락을 구조화된 3단계 프롬프트로 분석합니다: (1) NER 범주를 통한 엔티티 유형 식별, (2) 간결한 엔티티 설명 생성, (3) (머리, 관계, 꼬리) 형태의 구조화된 트리플 생성. 지식 베이스 내 빈도와 의미적 관련성을 기반으로 20개의 관계 유형이 엄선됩니다: <em>instance of, subclass of, part of, has characteristic, field of work, occupation, sex or gender, country of citizenship, position held, religion or worldview, member of, owner of, country, capital, continent, located in, industry, participant, genre, named after</em>. VLM은 이미지에서 시각적 단서(예: "직업: 농구 선수")와 텍스트에서 문맥적 단서(예: "출연작: Thunderstruck")를 모두 추출하여 T<sub>m</sub> = VLM(P<sub>triple</sub>(t<sub>m</sub>, v<sub>m</sub>))로 형식화합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">후보 엔티티 검색 (게이트 융합 대조 학습)</div>
+                <div class="step-desc">
+                    <p><strong>인코딩:</strong> 동결된 CLIP이 텍스트와 이미지를 d' 차원 임베딩으로 인코딩합니다. 트리플의 관계와 꼬리는 각각 행렬 R<sub>m</sub>과 O<sub>m</sub>으로 인코딩된 후, 잔차 연결이 포함된 MLP로 결합됩니다: Z&#771;<sub>m</sub> = O<sub>m</sub> + MLP([O<sub>m</sub> || R<sub>m</sub>]). 이를 통해 꼬리 엔티티 정보가 보존됩니다.</p>
+                    <p><strong>이중 교차 주의:</strong> 각 트리플의 텍스트 및 시각 모달리티에 대한 관련성 점수를 계산합니다: s<sub>m</sub> = Softmax((&beta; &middot; Z&#771;<sub>m</sub> &middot; T<sub>m</sub><sup>T</sup> + (1-&beta;) &middot; Z&#771;<sub>m</sub> &middot; V<sub>m</sub><sup>T</sup>) / &tau;<sub>att</sub>), &beta;=0.5로 모달리티 균형을 맞추고 &tau;<sub>att</sub>=0.1을 온도 파라미터로 사용합니다. Top-p 선택(p &isin; {3, 5})으로 가장 관련성 높은 트리플만 유지하여 노이즈를 제거합니다.</p>
+                    <p><strong>게이트 융합:</strong> 학습된 시그모이드 게이트가 세 모달리티 임베딩을 결합합니다: X<sub>m</sub> = g<sub>T</sub> &middot; W<sub>T</sub> &middot; T<sub>m</sub> + g<sub>V</sub> &middot; W<sub>V</sub> &middot; V<sub>m</sub> + W<sub>Z</sub> &middot; Z<sub>m</sub>, 여기서 g<sub>T</sub> = &sigma;(W<sub>T</sub><sup>(g)</sup> &middot; T<sub>m</sub> + b<sub>T</sub><sup>(g)</sup>)로 각 모달리티를 적응적으로 가중합니다.</p>
+                    <p><strong>학습:</strong> 세 가지 대조 손실로 학습합니다: (1) 멘션-엔티티 손실 L<sub>ME</sub>로 멘션과 정답 엔티티를 정렬, (2) 멘션-멘션 손실 L<sub>MM</sub>으로 서로 다른 멘션을 분리, (3) 엔티티-엔티티 손실 L<sub>EE</sub>로 서로 다른 엔티티를 분리합니다. L = L<sub>ME</sub> + &lambda;<sub>MM</sub> &middot; L<sub>MM</sub> + &lambda;<sub>EE</sub> &middot; L<sub>EE</sub>로 결합하며, &lambda;<sub>MM</sub> = &lambda;<sub>EE</sub> = 0.1, 대조 온도 &tau;<sub>cl</sub> = 0.1입니다. 내적 유사도로 Top-K=16개의 후보를 검색합니다.</p>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">엔티티 재순위화 (트리플 필터링 기반 LLM)</div>
+                <div class="step-desc">의미적 트리플 필터링 단계에서 각 후보 엔티티의 KG 트리플 중 멘션 트리플과의 유사도를 계산하여 상위 n개(n &isin; {10, 15})의 가장 관련성 높은 관계와 꼬리를 식별합니다: T<sub>e</sub><sup>(filt)</sup> = {(e,r,o) &isin; T<sub>e</sub> | r &isin; R(C(m), T<sub>m</sub>) &and; o &isin; O(C(m), T<sub>m</sub>)}. 이 필터링은 LLM을 오도할 수 있는 노이즈 트리플을 제거합니다. 이후 GPT-3.5-turbo가 구조화된 단계별 프롬프트를 통해 제로샷 재순위화를 수행합니다: (1) 각 후보에 대한 증거로서 지지 트리플 식별, (2) 필터링된 후보 중 가장 적합한 엔티티 결정. 최종 선택은 e<sub>m</sub>* = LLM(P<sub>rerank</sub>(t<sub>m</sub>, T<sub>m</sub>, {t<sub>e</sub>, T<sub>e</sub><sup>(filt)</sup>}<sub>e &isin; C(m)</sub>))입니다.</div>
+            </div>
+        </div>
     </div>
+
     <div class="section">
         <h2>실험 결과</h2>
-        <p>KGMEL은 지식그래프의 구조적 정보를 효과적으로 활용하여 기존 MEL 방법들 대비 일관된 성능 향상을 보여줍니다. 3단계 설계를 통해 각 구성 요소가 상호 보완적인 신호를 제공하며, 특히 시각적 또는 텍스트 단서만으로는 모호한 경우에 KG 트리플 통합이 큰 효과를 발휘합니다.</p>
+        <p>KGMEL은 Wikidata를 지식 베이스로 사용하여 세 가지 MEL 벤치마크에서 평가되었으며, 결과는 3회 실행의 평균으로 보고됩니다. 모든 데이터셋에서 <strong>최고 성능의 HITS@1</strong>을 달성했습니다.</p>
+
+        <h3>데이터셋 통계</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>통계</th><th>WikiDiverse</th><th>RichpediaMEL</th><th>WikiMEL</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>문장 수</td><td>7,405</td><td>17,724</td><td>22,070</td></tr>
+                <tr><td>멘션 수</td><td>15,093</td><td>17,805</td><td>25,846</td></tr>
+                <tr><td>KG 트리플 수</td><td>60.8M</td><td>32.8M</td><td>65.1M</td></tr>
+                <tr><td>후보 엔티티 수</td><td>132,460</td><td>160,935</td><td>109,976</td></tr>
+                <tr><td>전체 엔티티 수</td><td>776,407</td><td>831,737</td><td>761,343</td></tr>
+                <tr><td>관계 유형 수</td><td>1,322</td><td>1,288</td><td>1,289</td></tr>
+            </tbody>
+        </table>
+
+        <h3>주요 결과 (HITS@1)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>방법</th><th>WikiDiverse</th><th>RichpediaMEL</th><th>WikiMEL</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>M3EL</td><td>74.06</td><td>--</td><td>--</td></tr>
+                <tr><td>IIER</td><td>--</td><td>84.63</td><td>--</td></tr>
+                <tr><td>OT-MEL</td><td>--</td><td>--</td><td>88.97</td></tr>
+                <tr><td>KGMEL (검색만)</td><td>82.12</td><td>76.40</td><td>87.29</td></tr>
+                <tr><td class="highlight-cell"><strong>KGMEL (검색 + 재순위화)</strong></td><td class="highlight-cell"><strong>88.23</strong></td><td class="highlight-cell"><strong>85.21</strong></td><td class="highlight-cell"><strong>90.58</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>확장 지표</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>데이터셋</th><th>지표</th><th>검색</th><th>+ 재순위화</th></tr>
+            </thead>
+            <tbody>
+                <tr><td rowspan="3">WikiDiverse</td><td>HITS@3</td><td>90.28</td><td>92.82</td></tr>
+                <tr><td>HITS@5</td><td>92.07</td><td>93.61</td></tr>
+                <tr><td>MRR</td><td>86.00</td><td>90.84</td></tr>
+                <tr><td rowspan="3">RichpediaMEL</td><td>HITS@3</td><td>85.92</td><td>89.85</td></tr>
+                <tr><td>HITS@5</td><td>88.82</td><td>91.32</td></tr>
+                <tr><td>MRR</td><td>80.94</td><td>88.08</td></tr>
+                <tr><td rowspan="3">WikiMEL</td><td>HITS@3</td><td>92.47</td><td>95.18</td></tr>
+                <tr><td>HITS@5</td><td>93.94</td><td>95.87</td></tr>
+                <tr><td>MRR</td><td>89.99</td><td>93.04</td></tr>
+            </tbody>
+        </table>
+
+        <h3>트리플 생성 VLM 비교 (재순위화 후 HITS@1)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>VLM 모델</th><th>WikiDiverse</th><th>RichpediaMEL</th><th>WikiMEL</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>LLaVA-1.6-7B (오픈소스)</td><td>86.43</td><td>81.94</td><td>86.22</td></tr>
+                <tr><td>LLaVA-1.6-13B (오픈소스)</td><td>85.94</td><td>83.26</td><td>85.96</td></tr>
+                <tr><td class="highlight-cell"><strong>GPT-4o-mini (상용)</strong></td><td class="highlight-cell"><strong>88.23</strong></td><td class="highlight-cell"><strong>85.21</strong></td><td class="highlight-cell"><strong>90.58</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>절제 연구 (평균 HITS@1 하락폭)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>제거된 구성 요소</th><th>평균 HITS@1 하락</th><th>해석</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>이미지 임베딩 제거 (V)</td><td>-5.54%</td><td>시각 모달리티가 가장 영향력 있는 단일 구성 요소</td></tr>
+                <tr><td>트리플 임베딩 제거 (Z)</td><td>-1.62%</td><td>KG 트리플이 의미 있는 보완적 신호 제공</td></tr>
+                <tr><td>게이트 융합 레이어 제거</td><td>-1.29%</td><td>적응적 게이팅이 단순 연결/합산보다 우수</td></tr>
+            </tbody>
+        </table>
+
+        <h3>사례 연구: KG 트리플을 통한 엔티티 구별</h3>
+        <p>텍스트와 이미지 맥락 모두에서 농구 선수를 언급하는 멘션을 예로 들면, KGMEL은 이미지에서 <em>"직업: 농구 선수"</em>, 텍스트에서 <em>"출연작: Thunderstruck"</em> 등의 트리플을 생성합니다. 이렇게 생성된 트리플은 Wikidata의 정답 엔티티 KG 트리플과 정합되어, 텍스트나 이미지 특징만으로는 여러 유사 엔티티가 매칭될 수 있는 상황에서도 정확한 구별을 가능하게 합니다. 트리플 기반 의미적 가교는 시각적 외형이나 텍스트 설명은 유사하지만 구조적 관계 속성이 다른 엔티티에 특히 효과적입니다.</p>
+
+        <ul class="key-points">
+            <li><strong>최대 19.13% 성능 향상:</strong> WikiDiverse에서 기존 최고 성능(M3EL) 대비 14.17%의 HITS@1 향상을 달성하여, KG 구조가 텍스트 및 이미지 신호를 강력하게 보완함을 입증했습니다.</li>
+            <li><strong>재순위화의 큰 효과:</strong> 재순위화 단계가 WikiDiverse에서 6.11%, RichpediaMEL에서 8.81%, WikiMEL에서 3.29%의 HITS@1 향상을 가져왔으며, 검색 정확도가 낮은 경우 더 큰 개선을 보였습니다.</li>
+            <li><strong>이미지 임베딩의 높은 중요성:</strong> 이미지 임베딩 제거 시 가장 큰 성능 하락(-5.54%)이 발생하여, MEL에서 시각 정보의 중요성을 확인했습니다. 이미지가 텍스트에 없는 보완적 정체성 단서를 제공하기 때문입니다.</li>
+            <li><strong>다양한 VLM에 대한 강건성:</strong> 오픈소스 LLaVA-1.6-7B(WikiDiverse에서 86.43)부터 GPT-4o-mini(88.23)까지 다양한 모델에서 작동하며, 소규모 오픈소스 VLM도 유용한 트리플을 생성할 수 있음을 보여주었습니다. GPT-4o-mini가 전반적으로 최고 성능을 보였습니다.</li>
+            <li><strong>의미적 가교로서의 KG 트리플:</strong> 트리플 임베딩이 잠재 공간에서 멀리 떨어진 멘션-엔티티 텍스트 임베딩을 가깝게 만들어, 표면적 단서가 모호한 경우 보완적 신호를 제공합니다. BERT 임베딩의 t-SNE 시각화가 이 가교 효과를 실증적으로 확인합니다.</li>
+            <li><strong>대규모 KG 활용:</strong> 데이터셋당 3,280만~6,510만 개의 트리플과 수십만 개의 엔티티를 포함하는 지식 베이스에서 효과적으로 작동하여, 실제 규모의 지식 베이스에 대한 확장성을 입증했습니다.</li>
+            <li><strong>트리플 필터링의 필수성:</strong> LLM 재순위화 전 엔티티 트리플의 의미적 필터링은 언어 모델을 오도할 수 있는 노이즈 관계를 제거하여, 정확도와 계산 효율성을 모두 향상시킵니다.</li>
+        </ul>
     </div>
+
     <div class="section">
         <h2>의의</h2>
-        <p>엔티티 링킹은 정보 검색, 질의응답, 지식 기반 대화 시스템의 기초 과제입니다. KGMEL은 KG 구조가 멀티모달 엔티티 링킹을 크게 향상시킬 수 있음을 보여줌으로써, 구조화된 지식을 멀티모달 NLP 파이프라인에 통합하는 새로운 방향을 제시합니다.</p>
+        <p>엔티티 링킹은 정보 검색, 질의응답, 지식 기반 대화 시스템의 기초 과제입니다. KGMEL은 네 가지 핵심 기여를 통해 최신 기술 수준을 발전시킵니다:</p>
+        <ul>
+            <li><strong>MEL 최초의 종단간 KG 통합:</strong> 생성, 검색, 재순위화의 세 단계 모두에 KG 트리플을 통합하여, 구조적 지식이 텍스트 및 이미지 특징만 사용하는 방법 대비 실질적이고 일관된 성능 향상을 제공함을 보여주었습니다. 기존 연구 중 MEL 파이프라인 전체에 걸쳐 KG 정보를 체계적으로 활용한 사례는 없었습니다.</li>
+            <li><strong>실용적이고 유연한 설계:</strong> 7B 오픈소스 LLaVA부터 상용 GPT-4o-mini까지 다양한 VLM과 호환되며, 과제 특화 미세조정 없이 제로샷 LLM 재순위화를 활용하여 다양한 배포 환경과 예산에 적응 가능합니다.</li>
+            <li><strong>독창적인 기술 구성 요소:</strong> 트리플 노이즈 제거를 위한 top-p 선택이 포함된 이중 교차 주의 메커니즘, 적응적 모달리티 가중을 위한 게이트 융합 레이어, 재순위화 전 의미적 트리플 필터링은 절제 연구에서 확인된 바와 같이 각각 독립적으로 효과적인 기술적 혁신입니다.</li>
+            <li><strong>새로운 연구 방향:</strong> 엔티티의 풍부한 KG 구조(데이터셋당 3,280만~6,510만 개의 트리플, 평균 수백 개의 트리플)가 멀티모달 NLP에서 크게 미활용된 자원임을 입증하여, 시각 질의응답, 멀티모달 지식 베이스 구축, 교차 모달 검색 등 관련 과제에서도 KG 강화 방법의 가능성을 열었습니다.</li>
+        </ul>
     </div>
     <div class="section">
         <h2>링크</h2>
         <div class="links-section">
             <a href="https://dl.acm.org/doi/10.1145/3726302.3730217" target="_blank" class="paper-link">ACM Digital Library</a>
+            <a href="https://arxiv.org/abs/2504.15135" target="_blank" class="paper-link">arXiv Paper</a>
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">

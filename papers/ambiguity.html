@@ -22,7 +22,7 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A method for aligning language models to explicitly handle ambiguity in questions</p>
+        <p>Alignment with Perceived Ambiguity (APA) teaches language models to explicitly detect and handle ambiguous queries by leveraging each model's own assessment of ambiguity, outperforming gold-standard label training especially in out-of-distribution scenarios.</p>
     </div>
     <figure class="paper-figure">
         <img src="https://arxiv.org/html/2404.11972v1/x1.png" alt="Example of an ambiguous query showing how the degree of perceived ambiguity varies depending on the model's knowledge">
@@ -34,61 +34,90 @@
     </figure>
     <div class="section">
         <h2>Background &amp; Motivation</h2>
-        <p>When users ask questions like "Who won the national championship?", the query can refer to many different championships across different sports and years. Large language models (LLMs) typically pick a single interpretation and answer confidently, ignoring the inherent ambiguity. This leads to responses that may be technically correct for one reading but misleading overall.</p>
+        <p>In interactions between users and language model agents, user utterances frequently exhibit <strong>ellipsis</strong> (omission of words or phrases) or <strong>imprecision</strong> (lack of exactness) to prioritize efficiency. For instance, a question like "Who won the national championship?" can refer to many different championships across different sports and years, leading to varying interpretations based on different assumptions or background knowledge. Despite this, large language models (LLMs) typically pick a single interpretation and answer confidently, ignoring the inherent ambiguity.</p>
         <div class="highlight-box">
-            <p><strong>Limitation:</strong> Existing LLMs tend to produce a single answer even when a question is genuinely ambiguous, failing to surface alternative valid interpretations that the user may have intended.</p>
+            <p><strong>Limitation 1 &mdash; No Explicit Training:</strong> Existing LLMs are not explicitly trained to deal with ambiguous utterances. They tend to produce a single answer even when a question is genuinely ambiguous, failing to surface alternative valid interpretations that the user may have intended.</p>
         </div>
         <div class="highlight-box">
-            <p><strong>Key Insight:</strong> The degree of perceived ambiguity is <strong>model-dependent</strong> — a model with broader knowledge recognizes more possible interpretations than one with limited knowledge. Alignment should therefore be tailored to each model's own knowledge boundary.</p>
+            <p><strong>Limitation 2 &mdash; Model-Dependent Ambiguity:</strong> The degree of perceived ambiguity is <strong>model-dependent</strong> &mdash; a model with broader knowledge recognizes more possible interpretations than one with limited knowledge. Using fixed gold-standard ambiguity labels for all models ignores this fundamental variation, leading to suboptimal alignment.</p>
+        </div>
+        <div class="highlight-box">
+            <p><strong>Key Insight:</strong> Rather than relying on externally annotated ambiguity labels, alignment should be tailored to each model's own knowledge boundary. A model should learn to flag ambiguity precisely at the frontier of <em>its own</em> knowledge, not at some universal threshold.</p>
         </div>
     </div>
 
     <div class="section">
-        <h2>Method</h2>
-        <p>The paper proposes a four-stage alignment pipeline that teaches an LLM to detect ambiguity and respond with disambiguating clarifications:</p>
+        <h2>Proposed Method: Alignment with Perceived Ambiguity (APA)</h2>
+        <p>APA is a four-stage alignment pipeline that teaches an LLM to detect ambiguity and respond with disambiguating clarifications, using the model's own perception of ambiguity rather than external gold labels:</p>
         <div class="method-steps">
             <div class="method-step">
                 <div class="step-num">1</div>
-                <div class="step-title">Ambiguity Filtering</div>
-                <div class="step-desc">Identify samples that the model cannot already explicitly handle — questions where the model gives a single answer despite genuine ambiguity.</div>
+                <div class="step-title">Explicit Prediction &amp; Filtering</div>
+                <div class="step-desc">The model processes all samples; correctly handled predictions form D<sub>correct</sub>, while incorrectly handled ones (where the model gives a single answer despite genuine ambiguity) form D<sub>incorrect</sub>. This identifies the gap between what the model <em>should</em> clarify and what it currently does not.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">2</div>
                 <div class="step-title">Self-Disambiguation &amp; Information Gain</div>
-                <div class="step-desc">The model self-disambiguates each question, and the information gain from disambiguation is measured to rank which samples are most valuable for training.</div>
+                <div class="step-desc">For each sample in D<sub>incorrect</sub>, the model generates disambiguations. <strong>Information gain</strong> is computed as the entropy reduction: <em>InfoGain = H(x) &minus; H(x<sub>disambig</sub>)</em>, measuring token-level uncertainty change. Samples exceeding a threshold (&epsilon; = 0.1) are classified as truly ambiguous from the model's perspective.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">3</div>
-                <div class="step-title">Supervised Fine-Tuning (SFT)</div>
-                <div class="step-desc">High information-gain samples are used to fine-tune the model, teaching it to produce responses that enumerate possible interpretations.</div>
+                <div class="step-title">Data Construction &amp; Supervised Fine-Tuning (SFT)</div>
+                <div class="step-desc">Ambiguous samples receive clarification labels (e.g., "The question is ambiguous because...") and are balanced with D<sub>correct</sub> to form the training dataset D. The model is then fine-tuned using standard next-token prediction on this balanced dataset.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">4</div>
                 <div class="step-title">Preference Optimization</div>
-                <div class="step-desc">Further alignment through preference-based training to reinforce explicit ambiguity handling over single-answer responses.</div>
+                <div class="step-desc">Further alignment through preference-based training (DPO) to reinforce explicit ambiguity handling over single-answer responses, ensuring the model consistently surfaces multiple interpretations when appropriate.</div>
             </div>
         </div>
     </div>
 
     <div class="section">
-        <h2>Results</h2>
+        <h2>Experimental Results</h2>
+        <p>APA is evaluated on four question-answering datasets using Llama-2 (7B, 13B) and Mistral (7B) as base models. Models are trained on AmbigQA and tested both in-distribution and out-of-distribution (SituatedQA, AmbigTriviaQA). Baselines include inference-only methods (naive prompting, ambiguity-aware instructions, sample repetition, self-ask) and trained methods (honesty-tuned, full-set, random subset).</p>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>Dataset</th><th>Metric</th><th>Llama-2 7B</th><th>Mistral 7B</th><th>Llama-2 13B</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>AmbigQA</td><td>Unambig. Acc.</td><td>27.23%</td><td>37.23%</td><td>37.83%</td></tr>
+                <tr><td>AmbigQA</td><td>Ambig. F1</td><td>63.69</td><td>50.31</td><td>58.15</td></tr>
+                <tr><td>SituatedQA (Geo)</td><td>Unambig. Acc.</td><td>24.51%</td><td>32.21%</td><td>24.51%</td></tr>
+                <tr><td>SituatedQA (Geo)</td><td>Ambig. F1</td><td>42.05</td><td>42.18</td><td>41.59</td></tr>
+                <tr><td>SituatedQA (Temp)</td><td>Unambig. Acc.</td><td>21.90%</td><td>35.74%</td><td>24.36%</td></tr>
+                <tr><td>SituatedQA (Temp)</td><td>Ambig. F1</td><td>40.77</td><td>40.17</td><td>41.09</td></tr>
+                <tr><td>AmbigTriviaQA</td><td>Unambig. Acc.</td><td>53.41%</td><td>58.14%</td><td>63.74%</td></tr>
+                <tr><td>AmbigTriviaQA</td><td>Ambig. F1</td><td>61.34</td><td>58.93</td><td>55.23</td></tr>
+            </tbody>
+        </table>
+
         <ul class="key-points">
-            <li><strong>Ambiguity Detection:</strong> Aligned models significantly improve their ability to recognize when a question is ambiguous rather than blindly selecting one interpretation</li>
-            <li><strong>Answer Coverage:</strong> The aligned models produce responses that cover a broader set of valid answers, addressing multiple plausible interpretations of ambiguous queries</li>
-            <li><strong>Maintained Clarity:</strong> On unambiguous questions, the aligned models continue to provide direct, single answers without unnecessary hedging</li>
-            <li><strong>Information-Gain Selection:</strong> Using information gain to select training samples proves more effective than random selection, confirming the value of the model-aware data curation strategy</li>
+            <li><strong>Outperforms Gold Labels on OOD:</strong> APA surpasses the full-set baseline (trained on all gold-standard labels) by up to <strong>17 F1 points</strong> on out-of-distribution datasets, despite using only ~32% of data (Llama-2) or ~13% (Mistral)</li>
+            <li><strong>Information Gain &gt; Random Selection:</strong> Ablation studies show that information gain-based sample selection outperforms random subset selection by ~10 F1 points on OOD datasets, validating the model-aware curation strategy</li>
+            <li><strong>Balanced Alignment:</strong> APA achieves the best Overall Alignment Performance (23.87% on AmbigTriviaQA), combining a high Valid Alignment Rate with a low Misaligned Clarification Rate &mdash; meaning the model avoids false ambiguity signals on clear questions</li>
+            <li><strong>Maintained Clarity:</strong> On unambiguous questions, aligned models continue to provide direct, single answers without unnecessary hedging, preserving normal QA performance</li>
+            <li><strong>Consistent Across Scales:</strong> The approach works effectively across different model families (Llama-2, Mistral) and scales (7B, 13B), demonstrating broad applicability</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>Real-world user queries are often underspecified or ambiguous, yet most LLMs are trained to give a single decisive answer. This work provides a principled framework for teaching models <strong>when to ask for clarification</strong> and <strong>how to present multiple valid interpretations</strong>. By grounding the alignment process in each model's own knowledge, it avoids both over-hedging (flagging clear questions as ambiguous) and under-hedging (ignoring genuine ambiguity), making LLM interactions more trustworthy and informative.</p>
+        <p>Real-world user queries are often underspecified or ambiguous, yet most LLMs are trained to give a single decisive answer. This work provides a principled framework for teaching models <strong>when to ask for clarification</strong> and <strong>how to present multiple valid interpretations</strong>. Three aspects make APA particularly significant:</p>
+        <ul class="key-points">
+            <li><strong>Model-Aware Alignment:</strong> By grounding the alignment process in each model's own knowledge, APA avoids both over-hedging (flagging clear questions as ambiguous) and under-hedging (ignoring genuine ambiguity), making LLM interactions more trustworthy</li>
+            <li><strong>Data Efficiency:</strong> APA achieves superior OOD performance using only a fraction of available training data, demonstrating that intelligent sample selection outperforms brute-force training on all data</li>
+            <li><strong>Practical Reliability:</strong> As LLMs are increasingly deployed in customer-facing applications (search, assistants, chatbots), the ability to explicitly handle ambiguity rather than silently guessing is critical for user trust and safety</li>
+        </ul>
     </div>
 
     <div class="section">
         <h2>Links</h2>
         <div class="links-section">
             <a href="https://aclanthology.org/2024.emnlp-main.119/" target="_blank" class="paper-link">ACL Anthology</a>
+            <a href="https://arxiv.org/abs/2404.11972" target="_blank" class="paper-link">arXiv Paper</a>
+            <a href="https://github.com/heyjoonkim/APA" target="_blank" class="paper-link">GitHub</a>
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">

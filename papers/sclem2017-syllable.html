@@ -23,53 +23,99 @@
     <div class="section">
         <h2>One-Line Summary</h2>
         <p>A CNN-based word representation model that uses Korean syllables as the basic embedding unit, producing morphologically meaningful word vectors that are robust to out-of-vocabulary words and capture the agglutinative structure of Korean.</p>
+        <figure class="paper-figure">
+            <img src="../images/sclem2017-syllable/figure1.png" alt="Syllable-based word embedding model">
+            <figcaption><strong>Figure 1.</strong> Syllable-based word embedding model with convolutional and max pooling layers. Each word is decomposed into its constituent syllables, embedded, passed through multi-width convolution filters, and max-pooled to produce a fixed-dimensional word vector.</figcaption>
+        </figure>
     </div>
 
     <div class="section">
         <h2>Background &amp; Motivation</h2>
-        <p>Standard word embedding models like Word2Vec and GloVe treat words as atomic units, making them vulnerable to out-of-vocabulary (OOV) problems and unable to exploit subword information. These issues are <strong>magnified for agglutinative languages like Korean</strong>, where a single root morpheme can combine with ~60 different bound morphemes, causing vocabulary explosion.</p>
+        <p>Word embeddings have become a foundational component in NLP tasks such as named entity recognition, machine translation, and sentiment analysis. Standard models like Word2Vec (Skip-gram, CBOW) and GloVe treat each word as an atomic unit, mapping it to a single vector. This works reasonably well for languages with limited morphological variation, but becomes problematic for <strong>morphologically rich and agglutinative languages like Korean</strong>.</p>
         <div class="highlight-box">
-            <p><strong>Why Syllables?</strong> Korean characters have no inherent semantic meaning, while morpheme-based approaches require error-prone morphological analyzers. Korean syllables sit at the sweet spot: they carry semantic meaning (e.g., the syllables in "university" mean "big" + "study"), do not require preprocessing, and words sharing syllables often share semantics.</p>
+            <p><strong>The Korean Vocabulary Explosion Problem:</strong> In Korean, a single root morpheme can combine with approximately <strong>60 different bound morphemes</strong> (postpositions, verb endings, honorifics, etc.), each producing a distinct surface form. For example, the noun "학교" (school) can appear as "학교가", "학교를", "학교에서", "학교에서의" and dozens more. Traditional word-level embeddings treat each of these as a completely separate vocabulary entry, leading to massive vocabularies, sparse training data per word, and frequent out-of-vocabulary (OOV) failures.</p>
         </div>
+        <p>Prior subword approaches offer partial solutions but have significant drawbacks for Korean:</p>
+        <ul class="key-points">
+            <li><strong>Character-level (Jamo) models:</strong> Korean characters (ㄱ, ㅏ, ㄴ, etc.) are too fine-grained -- individual Jamo carry little semantic meaning on their own, making composition difficult and losing useful information.</li>
+            <li><strong>Morpheme-level models:</strong> Require a morphological analyzer as a preprocessing step, which introduces segmentation errors that propagate into the embeddings. Korean morphological analysis remains an imperfect and resource-intensive task.</li>
+            <li><strong>Syllable-level models (this work):</strong> Korean syllables occupy the sweet spot -- they naturally carry semantic meaning (e.g., "대학" = "大學", where "대" means "big/great" and "학" means "study/learning"), require no preprocessing tools, and words sharing syllables frequently share semantic content.</li>
+        </ul>
+        <p>The key insight is that <strong>Korean Hangul syllable blocks are linguistically meaningful units</strong> that exist between the too-fine character level and the too-coarse word level. Moreover, the total number of distinct syllables in practical use is only around 1,000 -- orders of magnitude smaller than the word vocabulary -- making syllable-level representation both semantically rich and computationally efficient.</p>
     </div>
 
     <div class="section">
         <h2>Proposed Method: Syllable-CNN</h2>
-        <p>The model constructs word representations by composing trained syllable vectors through a convolutional neural network:</p>
+        <p>The model constructs word representations by composing trained syllable vectors through a convolutional neural network. The architecture draws on insights from character-level CNN models (such as CharCNN by Kim et al., 2016) but adapts the approach to Korean's syllabic writing system:</p>
         <div class="method-steps">
             <div class="method-step">
                 <div class="step-num">1</div>
-                <div class="step-title">Syllable Embedding</div>
-                <div class="step-desc">Each Korean syllable is embedded into a d-dimensional vector space. A word's syllable vectors are concatenated in order to form the input representation.</div>
+                <div class="step-title">Syllable Embedding Layer</div>
+                <div class="step-desc">Each Korean syllable is mapped to a <em>d</em>-dimensional dense vector via a learnable embedding matrix. Given a word consisting of <em>n</em> syllables (s<sub>1</sub>, s<sub>2</sub>, ..., s<sub>n</sub>), the corresponding syllable vectors are looked up and concatenated in sequence to form an <em>n &times; d</em> matrix that serves as the input to the convolutional layers. With ~1,000 unique syllables in the corpus, this embedding table is compact yet expressive.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">2</div>
-                <div class="step-title">Convolutional Layers</div>
-                <div class="step-desc">Multiple convolution filters with varying widths (1-4) are applied to capture local syllable patterns at different scales, followed by max pooling to extract the most salient features.</div>
+                <div class="step-title">Multi-Width Convolutional Layers</div>
+                <div class="step-desc">Multiple 1D convolution filters with varying window widths (1, 2, 3, and 4 syllables) are applied over the syllable embedding matrix. Width-1 filters capture individual syllable features; width-2 filters capture bi-syllable patterns (common in Sino-Korean compound words); width-3 and width-4 filters detect longer compositional patterns. Each filter width uses 80 filters, producing 80-dimensional feature maps per width. A max-over-time pooling operation then selects the most activated feature from each filter, yielding a fixed-length vector of 320 dimensions (80 &times; 4 widths) regardless of word length.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">3</div>
-                <div class="step-title">Skip-gram Training</div>
-                <div class="step-desc">The entire model (syllable embeddings + CNN) is trained jointly using the Skip-gram objective with negative sampling, predicting context words from the composed word representation.</div>
+                <div class="step-title">Skip-gram Joint Training</div>
+                <div class="step-desc">The entire model -- syllable embeddings, convolutional filters, and pooling -- is trained end-to-end using the Skip-gram objective with negative sampling (k=5 negative samples). Given a target word, the CNN composes its syllable vectors into a word-level representation, which is then used to predict surrounding context words within a fixed window. Backpropagation through the CNN updates both the convolution parameters and the syllable embedding table jointly, allowing the model to learn syllable representations that are optimized for word-level distributional semantics.</div>
             </div>
+        </div>
+        <div class="highlight-box">
+            <p><strong>Key Architectural Advantage:</strong> Because the word representation is <em>computed</em> from syllable vectors rather than stored as a fixed lookup, the model can generate embeddings for <strong>any word composed of known syllables</strong> -- including words never seen during training. This compositional property directly addresses the OOV problem that plagues word-level models in Korean.</p>
         </div>
     </div>
 
     <div class="section">
         <h2>Experimental Results</h2>
-        <p>Evaluated on a Korean News corpus (2012-2014, ~2.7M tokens, 11K vocabulary, ~1K syllables) with vector dimension 320.</p>
+        <p>The model was evaluated on a Korean News corpus spanning 2012-2014, containing approximately <strong>2.7 million tokens</strong>, an <strong>11,000-word vocabulary</strong>, and only <strong>~1,000 unique syllables</strong>. The word vector dimension was set to 320 (80 filters &times; 4 widths). The baseline is the standard Skip-gram model trained on the same corpus.</p>
 
+        <h3>Word Similarity Evaluation</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>Pearson Correlation (WS353-Sim)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Skip-gram (baseline)</td><td>0.583</td></tr>
+                <tr><td class="highlight-cell"><strong>Syllable-CNN (proposed)</strong></td><td class="highlight-cell"><strong>0.634</strong></td></tr>
+            </tbody>
+        </table>
+        <p>On the Korean-translated WordSim-353 Similarity subset, Syllable-CNN achieves a <strong>+0.051 improvement</strong> in Pearson correlation over the Skip-gram baseline. This improvement is attributed to the model's ability to exploit shared syllables between semantically related words -- for example, "경제" (economy) and "경영" (management) share the syllable "경" (managing/governing), which the CNN captures through its compositional process.</p>
+
+        <h3>OOV Robustness: Handling Unseen Words</h3>
+        <p>A critical advantage of the syllable-based approach is its ability to produce meaningful embeddings for <strong>out-of-vocabulary words</strong>. The paper demonstrates this with neologisms and compound words absent from training data:</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>OOV Query Word</th><th>Nearest Neighbors (Syllable-CNN)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>구글신 ("God Google")</td><td>구글 (Google), and semantically related terms</td></tr>
+                <tr><td>갤노트 ("Galaxy Note", abbreviated)</td><td>갤럭시 (Galaxy), 노트 (Note), and related tech terms</td></tr>
+            </tbody>
+        </table>
+        <p>Because these OOV words share syllables with known words (e.g., "구글신" contains "구글" = Google), the CNN composes their syllable vectors into representations that are close to the expected semantic neighborhood. The standard Skip-gram model simply cannot produce vectors for these words at all.</p>
+
+        <h3>Morphological Structure Analysis</h3>
         <ul class="key-points">
-            <li><strong>Word Similarity:</strong> Outperforms the Skip-gram baseline on the Korean-translated WS353-Similarity dataset (Pearson correlation: 0.634 vs. 0.583), showing that shared syllables help capture word similarity</li>
-            <li><strong>OOV Robustness:</strong> Successfully handles newly coined words not in training data (e.g., "God Google", "Gal'Note") by composing syllable vectors, with nearest neighbors matching the original words they derive from</li>
-            <li><strong>Morphological Awareness:</strong> PCA visualization shows the model forms discriminative parallel clusters between base words and their postposition-combined forms, while the baseline fails to capture this morphological structure</li>
-            <li><strong>Efficient Coverage:</strong> Only ~1K syllables are needed to cover the entire vocabulary, compared to 11K word-level entries, making the approach highly parameter-efficient</li>
+            <li><strong>Parallel Cluster Formation:</strong> PCA visualization of word vectors reveals that Syllable-CNN forms <strong>discriminative parallel clusters</strong> between base nouns and their postposition-attached forms (e.g., "한국" vs. "한국이", "한국을", "한국에"). The consistent directional offset between base and inflected forms demonstrates that the model learns a systematic morphological transformation, not just memorized associations.</li>
+            <li><strong>Baseline Failure:</strong> The standard Skip-gram model fails to capture this morphological structure -- base words and their inflected forms are scattered without clear geometric relationships, confirming that word-level models treat each surface form independently.</li>
+            <li><strong>Parameter Efficiency:</strong> The syllable vocabulary (~1K entries) is <strong>over 10x smaller</strong> than the word vocabulary (~11K entries), meaning the model requires far fewer parameters to achieve equivalent or better coverage. This is especially advantageous for low-resource settings where training data is limited.</li>
+            <li><strong>No Preprocessing Required:</strong> Unlike morpheme-based models that depend on a morphological analyzer (introducing pipeline errors), the syllable-based approach works directly on raw text with simple syllable tokenization -- a deterministic, error-free process for Korean.</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>This work pioneered the use of <strong>syllables as the fundamental unit for Korean word representation</strong>, demonstrating that the unique syllabic structure of Hangul can be directly leveraged for NLP. The approach avoids the need for morphological analysis while naturally capturing Korean's agglutinative properties, providing a practical foundation for Korean NLP systems that must handle vocabulary variation and neologisms.</p>
+        <p>This work pioneered the use of <strong>syllables as the fundamental unit for Korean word representation</strong>, offering a linguistically motivated alternative to both character-level and morpheme-level approaches. Its contributions extend in several directions:</p>
+        <ul>
+            <li><strong>Practical Korean NLP foundation:</strong> By avoiding the need for morphological analyzers while naturally capturing Korean's agglutinative properties, the approach provides a robust, low-overhead building block for downstream Korean NLP tasks including NER, parsing, and machine translation.</li>
+            <li><strong>OOV problem mitigation:</strong> The compositional nature of the model means any word composed of known syllables can receive a meaningful embedding -- essential for handling the constant stream of neologisms, abbreviations, and compound words in Korean web text and social media.</li>
+            <li><strong>Subword representation insight:</strong> The paper demonstrates that the optimal subword granularity is language-dependent. While character-level approaches work well for alphabetic languages, Korean's unique syllable-block writing system (Hangul) offers a more semantically informative intermediate representation. This insight has influenced subsequent work on Korean language models.</li>
+            <li><strong>Efficient and scalable:</strong> With only ~1,000 syllable embeddings to learn versus 11,000+ word embeddings, the model is significantly more parameter-efficient, making it suitable for deployment in resource-constrained environments.</li>
+        </ul>
     </div>
 
     <div class="section">

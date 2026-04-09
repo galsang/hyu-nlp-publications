@@ -23,78 +23,90 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>토큰 수준 logprobs의 Shannon 엔트로피를 신뢰도 신호로 활용하여 선택적 조기 종료를 가능하게 하는 프레임워크로, 정확도 손실 없이 25-50%의 연산 절감을 달성합니다.</p>
+        <p>강화학습 기반 추론 모델에 자기 평가 신뢰도를 프롬프팅으로 유도하여, 추가 학습 없이 추론 길이를 적응적으로 조절하고 정확도 손실 없이 추론 토큰을 대폭 절감하는 프레임워크를 제안합니다.</p>
     </div>
 
     <figure class="paper-figure">
-        <img src="https://arxiv.org/html/2510.08146v2/x1.png" alt="모델-데이터셋 조합별 연산 효율성 향상">
-        <figcaption><strong>Figure 1.</strong> 모델-데이터셋 조합별 연산 효율성 향상: 정확도를 유지하면서 25-50% 토큰 절감 달성.</figcaption>
+        <img src="https://aclanthology.org/2026.findings-eacl.263.pdf" alt="자기 평가 신뢰도 기반 적응적 추론 개요" style="display:none;">
+        <figcaption><strong>Figure 1.</strong> 적응적 추론 프레임워크 개요: 모델이 추론 중 반성적 마커(예: "Wait")가 나타나는 시점에서 자기 신뢰도를 평가하고, 충분한 확신에 도달하면 추론을 조기 종료합니다.</figcaption>
     </figure>
 
     <div class="section">
         <h2>배경 및 동기</h2>
-        <p>고급 추론 모델(o1, QwQ 등)은 간단한 질문에도 긴 사고 과정을 생성하여 상당한 연산을 낭비합니다. <strong>모델이 이미 충분히 확신하고 있을 때 이를 감지하고 조기에 중단할 수 있을까요?</strong></p>
+        <p>OpenAI의 o1, DeepSeek-R1 등 강화학습으로 훈련된 대형 추론 모델(LRM)은 반성, 검증, 역추적을 포함하는 긴 사고 과정(Chain of Thought)을 생성합니다. 이러한 확장된 추론 과정은 복잡한 과제에서 뛰어난 성능을 가능하게 하지만, <strong>과소 사고(underthinking)</strong> &mdash; 정답에 도달하기 전 조기 종료 &mdash; 또는 <strong>과잉 사고(overthinking)</strong> &mdash; 정답 이후 불필요한 추론 지속으로 연산 낭비 및 정확도 저하 &mdash; 의 문제를 야기합니다.</p>
+        <p>기존 접근법들은 내부 로짓 기반 신호(예: DEER), 배치 샘플링, 또는 메모리 집약적 기법에 의존하여 폐쇄형 모델에서는 적용이 어렵습니다. <strong>모델 자체의 자기 평가 신뢰도를 활용하여 추론 길이를 적응적으로 제어할 수 있을까요?</strong></p>
         <div class="highlight-box">
-            <p><strong>핵심 통찰:</strong> 토큰 수준 logprobs에서 계산한 Shannon 엔트로피는 모델이 정답을 맞출 수 있는 질문과 그렇지 않은 질문을 강력하게 구분하는 신뢰할 수 있는 모델 내재적 신뢰도 신호를 제공합니다.</p>
+            <p><strong>핵심 통찰:</strong> 강화학습으로 훈련된 추론 모델은 자신의 신뢰도를 합리적으로 내성(introspection)할 수 있는 능력을 갖추고 있습니다. 중간 단계에서 신뢰도를 명시적으로 표현하도록 프롬프팅하면, 추가 학습이나 내부 로짓 접근, 외부 샘플링 없이도 추론 종료 시점을 동적으로 결정할 수 있습니다.</p>
         </div>
     </div>
 
-    <figure class="paper-figure">
-        <img src="https://arxiv.org/html/2510.08146v2/x2.png" alt="3단계 프레임워크 개요">
-        <figcaption><strong>Figure 2.</strong> 3단계 프레임워크 개요: 신뢰도 평가, 임계값 선택, 조기 종료 결정.</figcaption>
-    </figure>
-
     <div class="section">
         <h2>제안 방법</h2>
-        <p>프레임워크는 softmax 정규화 후 상위 20개 logprobs에서 Shannon 엔트로피를 계산한 다음, 이론적으로 근거가 있는 임계값을 적용하여 추론을 조기에 중단할지 계속할지 결정합니다.</p>
+        <p>본 방법은 추론 중 자연스러운 결정 지점에서 모델이 자신의 신뢰도를 평가하도록 하는 자기 평가 메커니즘을 도입합니다. 시스템 프롬프트를 통해 모델이 <em>Almost no chance</em>(0.0&ndash;0.1)부터 <em>Almost certain</em>(0.9&ndash;1.0)까지 10단계 척도의 구조화된 신뢰도 라벨을 출력하도록 지시합니다.</p>
 
         <div class="method-steps">
             <div class="method-step">
                 <div class="step-num">1</div>
-                <div class="step-title">신뢰도 평가</div>
-                <div class="step-desc">토큰 logprobs에서 Shannon 엔트로피를 계산하여 모델의 답변에 대한 확신 정도를 정량화</div>
+                <div class="step-title">반성적 마커 탐지</div>
+                <div class="step-desc">추론 중 LRM이 자연스럽게 생성하는 반성적 토큰("Wait", "Alternatively" 등)은 사고 과정의 전환점을 나타냅니다. 이러한 마커가 신뢰도 추정의 자연스러운 결정 지점으로 활용됩니다.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">2</div>
-                <div class="step-title">임계값 선택</div>
-                <div class="step-desc">4가지 이론적 근거 기반 방법 중 하나를 적용하여 신뢰도 기준점 결정</div>
+                <div class="step-title">자기 평가 신뢰도 주입</div>
+                <div class="step-desc">각 결정 지점에서 생성을 일시 중단하고 추가 프롬프트를 주입하여 모델이 <code>\confidence{...}</code> 라벨로 신뢰도를 표현하도록 요청합니다. 추정 중 추가 추론은 방지됩니다.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">3</div>
-                <div class="step-title">조기 종료</div>
-                <div class="step-desc">신뢰도가 선택된 임계값을 초과하는지에 따라 추론 중단 또는 계속 결정</div>
+                <div class="step-title">적응적 조기 종료</div>
+                <div class="step-desc">신뢰도가 임계값(기본값: <em>Almost certain</em>)에 도달하면 <code>&lt;/think&gt;</code> 태그를 삽입하여 추론을 종료하고 최종 답변으로 진행합니다. 그렇지 않으면 연속 단서("Wait")로 추론을 짧게 연장합니다.</div>
             </div>
         </div>
 
-        <p style="margin-top: 16px;">4가지 임계값 방법:</p>
+        <p style="margin-top: 16px;">핵심 설계 선택:</p>
         <ul class="key-points">
-            <li><strong>Entropy Mean:</strong> 평균 엔트로피를 기준점으로 사용하는 보수적 기준선</li>
-            <li><strong>Information-Theoretic Optimal:</strong> 최적 판별을 위한 정보 이득 최대화</li>
-            <li><strong>Bayesian Optimal:</strong> 전체 분류 오류 최소화</li>
-            <li><strong>Scale-Invariant Universal:</strong> 재보정 없이 여러 모델에 적용 가능</li>
+            <li><strong>키워드 트리거 추정:</strong> 추론 과정에서 자연스럽게 나타나는 반성적 마커("Wait", "Alternatively")에서 신뢰도를 평가하여 모델의 사고 전환과 일치시킴</li>
+            <li><strong>주기적 프로빙 대안:</strong> 반성적 마커가 드문 모델의 경우, 매 <em>k</em> 토큰마다 신뢰도를 질의하는 Periodic-Conf(<em>k</em>) 변형을 제공</li>
+            <li><strong>구성 가능한 임계값:</strong> <em>Very good chance</em>(0.7&ndash;0.8), <em>Highly likely</em>(0.8&ndash;0.9), <em>Almost certain</em>(0.9&ndash;1.0) 세 가지 임계값을 평가하여 효율성과 보수성 간 트레이드오프 조절 가능</li>
+            <li><strong>학습 불필요 &amp; 모델 무관:</strong> 미세조정이나 내부 모델 상태 접근 없이 프롬프팅만으로 작동</li>
         </ul>
-        <p>기본 배포에는 <strong>5-10개 예제</strong>만 필요하며, 완전한 최적화에는 <strong>25개 이상의 예제</strong>가 필요합니다.</p>
     </div>
 
     <div class="section">
         <h2>실험 결과</h2>
-        <ul class="key-points">
-            <li>모든 모델-데이터셋 조합에서 <strong>25-50% 토큰 절감</strong></li>
-            <li>높은 신뢰도 질문에 대해 <strong>88-100% 정확도</strong></li>
-            <li><strong>정확도 손실 제로</strong> (전체 성능 저하 없음)</li>
-            <li><strong>Cohen's d: 0.66-1.95</strong> (신뢰도 판별의 강한 효과 크기)</li>
-            <li>GPT OSS 120B/20B, Qwen3-30B에서 AIME'24, AIME'25, GPQA Diamond로 평가</li>
-        </ul>
+        <p>3개의 RL 기반 LRM(<strong>QwQ-32B</strong>, <strong>Qwen3-32B</strong>, <strong>R1-Distill-Qwen-32B</strong>)을 5개 벤치마크(MATH-500, AIME25, AIME24, AMC23, GPQA Diamond)에서 평가하였습니다. 베이스라인으로 <strong>Vanilla</strong>(조기 종료 없음)와 <strong>DEER</strong>(로짓 기반 신뢰도)를 비교합니다.</p>
 
-        <figure class="paper-figure">
-            <img src="https://arxiv.org/html/2510.08146v2/x7.png" alt="정확도-효율성 트레이드오프의 Pareto 분석">
-            <figcaption><strong>Figure 3.</strong> 다양한 임계값 구성에 따른 정확도-효율성 트레이드오프 Pareto 분석.</figcaption>
-        </figure>
+        <table class="results-table">
+            <thead>
+                <tr><th>모델 / 방법</th><th>평균 정확도 (&uarr;)</th><th>평균 길이 (&darr;)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>QwQ-32B</strong></td><td></td><td></td></tr>
+                <tr><td>&nbsp;&nbsp;Vanilla</td><td>76.75</td><td>9,260</td></tr>
+                <tr><td>&nbsp;&nbsp;DEER</td><td>77.48</td><td>7,529</td></tr>
+                <tr><td>&nbsp;&nbsp;<strong>Ours</strong></td><td><strong>79.17</strong></td><td>7,512</td></tr>
+                <tr><td><strong>Qwen3-32B</strong></td><td></td><td></td></tr>
+                <tr><td>&nbsp;&nbsp;Vanilla</td><td>80.32</td><td>8,148</td></tr>
+                <tr><td>&nbsp;&nbsp;DEER</td><td>78.78</td><td>5,630</td></tr>
+                <tr><td>&nbsp;&nbsp;<strong>Ours</strong></td><td><strong>81.25</strong></td><td>6,624</td></tr>
+                <tr><td><strong>R1-Distill-32B</strong></td><td></td><td></td></tr>
+                <tr><td>&nbsp;&nbsp;Vanilla</td><td>66.75</td><td>7,057</td></tr>
+                <tr><td>&nbsp;&nbsp;DEER</td><td><strong>68.24</strong></td><td>5,778</td></tr>
+                <tr><td>&nbsp;&nbsp;Ours</td><td>67.37</td><td><strong>5,387</strong></td></tr>
+            </tbody>
+        </table>
+
+        <ul class="key-points">
+            <li><strong>짧은 추론으로 더 높은 정확도:</strong> QwQ-32B와 Qwen3-32B에서 제안 방법이 Vanilla 대비 추론 길이를 대폭 줄이면서도 최고 평균 정확도를 달성</li>
+            <li><strong>최대 24% 토큰 절감:</strong> 예를 들어 Qwen3-32B에서 8,148 &rarr; 6,624 토큰으로 감소하면서 정확도 손실 없음 &mdash; 오히려 정확도가 향상되는 경우도 다수</li>
+            <li><strong>어려운 벤치마크에서도 안정적:</strong> AIME24, AIME25 등 난이도 높은 데이터셋에서도 성능이 안정적으로 유지 (예: Qwen3-32B AIME24에서 75.56% vs Vanilla 72.22%)</li>
+            <li><strong>DEER 대비 장점:</strong> 내부 로짓에 의존하는 DEER와 달리, 자기 평가 신뢰도는 과신(overconfidence) 문제가 적어 더 안정적이고 접근 가능한 추정치를 제공</li>
+            <li><strong>신뢰도 정합성:</strong> 자기 평가 신뢰도와 로짓 기반 신뢰도 간 상관관계 확인 (Pearson r = 0.33), 추론 모델이 생성 텍스트와 내부 표현 모두에서 확신도를 일관되게 인코딩함을 시사</li>
+        </ul>
     </div>
 
     <div class="section">
         <h2>연구의 의의</h2>
-        <p>추론 모델이 주류가 됨에 따라 연산 비용이 병목이 됩니다. 본 연구는 <strong>필요한 곳에 연산을 지능적으로 배분</strong>하여 품질 손실 없이 25-50%의 비용을 절감할 수 있음을 보여줍니다. 이는 비용에 민감한 프로덕션 환경에서 추론 모델을 대규모로 배포하는 데 직접적인 시사점을 가집니다.</p>
+        <p>본 연구는 강화학습으로 훈련된 추론 모델이 <strong>내성적 신뢰도 추정(introspective confidence estimation)</strong>의 의미 있는 능력을 보유하고 있으며, 이를 간단한 프롬프팅으로 활용할 수 있음을 입증합니다. 내부 로짓 접근이나 다중 샘플링이 필요한 방법과 달리, 본 접근법은 <strong>학습 불필요, 모델 무관, 폐쇄형 API 호환</strong>이라는 장점을 갖습니다. 자기 평가 신뢰도가 내부 신호와 정합한다는 발견은, 추론 지향 모델이 RL 최적화를 통해 진정한 자기 모니터링 능력을 발달시킨다는 가설을 뒷받침합니다 &mdash; 이는 일반적인 지시 조정(instruction-tuned) LLM에서는 거의 나타나지 않는 특성입니다. 추론 모델이 프로덕션 시스템의 핵심이 되어감에 따라, 이 경량 메커니즘은 <strong>정확도를 유지하거나 오히려 향상시키면서 추론 비용을 절감</strong>하는 실용적 경로를 제시합니다.</p>
     </div>
 
     <div class="section">

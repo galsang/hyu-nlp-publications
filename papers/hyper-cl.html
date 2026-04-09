@@ -22,80 +22,144 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A method for conditionally generating sentence representations via hypernetwork-based contrastive learning</p>
+        <p>A hypernetwork-based contrastive learning framework that dynamically projects sentence embeddings into condition-specific subspaces, bridging the performance-efficiency gap between bi-encoders and tri-encoders for conditional similarity tasks.</p>
     </div>
     <figure class="paper-figure">
         <img src="https://arxiv.org/html/2403.09490v1/x1.png" alt="Illustration of the Hyper-CL approach for conditioning sentence representations">
         <figcaption><strong>Figure 1.</strong> Illustration of the proposed approach, Hyper-CL. It demonstrates the effectiveness of dynamically conditioning pre-computed sentence representations with different perspectives.</figcaption>
     </figure>
+
+    <div class="section">
+        <h2>Background &amp; Motivation</h2>
+        <p>Sentence embeddings are central to many NLP applications, and contrastive learning methods like SimCSE have driven major advances in their quality. However, standard sentence representations capture a single, fixed view of a sentence's meaning. In practice, similarity between sentences often depends on a <strong>specific perspective or condition</strong>. For example, given sentences about a cyclist and a hiker, they should appear similar when considering "mode of transportation" but different regarding "speed of travel." This task is formalized as <strong>Conditional Semantic Textual Similarity (C-STS)</strong>, and also arises naturally in <strong>Knowledge Graph Completion (KGC)</strong> where entity similarity depends on the relation.</p>
+        <p>Three main architectures exist for computing conditioned similarity, each with distinct trade-offs. The <strong>cross-encoder</strong> concatenates both sentences and the condition as a single input [s1; s2; c], achieving strong performance but requiring a forward pass for every unique triplet -- making it impractical for retrieval. The <strong>bi-encoder</strong> concatenates each sentence with the condition [si; c] separately, requiring |S| x |C| encoder passes. The <strong>tri-encoder</strong> encodes sentences and conditions independently (|S| + |C| passes) then combines them with a lightweight function, enabling efficient caching but sacrificing accuracy because it cannot model explicit sentence-condition interactions.</p>
+        <div class="highlight-box">
+            <p><strong>Core Problem:</strong> Tri-encoders are highly efficient thanks to independent encoding and caching, but their simple composition functions (e.g., Hadamard product, concatenation) cannot capture the rich sentence-condition interactions that bi-encoders achieve. Hyper-CL addresses this by using a hypernetwork to generate expressive, condition-specific projection matrices -- maintaining tri-encoder efficiency while substantially closing the performance gap with bi-encoders.</p>
+        </div>
+    </div>
+
     <figure class="paper-figure">
         <img src="https://arxiv.org/html/2403.09490v1/x6.png" alt="Training procedure of Hyper-CL">
         <figcaption><strong>Figure 3.</strong> Training procedure of Hyper-CL. Every embedding is the output of the same encoder f. The hypernetwork constructs projection matrices to condition sentence representations based on the embedding of the condition.</figcaption>
     </figure>
-    <div class="section">
-        <h2>Background</h2>
-        <p>Sentence embeddings are central to many NLP applications, and contrastive learning has driven major advances in their quality. However, standard sentence representations capture a single, fixed view of a sentence's meaning. In practice, similarity between sentences often depends on a <strong>specific perspective or condition</strong> -- for example, two sentences may be similar in topic but dissimilar in sentiment. Existing architectures face a trade-off:</p>
-        <div class="highlight-box">
-            <p><strong>Bi-encoder:</strong> Accurate but requires |S| x |C| encoder forward passes (computationally expensive)</p>
-        </div>
-        <div class="highlight-box">
-            <p><strong>Tri-encoder:</strong> Efficient with pre-computed embeddings and caching, but limited interaction between sentence and condition leads to underperformance</p>
-        </div>
-    </div>
 
     <div class="section">
-        <h2>Method</h2>
-        <p>Hyper-CL bridges the accuracy-efficiency gap by integrating hypernetworks into a tri-encoder framework, enabling dynamic conditioning without sacrificing caching benefits.</p>
+        <h2>Proposed Method</h2>
+        <p>Hyper-CL builds on the tri-encoder architecture by introducing a hypernetwork that generates condition-sensitive linear transformation matrices on-the-fly. This enables dynamic, expressive conditioning of sentence embeddings without sacrificing the caching benefits inherent to tri-encoders.</p>
         <div class="method-steps">
             <div class="method-step">
                 <div class="step-num">1</div>
-                <div class="step-title">Encode Sentence & Condition</div>
-                <div class="step-desc">Use a shared encoder f to produce embeddings: h_s = f(s) for the sentence and h_c = f(c) for the condition</div>
+                <div class="step-title">Independent Embedding Computation</div>
+                <div class="step-desc">A shared encoder f (e.g., SimCSE-RoBERTa) independently encodes sentences and conditions: h_s = f(s) for the sentence and h_c = f(c) for the condition. Since encoding is independent, all embeddings can be pre-computed and cached.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">2</div>
-                <div class="step-title">Generate Projection via Hypernetwork</div>
-                <div class="step-desc">A hypernetwork q transforms the condition embedding into a condition-specific projection matrix: W_c = q(h_c), dynamically creating a condition subspace</div>
+                <div class="step-title">Hypernetwork-Generated Projection Matrix</div>
+                <div class="step-desc">A hypernetwork q takes the condition embedding h_c and generates a full linear transformation matrix: W_c = q(h_c), where q maps from R^(N_h) to R^(N_h x N_h). To avoid the cubic parameter explosion (N_h^3), the method uses <strong>low-rank decomposition</strong>: two smaller hypernetworks q_1 and q_2 each generate a low-rank factor (R^(N_h) to R^(N_h x N_K)), and the final matrix is W_c = W_c1 * W_c2^T where N_K &lt;&lt; N_h (e.g., K=64 for base models, K=85 for large).</div>
             </div>
             <div class="method-step">
                 <div class="step-num">3</div>
-                <div class="step-title">Condition-Aware Projection</div>
-                <div class="step-desc">Project sentence embeddings into the condition subspace: h_sc = W_c * h_s, enabling the same sentence to have different representations under different conditions</div>
+                <div class="step-title">Condition-Aware Subspace Projection</div>
+                <div class="step-desc">The sentence embedding is projected into the condition-specific subspace: h_sc = W_c * h_s. This means the same sentence embedding is projected differently for each condition, enabling fine-grained, perspective-dependent representations. Crucially, W_c depends only on h_c, so transformation matrices can also be cached alongside condition embeddings.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">4</div>
-                <div class="step-title">Contrastive Training</div>
-                <div class="step-desc">Train with task-specific contrastive objectives (MSE + InfoNCE for C-STS; adapted SimKGC for knowledge graph completion)</div>
+                <div class="step-title">Task-Specific Contrastive Training</div>
+                <div class="step-desc">For <strong>C-STS</strong>: a combined loss of MSE (matching predicted similarity to gold scores) and InfoNCE (contrastive loss pushing high-similarity condition pairs together and low-similarity pairs apart). For <strong>KGC</strong>: an adapted SimKGC objective with additive margin, learnable temperature, and self-negative, pre-batch, and in-batch negatives.</div>
             </div>
         </div>
         <div class="highlight-box">
-            <p><strong>Efficiency trick:</strong> Low-rank decomposition (following LoRA principles) reduces the hypernetwork output from cubic to manageable parameter size, and transformation matrices W_c can be cached since they depend only on conditions.</p>
+            <p><strong>Why low-rank decomposition matters:</strong> A full-rank hypernetwork for a 768-dim encoder would require ~453M parameters per layer. Low-rank factorization with K=64 reduces this to ~98K parameters while sacrificing only 0.39 Spearman points on C-STS. The rank K is selected as the optimal trade-off between expressiveness and efficiency (K=64 for base, K=85 for large models).</p>
+        </div>
+        <div class="highlight-box">
+            <p><strong>Expressiveness advantage:</strong> Compared to simpler Hadamard product conditioning (equivalent to a diagonal matrix), Hyper-CL's full transformation matrices exhibit 24.8x higher variance in Frobenius norm across conditions, indicating far more diverse and expressive condition-specific projections.</p>
         </div>
     </div>
 
     <div class="section">
-        <h2>Results</h2>
+        <h2>Experimental Results</h2>
+        <p>Hyper-CL is evaluated on two tasks: Conditional Semantic Textual Similarity (C-STS) using Spearman/Pearson correlation, and Knowledge Graph Completion (KGC) on WN18RR and FB15K-237 using MRR and Hits@K.</p>
+
+        <h3>C-STS Results</h3>
         <table class="results-table">
             <thead>
-                <tr><th>Benchmark</th><th>Metric</th><th>Performance</th></tr>
+                <tr><th>Method</th><th>Architecture</th><th>Spearman</th><th>Pearson</th></tr>
             </thead>
             <tbody>
-                <tr><td>C-STS (Conditional STS)</td><td>Spearman</td><td class="highlight-cell">38.75 (+7.25 over tri-encoder)</td></tr>
-                <tr><td>WN18RR (KG Completion)</td><td>MRR</td><td class="highlight-cell">0.616</td></tr>
-                <tr><td>WN18RR (KG Completion)</td><td>Hits@1</td><td class="highlight-cell">0.506</td></tr>
+                <tr><td>DiffCSE_base</td><td>Tri-encoder</td><td>28.9</td><td>27.8</td></tr>
+                <tr><td>SimCSE_base</td><td>Tri-encoder</td><td>31.5</td><td>31.0</td></tr>
+                <tr><td>SimCSE_large</td><td>Tri-encoder</td><td>35.3</td><td>35.6</td></tr>
+                <tr><td class="highlight-cell">SimCSE_base + Hyper-CL</td><td class="highlight-cell">Tri-encoder</td><td class="highlight-cell">38.75</td><td class="highlight-cell">38.38</td></tr>
+                <tr><td class="highlight-cell">SimCSE_large + Hyper-CL</td><td class="highlight-cell">Tri-encoder</td><td class="highlight-cell">39.60</td><td class="highlight-cell">39.96</td></tr>
+                <tr><td>SimCSE_base</td><td>Bi-encoder</td><td>44.8</td><td>44.9</td></tr>
+                <tr><td>SimCSE_large</td><td>Bi-encoder</td><td>47.5</td><td>47.6</td></tr>
             </tbody>
         </table>
+
+        <h3>KGC Results (WN18RR)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Method</th><th>MRR</th><th>Hits@1</th><th>Hits@3</th><th>Hits@10</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>SimKGC (bi-encoder)</td><td>0.666</td><td>0.587</td><td>0.717</td><td>0.800</td></tr>
+                <tr><td>SimKGC + Hadamard</td><td>0.164</td><td>0.004</td><td>0.243</td><td>0.481</td></tr>
+                <tr><td>SimKGC + Concatenation</td><td>0.335</td><td>0.226</td><td>0.382</td><td>0.550</td></tr>
+                <tr><td class="highlight-cell">SimKGC + Hyper-CL</td><td class="highlight-cell">0.616</td><td class="highlight-cell">0.506</td><td class="highlight-cell">0.690</td><td class="highlight-cell">0.810</td></tr>
+            </tbody>
+        </table>
+
+        <h3>KGC Results (FB15K-237)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Method</th><th>MRR</th><th>Hits@1</th><th>Hits@3</th><th>Hits@10</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>SimKGC (bi-encoder)</td><td>0.336</td><td>0.249</td><td>0.362</td><td>0.511</td></tr>
+                <tr><td class="highlight-cell">SimKGC + Hyper-CL</td><td class="highlight-cell">0.318</td><td class="highlight-cell">0.231</td><td class="highlight-cell">0.344</td><td class="highlight-cell">0.496</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Efficiency Comparison</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Architecture</th><th>Dataset</th><th>Inference Time</th><th>Cache Hit Rate</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>SimCSE_base (bi-encoder)</td><td>C-STS</td><td>791.71s</td><td>1.46%</td></tr>
+                <tr><td class="highlight-cell">SimCSE_base + Hyper-CL</td><td>C-STS</td><td class="highlight-cell">541.55s</td><td class="highlight-cell">64.11%</td></tr>
+                <tr><td>SimCSE_large (bi-encoder)</td><td>C-STS</td><td>1498.65s</td><td>1.46%</td></tr>
+                <tr><td class="highlight-cell">SimCSE_large + Hyper-CL</td><td>C-STS</td><td class="highlight-cell">960.84s</td><td class="highlight-cell">64.11%</td></tr>
+                <tr><td>SimKGC_base (bi-encoder)</td><td>WN18RR</td><td>994.41s</td><td>46.65%</td></tr>
+                <tr><td class="highlight-cell">SimKGC_base + Hyper-CL</td><td>WN18RR</td><td class="highlight-cell">448.95s</td><td class="highlight-cell">85.32%</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Generalization to Unseen Conditions</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Method</th><th>Overall</th><th>Unseen Conditions</th><th>Seen Conditions</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>SimCSE_large (baseline)</td><td>32.13</td><td>13.93</td><td>25.02</td></tr>
+                <tr><td class="highlight-cell">SimCSE_large + Hyper-CL</td><td class="highlight-cell">38.59</td><td class="highlight-cell">36.25</td><td class="highlight-cell">41.14</td></tr>
+            </tbody>
+        </table>
+
         <ul class="key-points">
-            <li><strong>C-STS:</strong> Reduces the performance gap between tri-encoder and bi-encoder from 13.3 to 6.05 points</li>
-            <li><strong>Speed:</strong> 108x faster than bi-encoder on WN18RR test set (1.93s vs. 209.98s with BERT-large)</li>
-            <li><strong>Low-rank variant:</strong> hyper64-cl achieves 38.36 Spearman with only 75M additional parameters, nearly matching the full model</li>
-            <li><strong>Clustering quality:</strong> Entropy drops from 0.739 to 0.270 after condition-specific projection, showing effective semantic reorganization</li>
+            <li><strong>C-STS:</strong> Hyper-CL improves tri-encoder performance by up to +7.25 Pearson, reducing the gap with bi-encoders from 13.3 to 6.05 points</li>
+            <li><strong>KGC:</strong> On WN18RR, Hyper-CL achieves 0.616 MRR -- close to the bi-encoder's 0.666 -- while naive tri-encoder variants (Hadamard: 0.164, Concatenation: 0.335) drastically underperform. Hits@10 (0.810) even surpasses the bi-encoder (0.800)</li>
+            <li><strong>Efficiency:</strong> ~40% faster on C-STS and ~55% faster on WN18RR compared to bi-encoders, thanks to 64% and 85% cache hit rates respectively</li>
+            <li><strong>Generalization:</strong> On unseen conditions (25.79% of C-STS validation), Hyper-CL achieves 36.25 Spearman vs. the baseline's 13.93 -- a +22 point improvement, demonstrating strong zero-shot condition transfer</li>
+            <li><strong>Clustering quality:</strong> Condition-specific projection reduces embedding cluster impurity (entropy) from 0.739 to 0.270, confirming that Hyper-CL effectively organizes embeddings by condition</li>
+            <li><strong>Ablation:</strong> Contrastive learning combined with hypernetworks (37.96 Spearman) outperforms contrastive learning alone (36.13) and hypernetworks alone (35.38), showing synergistic benefits</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>Hyper-CL demonstrates that sentence embeddings do not need to be static, one-size-fits-all vectors. By introducing hypernetwork-generated projections, the same pre-computed sentence embedding can be <strong>dynamically adapted to different perspectives</strong> at near-zero additional inference cost. This opens the door to more nuanced NLP applications -- from conditional retrieval to knowledge graph reasoning -- where the notion of "similarity" fundamentally depends on context, all while maintaining the computational efficiency needed for real-world deployment.</p>
+        <p>Hyper-CL demonstrates that sentence embeddings do not need to be static, one-size-fits-all vectors. By introducing hypernetwork-generated projections, the same pre-computed sentence embedding can be <strong>dynamically adapted to different perspectives</strong> at near-zero additional inference cost. The key insight is that condition-specific linear transformations, generated on-the-fly by a lightweight hypernetwork, provide far more expressive conditioning than simple element-wise operations -- while remaining fully compatible with the caching and pre-computation strategies that make tri-encoders practical.</p>
+        <p>This opens the door to more nuanced NLP applications -- from conditional retrieval to knowledge graph reasoning -- where the notion of "similarity" fundamentally depends on context. The strong generalization to unseen conditions (with a +22 point improvement) suggests that Hyper-CL learns transferable subspace projections rather than memorizing specific conditions, making it promising for real-world deployment where conditions are open-ended and unpredictable.</p>
     </div>
 
     <div class="section">

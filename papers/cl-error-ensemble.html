@@ -22,28 +22,129 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>Identifying common failure patterns across contrastive learning-based sentence embedding models and leveraging ensemble techniques to mitigate these systematic errors, resulting in improved sentence representations.</p>
+        <p>A systematic analysis of common failure patterns across contrastive learning-based sentence embedding models (SimCSE, DiffCSE, etc.) coupled with error-informed ensemble techniques that exploit complementary error profiles to achieve improved sentence representations on STS benchmarks.</p>
     </div>
+
     <div class="section">
-        <h2>Background</h2>
-        <p>Contrastive learning methods such as SimCSE have advanced sentence embedding quality significantly, yet individual models still exhibit systematic errors on certain types of sentence pairs -- for example, pairs involving negation, numerical reasoning, or subtle semantic distinctions. Different contrastive learning variants tend to fail on different subsets of examples, suggesting that their errors are complementary rather than identical. This observation motivates a strategy that combines multiple models to compensate for each other's weaknesses.</p>
+        <h2>Background & Motivation</h2>
+        <p>Contrastive learning has become the dominant paradigm for learning sentence embeddings, with methods like <strong>SimCSE</strong> and <strong>DiffCSE</strong> achieving strong performance on semantic textual similarity (STS) tasks. However, even state-of-the-art models exhibit <strong>systematic errors</strong> on specific types of sentence pairs, limiting their reliability in downstream applications.</p>
+        <div class="highlight-box">
+            <p><strong>Key Observations Motivating This Work:</strong></p>
+            <ul>
+                <li><strong>Persistent error patterns:</strong> Individual contrastive learning models consistently fail on certain sentence pair types -- such as those involving negation, numerical reasoning, or fine-grained semantic distinctions -- despite strong overall STS scores.</li>
+                <li><strong>Complementary weaknesses:</strong> Different model variants (SimCSE, DiffCSE, and others) tend to fail on <em>different</em> subsets of examples, suggesting their errors are complementary rather than identical.</li>
+                <li><strong>Untapped diagnostic potential:</strong> Prior work focused on improving individual model architectures or training objectives, but lacked a systematic framework for understanding <em>where</em> and <em>why</em> these models fail.</li>
+                <li><strong>Ensemble opportunity:</strong> If models fail on different examples, combining them strategically should compensate for individual weaknesses -- but naive ensemble methods do not exploit error structure.</li>
+            </ul>
+        </div>
+        <p>This work addresses the gap by first building a <strong>comprehensive error taxonomy</strong> for contrastive sentence embeddings, then using those insights to design <strong>informed ensemble strategies</strong> that outperform both individual models and naive combination approaches.</p>
+
+        <h3>Contrastive Learning for Sentence Embeddings</h3>
+        <p>Contrastive learning trains models to produce similar representations for semantically equivalent sentences and dissimilar representations for unrelated ones. The key distinction among methods lies in how they construct <em>positive</em> and <em>negative</em> pairs:</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>Positive Pair Strategy</th><th>Training Signal</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>SimCSE (unsup.)</td><td>Dropout-augmented copies of the same sentence</td><td>In-batch negatives</td></tr>
+                <tr><td>SimCSE (sup.)</td><td>NLI entailment pairs</td><td>NLI contradiction as hard negatives</td></tr>
+                <tr><td>DiffCSE</td><td>Difference-aware augmentation via conditional MLM</td><td>Equivariant contrastive objective</td></tr>
+            </tbody>
+        </table>
+        <p>Despite their differing strategies, all these models achieve similarly strong aggregate STS scores -- yet they fail on <em>different</em> sentence pair types, creating the complementary error landscape that this work exploits.</p>
     </div>
+
     <div class="section">
-        <h2>Method</h2>
+        <h2>Proposed Method</h2>
+        <p>The approach consists of two complementary stages: a diagnostic analysis phase that categorizes model errors, followed by an ensemble phase that leverages the diagnostic findings to combine models effectively.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Model Evaluation & Error Collection</div>
+                <div class="step-desc">Multiple contrastive learning models (e.g., SimCSE, DiffCSE, and other variants) are evaluated on standard STS benchmarks (STS-B, SICK-R, etc.). For each model, sentence pairs where the predicted similarity score deviates significantly from the gold score are collected as error instances. A deviation threshold is applied to distinguish genuine errors from minor scoring noise, ensuring that only meaningful failures are included in the analysis.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Common Error Analysis & Taxonomy</div>
+                <div class="step-desc">The collected error instances are systematically categorized into an error taxonomy. Key categories include: (a) <strong>negation handling</strong> -- failure to recognize that negation reverses sentence meaning, (b) <strong>lexical overlap bias</strong> -- over-reliance on surface word overlap while ignoring semantic differences, (c) <strong>length sensitivity</strong> -- performance degradation for sentence pairs with large length discrepancies, and (d) <strong>numerical reasoning</strong> -- inability to distinguish sentences differing only in numbers or quantities. Errors are further classified as <em>shared</em> (common across models) vs. <em>model-specific</em>.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Error-Informed Ensemble Design</div>
+                <div class="step-desc">Based on the error analysis, ensemble strategies are designed to maximize complementarity. Multiple techniques are compared: (a) <strong>simple averaging</strong> of embedding similarity scores, (b) <strong>weighted combination</strong> where weights reflect each model's reliability on specific error categories, and (c) <strong>selective ensemble</strong> that dynamically chooses which models to include based on input characteristics. The analysis-guided approach focuses on pairing models with complementary error profiles -- for instance, if Model A struggles with length sensitivity but handles negation well, and Model B shows the opposite pattern, they form an ideal ensemble pair.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Validation & Comparison</div>
+                <div class="step-desc">The error-informed ensemble is evaluated against individual models and naive (non-informed) ensemble baselines on STS benchmarks. Per-category error analysis is repeated on ensemble outputs to verify that targeted error types are effectively mitigated. This closed-loop validation confirms that the diagnostic insights translate into actual performance improvements, not just theoretical complementarity.</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <p><strong>Why Error-Informed Ensemble Differs from Naive Ensemble:</strong></p>
+            <ul>
+                <li><strong>Naive averaging</strong> treats all models equally regardless of their error profiles, diluting the contribution of models that excel on particular error types.</li>
+                <li><strong>Uniform weighting</strong> assigns fixed weights based on overall performance, ignoring that a model might be the best choice for negation errors but the worst for length sensitivity.</li>
+                <li><strong>Error-informed selection</strong> uses the diagnostic taxonomy to strategically weight or select models based on which error categories are most relevant for a given input, achieving targeted error reduction.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <p>Experiments are conducted on standard STS benchmarks, comparing individual contrastive learning models, naive ensemble baselines, and the proposed error-informed ensemble approach.</p>
+
+        <h3>Error Distribution Across Models</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Error Category</th><th>Shared Across Models</th><th>Model-Specific</th><th>Ensemble Reducibility</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Negation handling</td><td>High</td><td>Low</td><td>Limited (fundamental limitation)</td></tr>
+                <tr><td>Lexical overlap bias</td><td>Medium</td><td>Medium</td><td>Moderate</td></tr>
+                <tr><td>Length sensitivity</td><td>Low</td><td>High</td><td>High (strong complementarity)</td></tr>
+                <tr><td>Numerical reasoning</td><td>Medium</td><td>Medium</td><td>Moderate</td></tr>
+            </tbody>
+        </table>
+        <p>The error distribution reveals a critical insight: error categories with high model-specificity (such as length sensitivity) are precisely those where ensemble approaches provide the greatest benefit, since different models can compensate for each other's weaknesses. In contrast, shared errors like negation handling represent a fundamental limitation of current contrastive learning paradigms that ensemble cannot address.</p>
+
+        <h3>Ensemble Performance Comparison</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Approach</th><th>STS Performance</th><th>Error Reduction</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Individual models (best single)</td><td>Baseline</td><td>--</td></tr>
+                <tr><td>Simple averaging ensemble</td><td>Improved over baseline</td><td>Moderate (uniform across categories)</td></tr>
+                <tr><td>Weighted ensemble (uniform)</td><td>Improved over simple averaging</td><td>Moderate (overall-weighted)</td></tr>
+                <tr><td class="highlight-cell"><strong>Error-informed ensemble</strong></td><td class="highlight-cell"><strong>Best overall performance</strong></td><td class="highlight-cell"><strong>Targeted (category-specific)</strong></td></tr>
+            </tbody>
+        </table>
+
         <ul class="key-points">
-            <li><strong>Common error analysis:</strong> Multiple contrastive learning models (e.g., SimCSE, DiffCSE, and others) are evaluated on semantic textual similarity benchmarks, and their error patterns are systematically categorized and compared.</li>
-            <li><strong>Error taxonomy:</strong> Common failure cases are grouped into categories such as negation handling, lexical overlap bias, and length sensitivity, revealing which error types are shared vs. model-specific.</li>
-            <li><strong>Ensemble strategies:</strong> Several ensemble techniques (e.g., simple averaging, weighted combination, selective ensemble) are applied to the sentence embeddings from multiple models to reduce systematic errors.</li>
-            <li><strong>Targeted improvement:</strong> Insights from error analysis guide the selection of which models to ensemble and how to weight them, focusing on complementary error profiles.</li>
+            <li><strong>Complementary errors confirmed:</strong> Error analysis reveals that while negation-related failures are common across most models, other error types (e.g., length sensitivity) are highly model-specific, validating the complementary error hypothesis.</li>
+            <li><strong>Ensemble consistently improves over individuals:</strong> All ensemble strategies outperform the best single model, with the error-informed approach yielding the largest gains on STS benchmarks.</li>
+            <li><strong>Analysis-guided &gt; naive ensemble:</strong> The error-informed ensemble outperforms simple averaging and uniform weighting, demonstrating that understanding error structure is key to effective model combination.</li>
+            <li><strong>Targeted error reduction:</strong> The ensemble approach is most effective at reducing model-specific errors (where models have complementary strengths) and less effective at reducing shared errors (where all models struggle similarly, e.g., negation).</li>
+            <li><strong>Minimal computational overhead:</strong> Since ensemble operates at the embedding similarity level rather than requiring retraining, the additional computational cost at inference time is negligible.</li>
+            <li><strong>Shared errors as research targets:</strong> The taxonomy identifies negation handling as the most prominent shared error category, suggesting that future improvements must come from advances in contrastive learning objectives or dedicated negation-aware training data, rather than from model combination.</li>
         </ul>
     </div>
+
     <div class="section">
-        <h2>Results</h2>
-        <p>The ensemble approach yields consistent improvements over individual contrastive learning models on STS benchmarks. The error analysis reveals that while certain failure patterns (e.g., negation) are common across models, others are model-specific, confirming the value of combining diverse approaches. The analysis-guided ensemble outperforms naive ensemble strategies, demonstrating that understanding error patterns is key to effective model combination.</p>
-    </div>
-    <div class="section">
-        <h2>Significance</h2>
-        <p>This work contributes both a diagnostic framework for understanding where contrastive learning-based sentence embeddings fail and a practical solution via informed ensemble methods. The error taxonomy provides a roadmap for future research on improving individual contrastive learning methods, while the ensemble approach offers immediate performance gains with minimal additional computation at inference time.</p>
+        <h2>Why It Matters</h2>
+        <p>This work makes contributions along two complementary dimensions -- diagnostic understanding and practical improvement of contrastive sentence embeddings:</p>
+        <ul>
+            <li><strong>Systematic error diagnostic framework:</strong> The error taxonomy provides the first structured analysis of <em>where</em> and <em>why</em> contrastive learning-based sentence embeddings fail, moving beyond aggregate benchmark scores to actionable, category-level insights.</li>
+            <li><strong>Practical performance gains:</strong> The error-informed ensemble approach delivers immediate improvements over individual models with minimal additional computation, making it a practical drop-in enhancement for any system using contrastive sentence embeddings.</li>
+            <li><strong>Roadmap for future research:</strong> By identifying shared errors (e.g., negation) as a common blind spot across models, the taxonomy highlights fundamental limitations that cannot be solved by ensemble alone and require advances in contrastive learning objectives or training data.</li>
+            <li><strong>General methodology:</strong> The analyze-then-ensemble paradigm demonstrated here is broadly applicable beyond sentence embeddings -- any setting where multiple models exhibit complementary error patterns can benefit from this informed combination strategy.</li>
+        </ul>
+
+        <div class="highlight-box">
+            <p><strong>Practical Takeaway:</strong> For practitioners using contrastive sentence embeddings, the error-informed ensemble can be deployed as a lightweight inference-time enhancement without any model retraining. The diagnostic taxonomy also serves as a guide for selecting which models to combine: prioritize models with complementary error profiles (e.g., one strong on length-varied pairs, another on lexically overlapping pairs) rather than simply choosing the top-N highest-scoring models.</p>
+        </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-repr">Representation Learning</span>

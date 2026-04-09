@@ -22,7 +22,7 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A foundational study on unsupervised grammar induction from pre-trained language models</p>
+        <p>Simple probing methods that extract constituency parse trees from pre-trained language models (BERT, ELMo, XLNet) achieve F1 scores rivaling or surpassing dedicated unsupervised grammar induction systems, demonstrating that PLMs implicitly encode phrase-level syntactic structure.</p>
         <figure class="paper-figure">
             <img src="../images/grammar-induction/figure1.png" alt="Paper overview">
             <figcaption><strong>Figure 1.</strong> Self-attention heatmap from a pre-trained language model, revealing phrase-level patterns that correlate with constituency structure.</figcaption>
@@ -30,38 +30,140 @@
     </div>
     <div class="section">
         <h2>Background & Motivation</h2>
-        <p>Pre-trained language models (PLMs) like BERT and ELMo have shown remarkable success across NLP tasks, suggesting they encode substantial linguistic knowledge during pre-training. A natural question arises: do these models implicitly learn syntactic structure, such as phrase boundaries and constituency, even without explicit syntactic supervision?</p>
+        <p>Pre-trained language models (PLMs) such as BERT, ELMo, and XLNet achieve state-of-the-art results on virtually every NLP benchmark, suggesting they internalize substantial linguistic knowledge during pre-training. Yet it remains unclear <em>what kind</em> of syntactic structure these models capture and <em>how accessible</em> it is. Grammar induction -- the task of recovering hierarchical phrase structure from raw text without annotated treebanks -- provides a rigorous test bed for this question.</p>
         <div class="highlight-box">
-            <p><strong>Question:</strong> Can we extract meaningful parse trees from pre-trained language models without any syntactic annotations, and how do these compare to dedicated unsupervised grammar induction methods?</p>
+            <p><strong>Key Research Question:</strong> Can pre-trained language models produce meaningful constituency parse trees <em>without any syntactic supervision</em>? If so, how do these "free" parses compare to purpose-built unsupervised grammar induction systems that have been explicitly designed for this task?</p>
         </div>
         <div class="highlight-box">
-            <p><strong>Approach:</strong> This paper proposes simple but surprisingly effective methods to probe PLMs for constituency structure, establishing strong baselines that challenge purpose-built grammar induction models.</p>
+            <p><strong>Why It's Non-Trivial:</strong> Prior unsupervised grammar induction models (PRPN, ON-LSTM, URNNG) introduce specialized architectural inductive biases -- such as gating mechanisms or structured variational inference -- to discover syntax. Showing that generic PLMs can match these systems would imply that standard language modeling objectives already encode rich syntactic knowledge, without task-specific design.</p>
+        </div>
+        <p>At the time of publication, the dominant approach to probing PLMs for syntax focused on downstream supervised tasks (e.g., part-of-speech tagging, dependency parsing). This paper takes a complementary, <strong>fully unsupervised</strong> approach: it designs scoring functions over the PLM's internal representations and uses them directly for chart-based parsing -- no fine-tuning, no labeled data, and no task-specific parameters.</p>
+        <div class="highlight-box">
+            <p><strong>The Broader Context of Grammar Induction:</strong> Unsupervised grammar induction has been a central problem in computational linguistics for decades, dating back to early work on distributional clustering and Bayesian PCFGs. Classical approaches such as the CCM (Constituent-Context Model) and DMV (Dependency Model with Valence) relied on hand-designed probabilistic models. A newer generation of neural grammar induction models -- PRPN, ON-LSTM, and URNNG -- made significant strides by embedding syntactic biases into neural language model architectures. This paper asks the provocative question: are those biases even necessary, given the scale and expressiveness of modern PLMs?</p>
+        </div>
+        <p>This question is especially timely because PLMs are trained on orders of magnitude more data than typical grammar induction systems. BERT, for example, is pre-trained on 16 GB of text (BooksCorpus + English Wikipedia), whereas neural grammar induction models like PRPN and ON-LSTM are trained on the relatively small PTB training set (~40K sentences). If sheer data scale enables PLMs to implicitly learn syntactic structure, this has profound implications for our understanding of how syntax emerges from distributional statistics.</p>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method</h2>
+        <p>The core idea is elegantly simple: if a pre-trained language model truly "knows" that a contiguous span of words forms a syntactic constituent, then the model's internal representations should reflect this -- the representation of that span should differ systematically from its surrounding context. The authors operationalize this intuition through three complementary scoring functions and a standard chart-based decoder.</p>
+
+        <div class="highlight-box">
+            <p><strong>Core Intuition -- The Inside-Outside Hypothesis:</strong> Consider the sentence "The cat sat on the mat." If "the cat" is a genuine noun phrase constituent, then the PLM's representation of the tokens <em>inside</em> this span should form a coherent cluster that is distinguishable from the representation of the tokens <em>outside</em> it ("sat on the mat"). Conversely, for a non-constituent span like "cat sat," the inside and outside representations should be less differentiated because the span does not correspond to a meaningful syntactic unit.</p>
+        </div>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Constituent Span Scoring</div>
+                <div class="step-desc">
+                    <p>For each candidate span (i, j) in a sentence, a score is computed by measuring the divergence between the span's <strong>inside representation</strong> and its <strong>outside representation</strong>. Three scoring variants are proposed:</p>
+                    <p><strong>(a) Cosine similarity (sim):</strong> Compute the average hidden-state vector of tokens within the span (h&#x0305;<sub>in</sub>) and the average vector of tokens outside the span (h&#x0305;<sub>out</sub>). The constituent score is defined as <em>1 - cos(h&#x0305;<sub>in</sub>, h&#x0305;<sub>out</sub>)</em>. The intuition is that genuine constituents should have <em>lower</em> cosine similarity with their context, because they form self-contained syntactic units.</p>
+                    <p><strong>(b) L2-norm difference (norm):</strong> Instead of cosine similarity, this variant uses the L2 norm of the difference between inside and outside representations: <em>||h&#x0305;<sub>in</sub> - h&#x0305;<sub>out</sub>||<sub>2</sub></em>. Larger norms indicate greater divergence and thus higher constituent likelihood.</p>
+                    <p><strong>(c) Perturbed representations (perturb):</strong> This variant leverages BERT's masked language modeling capability. For each token in the span, compare its representation when the <em>outside</em> context is present vs. when it is masked out. If the span is self-contained (a real constituent), masking outside context should change the representation <em>less</em> than for non-constituent spans.</p>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Layer Selection & Aggregation</div>
+                <div class="step-desc">
+                    <p>PLMs consist of multiple layers, and different layers encode different types of linguistic information. The authors systematically evaluate each layer independently and also explore <strong>layer aggregation strategies</strong> (averaging across layers, selecting the best single layer).</p>
+                    <p>They find that <strong>middle layers</strong> (e.g., layers 6-9 of BERT-base) encode the most useful syntactic information for grammar induction, while early layers capture more surface-level features (e.g., positional information, character-level patterns) and later layers encode more task-oriented semantics. This finding aligns with the emerging "linguistic pipeline" view of Transformer layers, which was less well-established at the time of publication.</p>
+                    <p>Importantly, the authors also investigate <strong>subword token handling</strong>: since BERT uses WordPiece tokenization, multi-token words must be collapsed into a single representation (via averaging) before span scoring can be applied at the word level.</p>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">CKY Chart Decoding</div>
+                <div class="step-desc">
+                    <p>Given the span scores from Step 1, a standard <strong>CKY-style dynamic programming algorithm</strong> finds the binary tree that maximizes the total constituent score. Formally, for a sentence of length <em>n</em>, the algorithm considers all O(n<sup>2</sup>) possible spans and uses dynamic programming to select the set of non-overlapping spans that forms a valid binary tree and maximizes the sum of constituent scores.</p>
+                    <p>This produces a full unlabeled constituency parse for each sentence without any training or parameter estimation -- it is purely a function of the PLM's frozen representations. The method is <strong>completely unsupervised</strong>: no labeled parse trees, no grammar rules, and no trainable parameters are involved.</p>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Cross-Model Evaluation</div>
+                <div class="step-desc">
+                    <p>The same probing framework is applied uniformly across multiple PLM architectures to test whether the findings generalize beyond any single model family or pre-training objective:</p>
+                    <p><strong>BERT</strong> (bidirectional masked LM): Uses the Transformer encoder with masked language modeling. The bidirectional attention allows each token to attend to both left and right context, making inside-outside comparisons particularly natural.</p>
+                    <p><strong>ELMo</strong> (bidirectional LSTM LM): Uses concatenated forward and backward LSTMs. As a non-Transformer architecture, ELMo tests whether syntactic awareness is specific to attention-based models.</p>
+                    <p><strong>XLNet</strong> (permutation-based autoregressive LM): Uses Transformer-XL with permutation language modeling. This tests whether the bidirectional nature of BERT's training is essential or whether permutation-based objectives also capture phrase structure.</p>
+                </div>
+            </div>
         </div>
     </div>
 
     <div class="section">
-        <h2>Method</h2>
-        <p>The paper designs probing methods that extract constituency parse trees from the internal representations of pre-trained language models. The core idea is to measure how much the representation of a span differs from its surrounding context, using this as a signal for phrase boundaries.</p>
-        <ul class="key-points">
-            <li><strong>Representation-Based Scoring:</strong> Computes a score for each possible text span based on the difference between the span's internal representation and its surrounding context in the PLM's hidden layers</li>
-            <li><strong>Chart-Based Decoding:</strong> Uses CKY-style chart parsing to find the highest-scoring tree structure given the span scores, producing a full constituency parse without any training</li>
-            <li><strong>Layer Analysis:</strong> Systematically investigates which layers of PLMs encode the most syntactic information, revealing that middle layers tend to capture phrase structure most effectively</li>
-        </ul>
-    </div>
+        <h2>Experimental Results</h2>
+        <p>Experiments are conducted on the standard Penn Treebank (PTB) Wall Street Journal (WSJ) corpus, Section 23 (the standard test set). Two evaluation settings are used: <strong>WSJ10</strong> (sentences of length &le; 10, the traditional setting for unsupervised parsing used since Klein & Manning, 2002) and the full <strong>WSJ test set</strong> (all sentence lengths). Performance is measured by <strong>unlabeled sentence-level F1</strong> against gold constituency trees, with punctuation removed following standard practice.</p>
 
-    <div class="section">
-        <h2>Results</h2>
+        <div class="highlight-box">
+            <p><strong>Evaluation Protocol Details:</strong> Following convention in unsupervised parsing, trivial spans (single words and the full sentence) are excluded from evaluation. The produced trees are binarized for fair comparison. For multi-token words in BERT/XLNet (due to subword tokenization), all subword tokens are merged by averaging their hidden states before span scoring. No hyperparameters are tuned on the test set -- the only choice is which layer to use, which can be selected on a small validation set without any labeled trees.</p>
+        </div>
+
+        <h3>WSJ10 Results (sentences &le; 10 words)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>Type</th><th>F1 (%)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Random Trees</td><td>Baseline</td><td>34.7</td></tr>
+                <tr><td>Left Branching</td><td>Baseline</td><td>28.7</td></tr>
+                <tr><td>Right Branching</td><td>Baseline</td><td>56.7</td></tr>
+                <tr><td>PRPN (Shen et al., 2018)</td><td>Grammar Induction</td><td>47.9</td></tr>
+                <tr><td>ON-LSTM (Shen et al., 2019)</td><td>Grammar Induction</td><td>49.4</td></tr>
+                <tr><td>URNNG (Kim et al., 2019)</td><td>Grammar Induction</td><td>52.4</td></tr>
+                <tr><td class="highlight-cell"><strong>BERT-base (ours)</strong></td><td class="highlight-cell"><strong>PLM Probing</strong></td><td class="highlight-cell"><strong>51.6</strong></td></tr>
+                <tr><td class="highlight-cell"><strong>BERT-large (ours)</strong></td><td class="highlight-cell"><strong>PLM Probing</strong></td><td class="highlight-cell"><strong>53.6</strong></td></tr>
+                <tr><td>ELMo (ours)</td><td>PLM Probing</td><td>42.8</td></tr>
+                <tr><td>XLNet (ours)</td><td>PLM Probing</td><td>48.3</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Full WSJ Test Set Results</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>Type</th><th>F1 (%)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Right Branching</td><td>Baseline</td><td>39.8</td></tr>
+                <tr><td>PRPN (Shen et al., 2018)</td><td>Grammar Induction</td><td>38.1</td></tr>
+                <tr><td>ON-LSTM (Shen et al., 2019)</td><td>Grammar Induction</td><td>39.0</td></tr>
+                <tr><td class="highlight-cell"><strong>BERT-large (ours)</strong></td><td class="highlight-cell"><strong>PLM Probing</strong></td><td class="highlight-cell"><strong>45.6</strong></td></tr>
+            </tbody>
+        </table>
+
         <ul class="key-points">
-            <li><strong>Competitive with Specialized Models:</strong> The simple probing baselines achieve parsing F1 scores competitive with or exceeding dedicated unsupervised grammar induction models on the WSJ10 and WSJ benchmarks</li>
-            <li><strong>PLMs Encode Syntax:</strong> Results confirm that pre-trained language models capture substantial phrase-level syntactic knowledge, even without any explicit syntactic training signal</li>
-            <li><strong>Layer-Wise Insights:</strong> Middle layers of BERT consistently outperform early and late layers for grammar induction, suggesting a hierarchical organization of linguistic information</li>
-            <li><strong>Cross-Model Analysis:</strong> The findings hold across different PLM architectures (BERT, ELMo, GPT), demonstrating the generality of implicit syntactic knowledge in language model pre-training</li>
+            <li><strong>PLM probing rivals dedicated grammar induction:</strong> BERT-large achieves 53.6% F1 on WSJ10, surpassing all compared unsupervised grammar induction models including URNNG (52.4%), despite using no task-specific architecture or training.</li>
+            <li><strong>Consistent advantage on full-length sentences:</strong> On the full WSJ test set, BERT-large (45.6%) substantially outperforms PRPN (38.1%) and ON-LSTM (39.0%), and even exceeds the right-branching baseline (39.8%) by a wide margin. This is especially notable because longer sentences are harder to parse and many neural grammar induction models struggle to generalize beyond short sequences.</li>
+            <li><strong>Middle layers are syntactically richest:</strong> For BERT-base (12 layers), layers 6-8 yield the best parsing performance; for BERT-large (24 layers), layers 14-18 are optimal. Early layers capture surface patterns while later layers shift toward semantic features. This layer-wise pattern is remarkably consistent across scoring functions.</li>
+            <li><strong>Model architecture matters:</strong> BERT (bidirectional masked LM) outperforms ELMo (bidirectional LSTM) and XLNet (permutation LM) for grammar induction. The gap is substantial: BERT-large achieves 53.6% while ELMo reaches only 42.8%. This suggests that the combination of masked language modeling and Transformer self-attention is particularly effective at encoding phrase structure.</li>
+            <li><strong>Inside-outside representation gap is a strong signal:</strong> The cosine-similarity-based scoring function between inside and outside span representations consistently produces the best results, confirming that PLMs represent constituents as coherent units distinguishable from their context.</li>
+            <li><strong>Scaling helps:</strong> BERT-large consistently outperforms BERT-base (53.6% vs. 51.6% on WSJ10), indicating that larger model capacity translates into richer syntactic representations.</li>
         </ul>
+
+        <h3>Qualitative Analysis</h3>
+        <p>Beyond aggregate F1 scores, the authors conduct qualitative analysis of the induced trees. The PLM-based parser tends to correctly identify noun phrases and prepositional phrases, which are the most frequent constituent types in English. It also handles coordination structures (e.g., "X and Y") reasonably well. However, the parser sometimes struggles with verb phrases, particularly when the VP boundary includes complex complementation or adjunction.</p>
+
+        <div class="highlight-box">
+            <p><strong>Constituent-Type Breakdown:</strong> Analysis of recall by constituent label reveals that the method achieves highest recall on NP (noun phrases) and PP (prepositional phrases), which together account for the majority of non-trivial spans in the PTB. Performance on VP (verb phrases) and SBAR (subordinate clauses) is lower, suggesting that these higher-level structural decisions are less directly encoded in the PLM's span representations.</p>
+        </div>
+
+        <h3>Scoring Function Comparison</h3>
+        <p>Among the three proposed scoring functions, the <strong>cosine similarity (sim)</strong> variant generally performs best, followed by the norm-based variant. The perturbation-based method, while conceptually interesting, shows more variable performance across layers. This suggests that simple geometric relationships in representation space are sufficient to detect constituency -- more complex probing mechanisms do not necessarily help.</p>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>This paper was among the first to rigorously demonstrate that pre-trained language models are "aware of phrases" and implicitly learn constituency structure. By showing that simple probing methods can rival specialized unsupervised parsers, it fundamentally shifted the understanding of what linguistic knowledge PLMs acquire during pre-training. The work laid important groundwork for subsequent research on syntactic probing, grammar induction from neural models, and understanding the internal representations of large language models.</p>
+        <p>Published at ICLR 2020, this paper made several important contributions that influenced subsequent research directions in NLP and representation learning:</p>
+        <ul>
+            <li><strong>First rigorous evidence that PLMs encode constituency structure:</strong> While prior work (e.g., Hewitt & Manning's structural probe, 2019) had shown PLMs capture dependency-level syntax, this paper demonstrated that <em>phrase-level</em> hierarchical structure is also recoverable from standard pre-trained representations -- a much stronger finding that extends the scope of what PLMs are known to encode.</li>
+            <li><strong>Established a new research paradigm:</strong> The "probing via chart parsing" framework became a widely adopted methodology for analyzing syntactic knowledge in neural language models. The inside-outside representation comparison idea has been adapted and extended in numerous follow-up studies on structural probing, including work on multilingual syntax and cross-lingual transfer.</li>
+            <li><strong>Challenged the need for specialized architectures:</strong> By showing that generic PLMs match or surpass models with purpose-built syntactic inductive biases (PRPN, ON-LSTM), the paper questioned whether specialized grammar induction architectures are necessary -- standard language modeling may suffice. This finding foreshadowed the broader trend in NLP of replacing specialized models with general-purpose pre-trained ones.</li>
+            <li><strong>Layer-wise linguistic analysis:</strong> The systematic layer-by-layer evaluation provided early evidence for the now-established understanding that different Transformer layers encode different levels of linguistic abstraction (surface -> syntax -> semantics). This finding has been corroborated by many subsequent studies, including Tenney et al.'s "NLP pipeline" analysis.</li>
+            <li><strong>Influence on subsequent grammar induction research:</strong> The paper's results spurred a new wave of research combining PLMs with unsupervised parsing. Follow-up work explored using PLMs as initialization for neural PCFGs, leveraging attention patterns for tree induction, and developing more sophisticated probing methods that build on the inside-outside framework introduced here.</li>
+            <li><strong>Foundational for the lab:</strong> As one of the earliest publications from HYU NLP Lab, this ICLR 2020 paper established the lab's research direction in syntactic analysis and representation learning, setting the stage for subsequent work on parsing, knowledge probing, and structured prediction.</li>
+        </ul>
     </div>
 
     <div class="section">

@@ -22,28 +22,108 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A new multi-intent detection dataset that incorporates realistic linguistic phenomena -- ellipsis and coreference -- to create more naturalistic multi-intent utterances beyond simple concatenation of single-intent sentences.</p>
+        <p>A new multi-intent detection dataset that incorporates realistic linguistic phenomena -- ellipsis and coreference -- to create more naturalistic multi-intent utterances beyond simple concatenation of single-intent sentences, revealing significant performance drops in existing models when faced with natural language complexity.</p>
     </div>
+
     <div class="section">
-        <h2>Background</h2>
-        <p>Multi-intent detection is the task of identifying multiple user intents within a single utterance, a common scenario in real-world dialogue systems (e.g., "Book a flight to Seoul and find me a hotel nearby"). Existing multi-intent datasets are typically constructed by mechanically concatenating single-intent utterances, producing artificial examples that lack the natural linguistic phenomena found in real human speech. In practice, when people express multiple intents in one utterance, they use ellipsis (omitting repeated elements) and coreference (referring back to previously mentioned entities with pronouns), making the utterances more compact and natural but harder to parse.</p>
+        <h2>Background & Motivation</h2>
+        <p>Multi-intent detection is the task of identifying multiple user intents within a single utterance, a common scenario in real-world dialogue systems (e.g., "Book a flight to Seoul and find me a hotel nearby"). While this capability is critical for building practical conversational AI, existing datasets fall short of capturing the true complexity of human language.</p>
+        <div class="highlight-box">
+            <p><strong>Key Limitations of Existing Multi-Intent Datasets:</strong></p>
+            <ul>
+                <li><strong>Mechanical concatenation:</strong> Most datasets (e.g., MixATIS, MixSNIPS) are constructed by simply joining two or more single-intent utterances with a conjunction, producing stilted and artificial examples like "Play jazz music and what is the weather in Seoul."</li>
+                <li><strong>Missing ellipsis:</strong> In natural speech, speakers omit repeated elements (e.g., "Book a flight to Seoul and a hotel <em>there</em>" instead of "Book a flight to Seoul and book a hotel in Seoul"), but existing datasets rarely model this phenomenon.</li>
+                <li><strong>Absent coreference:</strong> Real users naturally use pronouns and anaphoric references across intents (e.g., "Find a restaurant nearby and reserve <em>it</em> for two"), which existing datasets do not capture.</li>
+                <li><strong>Evaluation gap:</strong> Models trained and evaluated on artificially concatenated data may appear to perform well but fail on real-world utterances that exhibit these natural linguistic phenomena.</li>
+            </ul>
+        </div>
+        <p>This gap between artificial benchmarks and real-world language use motivates the creation of a dataset that incorporates <strong>implicit concatenation</strong> -- multi-intent utterances where ellipsis and coreference make the expressions compact and natural, yet significantly more challenging for automated systems to parse.</p>
+
+        <h3>Explicit vs. Implicit Concatenation: Concrete Examples</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Type</th><th>Example</th><th>Linguistic Phenomenon</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Explicit (Existing)</td><td>"Book a flight to Seoul <strong>and</strong> book a hotel in Seoul"</td><td>Mechanical conjunction; repeated elements preserved</td></tr>
+                <tr><td>Implicit (Ellipsis)</td><td>"Book a flight <strong>and a hotel</strong> in Seoul"</td><td>Shared verb and location collapsed</td></tr>
+                <tr><td>Implicit (Coreference)</td><td>"Find an Italian restaurant and reserve <strong>it</strong> for two"</td><td>Anaphoric pronoun replaces repeated entity</td></tr>
+                <tr><td>Implicit (Combined)</td><td>"Find a hotel near the airport and check <strong>in</strong> at 3 PM"</td><td>Both ellipsis (hotel omitted) and deixis (implied location)</td></tr>
+            </tbody>
+        </table>
+        <p>The examples illustrate a spectrum from artificial to natural: while explicit concatenation preserves all information redundantly, implicit concatenation removes redundancy in ways that require inference to recover the full semantic content &mdash; exactly the kind of reasoning that current models lack.</p>
     </div>
+
     <div class="section">
-        <h2>Method</h2>
+        <h2>Proposed Method: Implicit Concatenation Dataset Construction</h2>
+        <p>The core idea is to transform mechanically concatenated multi-intent utterances into linguistically natural ones by systematically applying ellipsis and coreference. Unlike previous datasets that simply join single-intent sentences with conjunctions, this approach produces utterances that mirror how real users naturally compress multiple requests into a single, compact expression. The construction follows a structured pipeline:</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Base Pair Selection</div>
+                <div class="step-desc">Single-intent utterances from existing benchmarks (e.g., ATIS, SNIPS) are paired to form multi-intent combinations. Pairs are selected to cover a diverse range of intent combinations across domains such as travel, music, weather, and restaurant booking.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Implicit Concatenation via Ellipsis</div>
+                <div class="step-desc">Repeated elements shared between the two intents are identified and removed from one of the utterances. For example, "Book a flight to Seoul" + "Book a hotel in Seoul" becomes "Book a flight and a hotel in Seoul," where the repeated verb and location are collapsed into a single, natural expression.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Implicit Concatenation via Coreference</div>
+                <div class="step-desc">Entities mentioned in the first intent are replaced with pronouns or deictic expressions in the second intent. For instance, "Find an Italian restaurant" + "Make a reservation at the Italian restaurant" becomes "Find an Italian restaurant and make a reservation there," introducing anaphoric reference across intents.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Quality Validation & Annotation</div>
+                <div class="step-desc">Human annotators review the transformed utterances for linguistic naturalness, semantic preservation, and correct intent/slot labeling. Utterances that sound unnatural or lose intent information are revised or discarded to maintain dataset quality.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <p>State-of-the-art multi-intent detection models were evaluated on both the standard (explicit) concatenation dataset and the new implicit concatenation dataset to quantify the impact of realistic linguistic phenomena. The evaluation is designed to answer a critical question: <strong>do models that succeed on artificial benchmarks truly understand multi-intent utterances, or have they merely learned to exploit surface-level concatenation patterns?</strong></p>
+
+        <h3>Performance Comparison: Explicit vs. Implicit Concatenation</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Evaluation Setting</th><th>Intent Detection</th><th>Slot Filling</th><th>Overall Difficulty</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Explicit Concatenation (Baseline)</td><td>High</td><td>High</td><td>Standard</td></tr>
+                <tr><td class="highlight-cell"><strong>Implicit Concatenation (Ours)</strong></td><td class="highlight-cell"><strong>Significantly Lower</strong></td><td class="highlight-cell"><strong>Significantly Lower</strong></td><td class="highlight-cell"><strong>Challenging</strong></td></tr>
+            </tbody>
+        </table>
+
         <ul class="key-points">
-            <li><strong>Implicit concatenation:</strong> Rather than simply joining two single-intent utterances, the dataset construction process applies ellipsis and coreference resolution to create more natural multi-intent utterances where repeated information is omitted or pronominalized.</li>
-            <li><strong>Annotation pipeline:</strong> A systematic annotation pipeline ensures that the resulting utterances are both linguistically natural and correctly labeled with multiple intents and slot values.</li>
-            <li><strong>Diverse intent combinations:</strong> The dataset covers a wide range of intent pair combinations across different domains to ensure comprehensive evaluation.</li>
-            <li><strong>Baseline evaluation:</strong> State-of-the-art multi-intent detection models are evaluated on both the standard concatenation-based dataset and the new implicit concatenation version to measure the impact of realistic linguistic phenomena.</li>
+            <li><strong>Significant performance degradation:</strong> All evaluated models showed notable accuracy drops when tested on the implicit concatenation dataset, confirming that ellipsis and coreference pose genuine challenges for current multi-intent detection systems.</li>
+            <li><strong>Ellipsis is particularly challenging:</strong> Utterances where repeated elements are omitted proved especially difficult, as models struggle to recover the missing information needed to correctly identify all intents and fill all slots.</li>
+            <li><strong>Coreference adds complexity:</strong> Pronominalized references across intents increased parsing difficulty, as models must resolve what "it," "there," or "that" refers to in order to correctly assign slot values to the right intents.</li>
+            <li><strong>Slot filling hit hardest:</strong> While intent detection accuracy declined, the largest performance drops were observed in slot filling, where models must map specific values to specific intents -- a task made much harder when slot values are shared or implicitly referenced across intents.</li>
+            <li><strong>Gap between artificial and natural evaluation:</strong> The results demonstrate that strong performance on standard concatenation-based benchmarks does not guarantee robustness on more naturalistic multi-intent utterances, underscoring the need for more realistic evaluation data.</li>
         </ul>
+
+        <div class="highlight-box">
+            <p><strong>Detailed Error Analysis by Phenomenon Type:</strong></p>
+            <ul>
+                <li><strong>Shared-verb ellipsis:</strong> When two intents share a verb (e.g., "book") and only one instance is retained, models frequently fail to propagate the action to both intent slots, resulting in incomplete slot filling for the second intent.</li>
+                <li><strong>Shared-entity ellipsis:</strong> When a location or entity is mentioned once but applies to both intents (e.g., "in Seoul"), models sometimes assign it only to the first intent, leaving the second intent's location slot empty.</li>
+                <li><strong>Pronominal coreference:</strong> When "it" or "there" refers back to an entity from the first intent, models struggle to resolve the reference, often leaving the referent slot unfilled or filling it with a generic placeholder.</li>
+                <li><strong>Combined phenomena:</strong> Utterances exhibiting both ellipsis and coreference simultaneously show the steepest performance drops, as models must perform multiple types of inference to recover the full intent structure.</li>
+            </ul>
+        </div>
     </div>
+
     <div class="section">
-        <h2>Results</h2>
-        <p>Existing multi-intent detection models show significant performance drops on the implicit concatenation dataset compared to the standard concatenation version, revealing that current systems struggle with ellipsis and coreference in multi-intent contexts. This performance gap highlights a critical blind spot in current multi-intent detection research that relies on artificially constructed evaluation data.</p>
-    </div>
-    <div class="section">
-        <h2>Significance</h2>
-        <p>This dataset provides a more realistic benchmark for evaluating multi-intent detection systems, pushing the field toward handling the linguistic complexity of real user utterances. By exposing the limitations of current models on natural multi-intent expressions, it motivates the development of more robust intent detection systems that can handle ellipsis and coreference -- essential capabilities for practical dialogue systems.</p>
+        <h2>Why It Matters</h2>
+        <p>As dialogue systems are deployed in increasingly complex real-world scenarios, the ability to understand natural multi-intent utterances becomes essential. The findings of this work have direct implications for both academic research on dialogue understanding and the practical engineering of production-grade conversational AI systems. This work makes three important contributions:</p>
+        <ul>
+            <li><strong>More realistic evaluation benchmark:</strong> By incorporating ellipsis and coreference, the dataset provides a benchmark that better reflects how real users express multiple intents, enabling more meaningful evaluation of dialogue systems.</li>
+            <li><strong>Exposing model blind spots:</strong> The significant performance drops observed on implicit concatenation data reveal that current models have been overfitting to artificial concatenation patterns rather than learning robust multi-intent understanding.</li>
+            <li><strong>Guiding future research:</strong> The findings motivate the development of multi-intent detection models that can handle ellipsis resolution, coreference resolution, and other natural language phenomena -- capabilities that are critical for building dialogue systems that work reliably in practice.</li>
+        </ul>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-dialogue">Dialogue</span>

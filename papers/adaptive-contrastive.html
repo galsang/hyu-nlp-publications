@@ -22,7 +22,7 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A method for adaptively adjusting decoding strategies based on the quality of retrieved documents in RAG</p>
+        <p>An entropy-based adaptive contrastive decoding method that dynamically adjusts how much an LLM relies on retrieved context during RAG, achieving robust open-domain QA performance even when retrieval returns noisy or irrelevant passages.</p>
         <figure class="paper-figure">
             <img src="../images/adaptive-contrastive/figure1.png" alt="Paper overview">
             <figcaption><strong>Figure 1.</strong> Overview of Adaptive Contrastive Decoding (ACD). ACD adapts the contrastive weight based on context relevance, enabling robust RAG generation even with noisy retrieved contexts.</figcaption>
@@ -30,50 +30,186 @@
     </div>
     <div class="section">
         <h2>Background &amp; Motivation</h2>
-        <p>Retrieval-Augmented Generation (RAG) enhances LLMs by feeding them external documents retrieved at inference time. However, retrieved passages are often noisy, irrelevant, or even contradictory to the correct answer. When a model blindly conditions on such low-quality contexts, generation quality degrades significantly.</p>
+        <p>When using LLMs for knowledge-intensive tasks such as open-domain question answering, Retrieval-Augmented Generation (RAG) bridges the gap between external knowledge and the model's parametric knowledge by feeding retrieved documents as context. However, real-world retrieval is far from perfect -- passages are often noisy, irrelevant, or even contradictory to the correct answer. When a model blindly conditions on such low-quality contexts, generation quality degrades significantly.</p>
+        <p>Recent contrastive decoding approaches (e.g., Context-Aware Decoding, CAD) attempt to amplify contextual knowledge over parametric knowledge by contrasting output distributions with and without context. While effective when relevant context is provided, these methods use a <strong>fixed contrastive weight</strong>, making them vulnerable to noisy retrieval scenarios. Another line of work, Multi-Input Contrastive Decoding (MICD), introduces a dynamic weight based on maximum token probability, but its relevance estimation remains coarse-grained and unreliable.</p>
         <div class="highlight-box">
-            <p><strong>Limitation:</strong> Standard contrastive decoding applies a fixed penalty to suppress the influence of retrieved context, but a fixed weight is suboptimal — it over-corrects when the context is actually helpful and under-corrects when the context is harmful.</p>
+            <p><strong>Limitation of Fixed Contrastive Decoding:</strong> Methods like CAD apply a constant weight (&alpha; = 0.5) to suppress or amplify context influence. This is fundamentally suboptimal: a fixed weight <strong>over-corrects</strong> when the retrieved context is actually helpful (degrading performance on gold contexts -- e.g., CAD drops TriviaQA from 60.23 to 49.02 on Llama2-7B) and <strong>under-corrects</strong> when the context is noisy or misleading (failing to suppress harmful influence). Similarly, MICD-F uses a fixed &alpha; = 1.0, which aggressively amplifies context regardless of quality.</p>
         </div>
         <div class="highlight-box">
-            <p><strong>Key Insight:</strong> The decoding strategy should <strong>adapt dynamically</strong> based on how relevant the retrieved context is to the query, applying stronger contrastive correction for noisier contexts and weaker correction for helpful ones.</p>
+            <p><strong>Key Insight:</strong> The optimal decoding strategy should <strong>adapt dynamically</strong> based on how much the retrieved context actually helps the model. By measuring the <em>entropy change</em> between context-free and context-augmented output distributions, the model itself can signal whether context is reducing uncertainty (helpful) or not (noisy) -- and the contrastive weight should respond accordingly. Unlike MICD-D's max-probability heuristic, entropy captures the full shape of the output distribution, providing a more principled and reliable relevance signal.</p>
         </div>
     </div>
 
     <div class="section">
-        <h2>Method</h2>
-        <p>The paper introduces Adaptive Contrastive Decoding (ACD), which modulates the contrastive weight at each generation step based on context relevance:</p>
+        <h2>Proposed Method: Adaptive Contrastive Decoding (ACD)</h2>
+        <p>ACD extends standard contrastive decoding with an entropy-based adaptive weight mechanism. The core decoding formula is:</p>
+        <div class="highlight-box">
+            <p><strong>Decoding Formula:</strong> P(Y_t | x, y_&lt;t) = softmax( z_t + &alpha;<sub>ACD</sub> &middot; (z_t<sup>c</sup> - z_t) )</p>
+            <p>where z_t are the logits without context, z_t<sup>c</sup> are the logits with context, and &alpha;<sub>ACD</sub> is the adaptive weight.</p>
+            <p><strong>Adaptive Weight:</strong> &alpha;<sub>ACD</sub> = H(Y_t) / ( H(Y_t) + H(Y_t<sup>c</sup>) )</p>
+            <p>where H(Y_t) is the entropy of the context-free distribution and H(Y_t<sup>c</sup>) is the entropy of the context-augmented distribution.</p>
+        </div>
+        <p>The intuition is simple: when retrieved context reduces model uncertainty (H(Y_t<sup>c</sup>) &lt; H(Y_t)), &alpha;<sub>ACD</sub> approaches 1, amplifying context influence. When context adds confusion (H(Y_t<sup>c</sup>) &gt; H(Y_t)), &alpha;<sub>ACD</sub> decreases toward 0, suppressing context influence and relying more on parametric knowledge. When both entropies are equal, &alpha;<sub>ACD</sub> = 0.5, providing a neutral balance.</p>
+
         <div class="method-steps">
             <div class="method-step">
                 <div class="step-num">1</div>
-                <div class="step-title">Context Relevance Estimation</div>
-                <div class="step-desc">Estimate how relevant and reliable the retrieved context is for the given query, using signals derived from the model's own output distributions.</div>
+                <div class="step-title">Dual Forward Pass</div>
+                <div class="step-desc">At each generation step, compute two sets of logits: z_t (from the model without retrieved context, i.e., closed-book) and z_t<sup>c</sup> (from the model conditioned on retrieved context, i.e., open-book). This provides the two output distributions needed for both contrastive decoding and relevance estimation. The closed-book prompt follows the format "Answer the following questions: [few-shots] Question: [q] Answer:" while the open-book version prepends "Context: [retrieved passage]".</div>
             </div>
             <div class="method-step">
                 <div class="step-num">2</div>
-                <div class="step-title">Adaptive Weight Computation</div>
-                <div class="step-desc">Compute a contrastive weight that varies based on the estimated relevance — a larger weight for noisy contexts (to suppress their influence) and a smaller weight for relevant contexts (to preserve their contribution).</div>
+                <div class="step-title">Entropy-Based Relevance Estimation</div>
+                <div class="step-desc">Compute the entropy H(Y_t) and H(Y_t<sup>c</sup>) of both distributions. The ratio &alpha;<sub>ACD</sub> = H(Y_t) / (H(Y_t) + H(Y_t<sup>c</sup>)) automatically captures context quality: high &alpha; when context helps (reduces uncertainty), low &alpha; when context hurts (increases uncertainty). Unlike MICD-D's max-probability heuristic, entropy considers the entire probability distribution, yielding a far more reliable relevance signal (AUROC 73-80% vs. 54-69%).</div>
             </div>
             <div class="method-step">
                 <div class="step-num">3</div>
-                <div class="step-title">Contrastive Decoding</div>
-                <div class="step-desc">During token generation, contrast the output distribution conditioned on retrieved context against the distribution without context, scaled by the adaptive weight, to produce the final token probabilities.</div>
+                <div class="step-title">Adaptive Contrastive Token Generation</div>
+                <div class="step-desc">Apply the adaptive weight to the contrastive decoding formula: the final logits are z_t + &alpha;<sub>ACD</sub> &middot; (z_t<sup>c</sup> - z_t). This smoothly interpolates between fully relying on parametric knowledge (&alpha;=0) and fully leveraging context (&alpha;=1), with the balance determined per-token by the entropy signal. The computational overhead is exactly 2x standard greedy decoding (same as CAD), since only two forward passes are needed per step.</div>
             </div>
         </div>
     </div>
 
     <div class="section">
-        <h2>Results</h2>
+        <h2>Experimental Setup</h2>
+        <p>ACD is evaluated on three open-domain QA benchmarks using Wikipedia (December 2018 dump) as the retrieval corpus:</p>
+        <ul>
+            <li><strong>Natural Questions (NQ)</strong>: 3,610 test samples of general world knowledge questions derived from real Google search queries</li>
+            <li><strong>TriviaQA</strong>: 11,313 test samples of trivia-style factoid questions</li>
+            <li><strong>PopQA</strong>: 14,262 test samples focusing on long-tail, less popular knowledge -- the most challenging for parametric-only approaches</li>
+        </ul>
+        <p>Retrieval uses <strong>Contriever-msmarco</strong> with top-1 passage selection. Four LLMs are tested: Llama2-7B, Llama2-13B, Llama3-8B, and Mistral-7B. All experiments use 5-shot prompting and <strong>Exact Match (EM)</strong> as the evaluation metric. To systematically analyze robustness, each dataset is split into:</p>
+        <ul>
+            <li><strong>SubsetGold</strong>: Samples where the retrieved passage contains the correct answer (retrieval succeeded)</li>
+            <li><strong>SubsetNoisy</strong>: Samples where the retrieved passage does not contain the correct answer (retrieval failed -- noisy/irrelevant context)</li>
+        </ul>
+        <p>Baselines include: <strong>RegCls</strong> (closed-book, no context), <strong>RegOpn / Standard RAG</strong> (open-book, standard greedy decoding), <strong>CAD</strong> (fixed &alpha;=0.5), <strong>MICD-F</strong> (fixed &alpha;=1.0), and <strong>MICD-D</strong> (dynamic &alpha; based on max token probability).</p>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+
+        <h3>Main Results with Gold/Noisy Breakdown (Llama2-7B, EM Accuracy)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Method</th><th colspan="3">TriviaQA</th><th colspan="3">NQ</th><th colspan="3">PopQA</th></tr>
+                <tr><th></th><th>All</th><th>Gold</th><th>Noisy</th><th>All</th><th>Gold</th><th>Noisy</th><th>All</th><th>Gold</th><th>Noisy</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Standard RAG</td><td>60.23</td><td>87.40</td><td>33.50</td><td>31.39</td><td>61.31</td><td>12.40</td><td>38.49</td><td>81.21</td><td>7.77</td></tr>
+                <tr><td>CAD (&alpha;=0.5)</td><td>49.02</td><td>73.69</td><td>24.75</td><td>25.57</td><td>51.61</td><td>9.05</td><td>33.70</td><td>72.18</td><td>6.03</td></tr>
+                <tr><td>MICD-F (&alpha;=1.0)</td><td>60.36</td><td>85.72</td><td>35.39</td><td>29.45</td><td>56.10</td><td>12.54</td><td>35.73</td><td>74.25</td><td>8.03</td></tr>
+                <tr><td>MICD-D</td><td>63.23</td><td>86.03</td><td>40.79</td><td>30.36</td><td>52.18</td><td>16.52</td><td>39.01</td><td>77.39</td><td>11.42</td></tr>
+                <tr><td class="highlight-cell"><strong>ACD (Ours)</strong></td><td class="highlight-cell"><strong>64.85</strong></td><td class="highlight-cell"><strong>88.01</strong></td><td class="highlight-cell"><strong>42.06</strong></td><td class="highlight-cell"><strong>32.91</strong></td><td class="highlight-cell"><strong>56.60</strong></td><td class="highlight-cell"><strong>17.88</strong></td><td class="highlight-cell"><strong>41.29</strong></td><td class="highlight-cell"><strong>82.77</strong></td><td class="highlight-cell"><strong>11.46</strong></td></tr>
+            </tbody>
+        </table>
+        <p>ACD achieves the best overall performance across all three datasets. Critically, it simultaneously excels on both SubsetGold (preserving retrieval benefits) and SubsetNoisy (suppressing noise). CAD, with its fixed weight, catastrophically degrades on both subsets -- dropping TriviaQA from 87.40 to 73.69 on gold contexts, showing that indiscriminate contrastive amplification actively hurts when contexts are helpful.</p>
+
+        <h3>Cross-Model Generalization (All Data, EM Accuracy)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>Method</th><th>TriviaQA</th><th>NQ</th><th>PopQA</th></tr>
+            </thead>
+            <tbody>
+                <tr><td rowspan="2">Llama2-13B</td><td>MICD-D</td><td>66.52</td><td>34.38</td><td>41.65</td></tr>
+                <tr><td class="highlight-cell"><strong>ACD</strong></td><td class="highlight-cell"><strong>67.37</strong></td><td class="highlight-cell"><strong>36.12</strong></td><td class="highlight-cell"><strong>43.35</strong></td></tr>
+                <tr><td rowspan="2">Llama3-8B</td><td>MICD-D</td><td>64.01</td><td>30.72</td><td>41.35</td></tr>
+                <tr><td class="highlight-cell"><strong>ACD</strong></td><td class="highlight-cell"><strong>66.32</strong></td><td class="highlight-cell"><strong>35.48</strong></td><td class="highlight-cell"><strong>43.25</strong></td></tr>
+                <tr><td rowspan="2">Mistral-7B</td><td>MICD-D</td><td>66.97</td><td>33.24</td><td>39.87</td></tr>
+                <tr><td class="highlight-cell"><strong>ACD</strong></td><td class="highlight-cell"><strong>67.82</strong></td><td class="highlight-cell"><strong>35.37</strong></td><td class="highlight-cell"><strong>41.47</strong></td></tr>
+            </tbody>
+        </table>
+        <p>ACD consistently outperforms the strongest baseline (MICD-D) across all four model architectures, with particularly large gains on NQ (+4.76 on Llama3-8B) where retrieval noise is most prevalent.</p>
+
+        <h3>Context Quality Discrimination (AUROC, Llama2-7B)</h3>
+        <p>To verify that the adaptive weight truly reflects context quality, the paper measures how well &alpha; values separate gold from noisy contexts using AUROC. Three aggregation strategies are compared: max, average, and first-token &alpha;.</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Aggregation</th><th>Method</th><th>NQ</th><th>TriviaQA</th><th>PopQA</th></tr>
+            </thead>
+            <tbody>
+                <tr><td rowspan="2">Max</td><td>MICD-D</td><td>51.53</td><td>59.76</td><td>65.49</td></tr>
+                <tr><td class="highlight-cell"><strong>ACD</strong></td><td class="highlight-cell"><strong>65.78</strong></td><td class="highlight-cell"><strong>73.37</strong></td><td class="highlight-cell"><strong>74.84</strong></td></tr>
+                <tr><td rowspan="2">Average</td><td>MICD-D</td><td>54.18</td><td>63.78</td><td>72.64</td></tr>
+                <tr><td class="highlight-cell"><strong>ACD</strong></td><td class="highlight-cell"><strong>68.80</strong></td><td class="highlight-cell"><strong>72.32</strong></td><td class="highlight-cell"><strong>78.90</strong></td></tr>
+                <tr><td rowspan="2">First Token</td><td>MICD-D</td><td>53.92</td><td>62.95</td><td>68.81</td></tr>
+                <tr><td class="highlight-cell"><strong>ACD</strong></td><td class="highlight-cell"><strong>73.27</strong></td><td class="highlight-cell"><strong>80.45</strong></td><td class="highlight-cell"><strong>80.08</strong></td></tr>
+            </tbody>
+        </table>
+        <p>ACD's entropy-based &alpha; achieves 65-80% AUROC across all settings, far surpassing MICD-D's max-probability heuristic (51-73%). The first-token &alpha; is especially discriminative, suggesting that the model's initial reaction to context is already highly informative about passage quality.</p>
+
+        <h3>Comparison with Oracle Upper Bound (Llama2-7B)</h3>
+        <p>The oracle sets &alpha;=1.0 for gold contexts and &alpha;=0.0 for noisy contexts -- a perfect relevance estimator using ground-truth labels:</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Dataset</th><th>ACD</th><th>Oracle</th><th>Gap</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>NQ</td><td>32.91</td><td>35.35</td><td>+2.44</td></tr>
+                <tr><td>TriviaQA</td><td>64.85</td><td>65.31</td><td>+0.46</td></tr>
+                <tr><td>PopQA</td><td>41.29</td><td>44.10</td><td>+2.81</td></tr>
+            </tbody>
+        </table>
+        <p>ACD reaches 97-99% of oracle performance without any ground-truth labels, demonstrating that entropy is an excellent proxy for true context relevance.</p>
+    </div>
+
+    <div class="section">
+        <h2>Analysis</h2>
+
+        <h3>Ablation: Adaptive vs. Fixed &alpha;</h3>
+        <p>The paper ablates performance across fixed &alpha; values from 0.0 to 1.0 to confirm that dynamic weighting is strictly superior. At &alpha;=0.0 (parametric only), overall EM is low. As &alpha; increases, gold-context performance initially improves but noisy-context performance worsens. No single fixed &alpha; can optimize both subsets simultaneously. ACD's adaptive &alpha; consistently outperforms every fixed &alpha; by 1-3 EM points overall, validating that per-token dynamic adjustment is essential.</p>
+
+        <h3>Knowledge Conflict Scenario (NQ-swap)</h3>
+        <p>A particularly revealing analysis uses the <strong>NQ-swap</strong> dataset (3,650 samples), where gold answer spans in retrieved passages are replaced with random entities of the same type. This creates a scenario where the context is structurally relevant but factually wrong -- directly conflicting with the model's parametric knowledge.</p>
+        <div class="highlight-box">
+            <p><strong>Key Finding:</strong> ACD achieves 60-75% EM on NQ-swap across models, substantially outperforming Standard RAG (41-50%) which blindly follows the manipulated context. Critically, ACD also outperforms MICD-D, which tends to over-reject contexts and fails to leverage the structural cues. ACD's entropy-based mechanism correctly identifies that the swapped context <em>increases</em> model uncertainty (since the injected entity conflicts with parametric knowledge), leading to lower &alpha; and appropriate reliance on internal knowledge.</p>
+        </div>
+
+        <h3>Case Study: Entropy in Action</h3>
+        <p>Two illustrative examples demonstrate how ACD's entropy-based weight works in practice:</p>
+        <div class="highlight-box">
+            <p><strong>Known-Noisy Example:</strong> "Who does the voice of Nala in the Lion King?"</p>
+            <p>The model already knows the answer (Moira Kelly) with low entropy: H(Y_t) = 2.92. When given a noisy passage suggesting Whoopi Goldberg, context-augmented entropy spikes: H(Y_t<sup>c</sup>) = 5.46. The resulting &alpha;<sub>ACD</sub> = 0.35 (low), correctly suppressing the misleading context. ACD answers "Moira Kelly" -- correct.</p>
+        </div>
+        <div class="highlight-box">
+            <p><strong>Unknown-Gold Example:</strong> "Who played Ben Stone on Law and Order?"</p>
+            <p>The model is uncertain (guesses Michael Tucker) with high entropy: H(Y_t) = 6.67. Given a gold passage mentioning Michael Moriarty, uncertainty drops sharply: H(Y_t<sup>c</sup>) = 1.56. The resulting &alpha;<sub>ACD</sub> = 0.81 (high), correctly amplifying the helpful context. ACD answers "Michael Moriarty" -- correct.</p>
+        </div>
+        <p>These cases illustrate the core mechanism: &alpha;<sub>ACD</sub> naturally tracks whether context resolves or creates uncertainty, without any explicit relevance classifier.</p>
+    </div>
+
+    <div class="section">
+        <h2>Limitations</h2>
+        <ul>
+            <li><strong>Computational cost:</strong> ACD requires two forward passes per decoding step (2x inference cost), the same overhead as CAD. While cheaper than MICD (3x cost), this may be a concern for latency-sensitive deployments.</li>
+            <li><strong>Base models only:</strong> The experiments focus on base LLMs (Llama2, Llama3, Mistral). Instruction-tuned or RLHF-aligned models exhibit different token distributions when conditioned on context (e.g., following instructions like "According to the given context..."), which could interfere with the contrastive mechanism.</li>
+            <li><strong>Short-form QA focus:</strong> ACD is evaluated on factoid QA tasks with short answers. Performance on long-form generation, multi-hop reasoning, or partially-relevant contexts remains unexplored.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results (Summary)</h2>
+
         <ul class="key-points">
-            <li><strong>Noise Robustness:</strong> ACD significantly outperforms fixed contrastive decoding and standard RAG baselines when retrieved contexts contain irrelevant or misleading information</li>
-            <li><strong>Preserved Gains from Good Retrieval:</strong> Unlike fixed contrastive methods that can hurt performance when contexts are helpful, ACD retains the benefits of high-quality retrieved passages</li>
-            <li><strong>Consistent Improvements:</strong> Gains are observed across multiple open-domain QA benchmarks, demonstrating the generality of the adaptive approach</li>
-            <li><strong>No Additional Training Required:</strong> ACD operates purely at decoding time, making it a plug-and-play enhancement for any existing RAG pipeline</li>
+            <li><strong>Consistent Top Performance:</strong> ACD outperforms all baselines including standard RAG, CAD, and MICD variants across all three benchmarks and four model architectures</li>
+            <li><strong>Superior Noise Robustness:</strong> On SubsetNoisy data, ACD achieves the highest EM scores (e.g., 42.06 on TriviaQA vs. MICD-D's 40.79), while CAD severely degrades to 24.75 -- even below closed-book performance</li>
+            <li><strong>Preserved Gains from Good Retrieval:</strong> On SubsetGold, ACD matches or exceeds Standard RAG (88.01 vs. 87.40 on TriviaQA), unlike CAD which drops to 73.69 by indiscriminately dampening context</li>
+            <li><strong>Strong Context Quality Discrimination:</strong> ACD achieves AUROC scores of 65-80% in distinguishing gold from noisy contexts across three aggregation strategies, far surpassing MICD-D's 51-73%</li>
+            <li><strong>Near-Oracle Performance:</strong> The gap between ACD and the oracle (which uses perfect knowledge of context quality) is only 0.46-2.81 points, demonstrating the effectiveness of entropy-based relevance estimation</li>
+            <li><strong>Robust to Knowledge Conflicts:</strong> On NQ-swap (factually manipulated contexts), ACD achieves 60-75% EM, correctly preferring parametric knowledge over misleading context</li>
+            <li><strong>No Additional Training Required:</strong> ACD operates purely at decoding time with only 2x inference cost, making it a plug-and-play enhancement for any existing RAG pipeline</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>RAG systems are increasingly deployed in production, but retrieval quality is inherently unpredictable. A system that works well with perfect retrieval can fail catastrophically with noisy results. ACD addresses this fundamental brittleness by making the generation process <strong>context-aware at the decoding level</strong>, providing a training-free mechanism that makes RAG systems more reliable in real-world conditions where retrieval quality varies widely.</p>
+        <p>RAG systems are increasingly deployed in production, but retrieval quality is inherently unpredictable. A system that works well with perfect retrieval can fail catastrophically with noisy results. ACD addresses this fundamental brittleness through three key contributions:</p>
+        <ul>
+            <li><strong>Principled adaptive mechanism:</strong> By grounding the contrastive weight in information-theoretic entropy, ACD provides a principled, interpretable way to modulate context influence -- unlike heuristic or fixed-weight approaches. The entropy ratio naturally captures the full distributional impact of context, achieving near-oracle relevance estimation without any ground-truth labels.</li>
+            <li><strong>Training-free robustness:</strong> ACD requires no additional training, fine-tuning, or external models. It operates purely at decoding time with the same 2x inference cost as existing contrastive methods, making it immediately applicable to any existing RAG pipeline as a drop-in replacement for standard decoding.</li>
+            <li><strong>Practical reliability:</strong> The near-oracle performance (within 0.46-2.81 points) and high AUROC for context quality discrimination demonstrate that entropy-based signals are a highly effective proxy for context relevance. The robustness to knowledge conflicts (NQ-swap) further shows that ACD can handle adversarial or manipulated contexts, paving the way for more reliable RAG systems in real-world deployments where retrieval quality varies widely.</li>
+            <li><strong>Generalizable design:</strong> Consistent improvements across four different LLM architectures (Llama2-7B/13B, Llama3-8B, Mistral-7B) and three diverse QA benchmarks demonstrate that ACD's entropy-based mechanism is not model- or dataset-specific, but captures a general principle of context-aware generation.</li>
+        </ul>
     </div>
 
     <div class="section">

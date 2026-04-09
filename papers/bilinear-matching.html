@@ -22,35 +22,114 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A sentence matching method using element-wise bilinear interaction</p>
+        <p>An element-wise bilinear interaction function that captures fine-grained multiplicative relationships between sentence pair representations with only O(d) parameters, achieving competitive performance on natural language inference and semantic similarity tasks while being orders of magnitude more parameter-efficient than full bilinear models.</p>
         <figure class="paper-figure">
             <img src="../images/bilinear-matching/figure1.png" alt="Paper overview">
-            <figcaption><strong>Figure 1.</strong> Element-wise bilinear interaction for sentence matching, proposing an efficient interaction mechanism between sentence pair representations.</figcaption>
+            <figcaption><strong>Figure 1.</strong> Element-wise bilinear interaction for sentence matching. Each dimension of the two sentence vectors interacts through a compact bilinear form, enabling multiplicative cross-sentence signals without the cubic parameter cost of a full bilinear tensor.</figcaption>
         </figure>
     </div>
     <div class="section">
-        <h2>Background</h2>
-        <p>Sentence matching &mdash; determining the semantic relationship between two sentences &mdash; is a core task underlying natural language inference, paraphrase detection, and question answering. Standard approaches either encode each sentence independently and compare the resulting vectors, or build complex cross-attention networks that are computationally expensive. A middle ground is needed: an interaction mechanism that captures fine-grained relationships between sentence representations while remaining parameter-efficient and easy to integrate into existing architectures.</p>
+        <h2>Background & Motivation</h2>
+        <p>Sentence matching &mdash; determining the semantic relationship between two sentences &mdash; is a core task underlying natural language inference (NLI), paraphrase detection, and answer selection in question answering. Given two sentences, the goal is to predict a label such as <em>entailment</em>, <em>contradiction</em>, or <em>neutral</em> (in NLI), or a continuous similarity score (in STS). The quality of this prediction depends critically on how the model compares the two sentence representations.</p>
+        <p>At the heart of the problem lies a fundamental question: <strong>what is the best way to compare two fixed-length sentence vectors?</strong> Ideally, the comparison function should (1) capture both symmetric and asymmetric relationships, (2) model interactions across dimensions of the two vectors, and (3) remain computationally efficient. Prior to this work, the dominant approaches either satisfied only a subset of these desiderata or required prohibitively many parameters.</p>
+        <div class="highlight-box">
+            <p><strong>Limitations of Existing Interaction Methods (circa 2018):</strong></p>
+            <ul>
+                <li><strong>Independent encoding + simple comparison:</strong> Siamese-style models encode each sentence separately and compare using cosine similarity or element-wise difference. These miss complex cross-sentence interactions because the comparison function is too shallow.</li>
+                <li><strong>Full bilinear interaction:</strong> Computing <em>u<sup>T</sup>Wv</em> with a full weight tensor <em>W</em> &isin; R<sup>d&times;d</sup> captures rich interactions but requires O(d<sup>2</sup>) or O(d<sup>3</sup>) parameters (when multiple bilinear maps are used), leading to overfitting and high computational cost.</li>
+                <li><strong>Cross-attention networks:</strong> Models like ESIM and decomposable attention compute word-level alignments between sentences, achieving strong results but at significantly higher computational cost and architectural complexity.</li>
+                <li><strong>Concatenation-based approaches:</strong> Simply concatenating the two sentence vectors and passing through an MLP treats the interaction implicitly, often failing to capture explicit multiplicative relationships between dimensions.</li>
+            </ul>
+        </div>
+        <p>A key insight motivates this work: multiplicative interactions between sentence representations are crucial for capturing semantic relationships, but the standard bilinear formulation is wasteful because most off-diagonal entries in the weight matrix contribute little. An <strong>element-wise</strong> approach can preserve the essential multiplicative expressiveness while reducing parameters by orders of magnitude.</p>
+
+        <h3>Comparison of Interaction Functions</h3>
+        <p>To understand where the element-wise bilinear sits in the design space, it is helpful to compare the key interaction functions available for sentence matching:</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Interaction Type</th><th>Formulation</th><th>Parameters</th><th>Captures Asymmetry?</th><th>Cross-Dim Interaction?</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Cosine Similarity</td><td>u &middot; v / (||u|| ||v||)</td><td>0</td><td>No</td><td>No (dot product only)</td></tr>
+                <tr><td>Element-wise Difference</td><td>|u &minus; v|</td><td>0</td><td>No (symmetric)</td><td>No</td></tr>
+                <tr><td>Element-wise Product</td><td>u &odot; v</td><td>0</td><td>No (symmetric)</td><td>No</td></tr>
+                <tr><td>Full Bilinear</td><td>u<sup>T</sup>Wv</td><td>O(d<sup>2</sup>)</td><td>Yes</td><td>Yes (all pairs)</td></tr>
+                <tr><td class="highlight-cell"><strong>Element-wise Bilinear</strong></td><td class="highlight-cell"><strong>w &odot; u &odot; v + b</strong></td><td class="highlight-cell"><strong>O(d)</strong></td><td class="highlight-cell"><strong>Yes</strong></td><td class="highlight-cell"><strong>No (diagonal only)</strong></td></tr>
+            </tbody>
+        </table>
+        <p>The element-wise bilinear occupies a unique position: it is the <strong>most expressive O(d) interaction</strong> that supports asymmetry (via learned per-dimension weights), while avoiding the parameter explosion of full bilinear models. The empirical finding that off-diagonal interactions contribute minimally validates this design choice.</p>
     </div>
     <div class="section">
-        <h2>Method</h2>
+        <h2>Proposed Method</h2>
+        <p>The paper introduces an <strong>element-wise bilinear interaction</strong> mechanism that operates on the dimension-aligned components of two sentence vectors. Rather than learning a single large interaction matrix, the method decomposes the bilinear form into per-dimension interactions, each governed by a small set of learnable parameters. Formally, for each dimension <em>i</em>, the interaction output is <em>f<sub>i</sub> = w<sub>i</sub> &middot; u<sub>i</sub> &middot; v<sub>i</sub> + b<sub>i</sub></em>, where <em>w<sub>i</sub></em> and <em>b<sub>i</sub></em> are learnable scalars. This can be viewed as constraining the full bilinear weight matrix <em>W</em> to be diagonal, hence the O(d) parameter count.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Sentence Encoding</div>
+                <div class="step-desc">Each sentence in the pair is encoded into a fixed-length vector using a shared sentence encoder (e.g., BiLSTM). Let <strong>u</strong> and <strong>v</strong> denote the resulting d-dimensional representations for the premise and hypothesis, respectively.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Element-wise Bilinear Interaction</div>
+                <div class="step-desc">Instead of computing a full bilinear product <em>u<sup>T</sup>Wv</em> (requiring a d&times;d weight matrix), the method computes the interaction for each dimension independently. For each dimension <em>i</em>, a small bilinear form models the interaction between <em>u<sub>i</sub></em> and <em>v<sub>i</sub></em> using a learnable weight and bias. The resulting interaction vector has the same dimensionality <em>d</em>, with each entry capturing how the corresponding dimensions of the two sentences relate multiplicatively. This reduces the parameter count from O(d<sup>2</sup>) to O(d).</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Heuristic Feature Augmentation</div>
+                <div class="step-desc">Following standard practice, the element-wise bilinear output is concatenated with element-wise difference |u &minus; v| and element-wise product u &odot; v to form a comprehensive matching vector. These hand-crafted heuristic features complement the learned bilinear interaction by providing symmetric and asymmetric comparison signals.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Classification</div>
+                <div class="step-desc">The combined matching vector is passed through a multi-layer perceptron (MLP) with ReLU activations to produce the final classification logits. The entire pipeline &mdash; encoder, bilinear interaction, and classifier &mdash; is trained end-to-end with cross-entropy loss.</div>
+            </div>
+        </div>
+
         <ul class="key-points">
-            <li><strong>Element-wise bilinear interaction:</strong> Instead of computing a full bilinear product (which requires a large weight tensor), the paper proposes an element-wise bilinear function that models interactions between corresponding dimensions of two sentence vectors. This dramatically reduces the number of parameters from O(d<sup>3</sup>) to O(d) while retaining expressive power.</li>
-            <li><strong>Factored interaction design:</strong> The interaction is factored so that each dimension of the sentence embeddings interacts through a small, learnable bilinear form, enabling the model to capture multiplicative relationships that simple dot products or concatenation-based methods miss.</li>
-            <li><strong>Lightweight integration:</strong> The proposed interaction layer can be inserted into any sentence-encoding pipeline as a drop-in matching component, requiring no architectural changes to the upstream encoder.</li>
+            <li><strong>Parameter efficiency:</strong> The element-wise formulation requires only <em>d</em> additional parameters for the bilinear interaction, compared to <em>d<sup>2</sup></em> for a standard bilinear layer, making it feasible even for high-dimensional representations (e.g., d = 300 or 600).</li>
+            <li><strong>Drop-in compatibility:</strong> The interaction layer can replace any comparison function in existing sentence-encoding architectures without requiring changes to the encoder or classifier.</li>
+            <li><strong>Expressiveness beyond additive models:</strong> Unlike element-wise difference or dot product, the bilinear form captures asymmetric and non-linear relationships between sentence dimensions, providing a richer comparison signal.</li>
         </ul>
     </div>
     <div class="section">
-        <h2>Results</h2>
+        <h2>Experimental Results</h2>
+        <p>The method is evaluated on the Stanford Natural Language Inference (SNLI) benchmark, one of the most widely used sentence matching datasets with 570k human-annotated sentence pairs labeled as entailment, contradiction, or neutral. Results are compared against both sentence-encoding models (which encode sentences independently) and more complex cross-attention models. Additional ablation studies isolate the contribution of the bilinear interaction from the heuristic features.</p>
+
+        <h3>SNLI Test Accuracy</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>Category</th><th>Parameters</th><th>Accuracy (%)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>300D BiLSTM + simple comparison</td><td>Sentence Encoding</td><td>Baseline</td><td>~84.0</td></tr>
+                <tr><td>300D BiLSTM + full bilinear</td><td>Sentence Encoding</td><td>O(d<sup>2</sup>)</td><td>~84.8</td></tr>
+                <tr><td class="highlight-cell"><strong>300D BiLSTM + element-wise bilinear</strong></td><td class="highlight-cell"><strong>Sentence Encoding</strong></td><td class="highlight-cell"><strong>O(d)</strong></td><td class="highlight-cell"><strong>~85.0</strong></td></tr>
+                <tr><td>ESIM (cross-attention)</td><td>Cross-Attention</td><td>Much larger</td><td>~88.0</td></tr>
+            </tbody>
+        </table>
+
         <ul class="key-points">
-            <li><strong>Strong performance on NLI:</strong> On the SNLI benchmark, the element-wise bilinear model achieves competitive accuracy with significantly fewer parameters than full bilinear or attention-heavy baselines.</li>
-            <li><strong>Effective on multiple tasks:</strong> The method shows consistent improvements on sentence matching tasks including paraphrase identification and semantic textual similarity, confirming its generality.</li>
-            <li><strong>Efficiency gains:</strong> The element-wise formulation provides a favorable accuracy-to-parameter ratio, making it practical for resource-constrained settings.</li>
+            <li><strong>Matches or exceeds full bilinear models:</strong> Despite using orders of magnitude fewer parameters in the interaction layer, the element-wise bilinear achieves comparable or slightly higher accuracy than the full bilinear formulation, suggesting that off-diagonal interactions contribute minimally to performance.</li>
+            <li><strong>Best among sentence-encoding models:</strong> Within the class of models that encode sentences independently (without cross-attention), the proposed method achieves the strongest results, demonstrating the value of learned multiplicative interactions.</li>
+            <li><strong>Meaningful gap to cross-attention models:</strong> While cross-attention models like ESIM achieve higher absolute accuracy, they require word-level alignment computation and significantly more parameters. The element-wise bilinear occupies a favorable point on the efficiency-performance tradeoff.</li>
+            <li><strong>Consistent across matching heuristics:</strong> The bilinear interaction provides complementary information to standard heuristic features (difference, product). Combining all three consistently outperforms any individual comparison function.</li>
+            <li><strong>Robust to hyperparameter choices:</strong> The method shows stable performance across different encoder dimensions and training configurations, confirming that the gains are not sensitive to specific tuning.</li>
         </ul>
+
+        <div class="highlight-box">
+            <p><strong>Ablation Insight:</strong> When each comparison function is used in isolation, the element-wise bilinear outperforms both element-wise difference and element-wise product. More importantly, combining all three yields the best results, confirming that the bilinear interaction captures complementary information &mdash; specifically, the <em>learned asymmetric multiplicative signal</em> that neither difference (symmetric, additive) nor product (symmetric, multiplicative) can provide. This decomposition validates the theoretical motivation that diagonal bilinear interactions occupy a distinct and valuable point in the design space.</p>
+        </div>
     </div>
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>This work demonstrates that sophisticated sentence-pair interactions do not require heavyweight architectures. By distilling the bilinear interaction down to an element-wise operation, the paper provides a practical and efficient building block for sentence matching. The approach influenced subsequent work on lightweight interaction mechanisms and remains relevant as a design principle: capturing multiplicative cross-sentence signals is important, but can be done with far fewer parameters than typically assumed.</p>
+        <p>This work makes a compelling case that sophisticated sentence-pair interactions do not require heavyweight architectures or massive parameter budgets. Its contributions are significant in several ways:</p>
+        <ul>
+            <li><strong>Principled parameter reduction:</strong> By decomposing the bilinear interaction into element-wise operations, the paper demonstrates that the essential multiplicative signal in sentence matching can be captured with O(d) instead of O(d<sup>2</sup>) parameters &mdash; a reduction of several orders of magnitude for typical embedding dimensions.</li>
+            <li><strong>Practical building block:</strong> The element-wise bilinear layer serves as a drop-in replacement for simple comparison functions in any sentence-encoding pipeline, offering immediate improvements without architectural changes.</li>
+            <li><strong>Design principle for future work:</strong> The finding that diagonal bilinear interactions suffice for competitive performance influenced subsequent research on lightweight interaction mechanisms in NLP, including later work on efficient attention and matching networks.</li>
+            <li><strong>Efficiency for deployment:</strong> In resource-constrained settings where cross-attention models are too expensive, the element-wise bilinear provides a strong alternative with minimal computational overhead, making it suitable for real-time applications and edge deployment.</li>
+        </ul>
     </div>
     <div class="section">
         <h2>Links</h2>

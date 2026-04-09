@@ -22,42 +22,132 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>단순 연결을 넘어 다양하고 복잡한 언어 패턴으로 단일 의도 발화를 혼합하여, 다중 의도 감지를 위한 엄밀한 벤치마크를 구축한 연구.</p>
+        <p>BlendX는 규칙 기반 휴리스틱과 ChatGPT 기반 생성을 결합하여 언어학적으로 다양한 다중 의도 발화를 구축한 벤치마크 스위트로, 기존 최신 모델의 정확도가 최대 40%p 하락함을 밝혀 기존 벤치마크의 허점을 드러낸 연구입니다.</p>
     </div>
     <figure class="paper-figure">
         <img src="https://arxiv.org/html/2403.18277v1/x1.png" alt="기존 다중 의도 감지 데이터셋의 한계와 BlendX의 필요성">
         <figcaption><strong>Figure 1.</strong> BlendX의 동기: 기존 다중 의도 감지 데이터셋(MixX)이 지나치게 단순한 연결 패턴에 의존하고 있어, 보다 엄밀한 다중 의도 감지 테스트베드의 필요성을 보여줌.</figcaption>
     </figure>
     <div class="section">
-        <h2>배경</h2>
-        <p>다중 의도 감지(Multi-Intent Detection, MID)는 하나의 사용자 발화에 여러 의도가 포함된 현실적인 상황을 다루는 과제입니다. 실제 프로덕션 대화 시스템에서는 전체 발화의 절반 이상이 복수의 의도를 포함하는 것으로 보고되고 있습니다. 그러나 대표적인 MID 벤치마크인 MixATIS와 MixSNIPS는 <em>"and," "and then," "and also,"</em> 콤마 등 단 4종의 접속사만으로 다중 의도 예시를 구성합니다. 이러한 지나치게 단순한 구성 방식은 모델이 의미를 진정으로 이해하지 않고도 표면적인 연결 패턴만으로 높은 성능을 달성할 수 있게 하여, 실제 성능을 과대평가하는 문제를 야기합니다.</p>
+        <h2>배경 및 동기</h2>
+        <div class="highlight-box">
+            <strong>핵심 문제:</strong> 대표적인 다중 의도 감지 벤치마크(MixATIS, MixSNIPS)는 <em>"and," "and then," "and also,"</em> 콤마 등 단 4종의 접속사 템플릿만으로 예시를 구성하여, 모델이 구성적 의미를 이해하지 않고도 표면적인 연결 패턴만으로 높은 성능을 달성할 수 있게 합니다.
+        </div>
+        <p>다중 의도 감지(Multi-Intent Detection, MID)는 하나의 사용자 발화에 여러 의도가 포함된 현실적인 상황을 다루는 과제입니다. 실제 프로덕션 대화 시스템에서는 전체 발화의 절반 이상이 복수의 의도를 포함하는 것으로 보고되고 있어, MID는 실제 목적 지향 대화 시스템에서 핵심적인 역할을 합니다.</p>
+        <p>그러나 기존 MID 벤치마크에는 두 가지 근본적인 한계가 존재합니다:</p>
+        <ul class="key-points">
+            <li><strong>제한된 연결 패턴:</strong> MixATIS와 MixSNIPS는 단 4종의 접속사만으로 단일 의도 발화를 결합하여, 자연어의 다양성을 전혀 반영하지 못하는 매우 예측 가능한 다중 의도 예시를 생성합니다.</li>
+            <li><strong>좁은 데이터셋 범위:</strong> 기존 연구는 ATIS와 SNIPS 두 개의 원본 데이터셋에만 한정되어, 평가되는 의도와 도메인의 다양성이 크게 제한됩니다.</li>
+            <li><strong>과대평가된 성능:</strong> 지나치게 단순한 구성 방식으로 인해 모델이 "and" 등의 표면적 단서만 감지하면 근완전한 점수를 달성할 수 있어, 실제 성능을 크게 과대평가하는 문제가 발생합니다.</li>
+        </ul>
+        <p>이러한 한계들이 BlendX의 개발 동기가 되었으며, BlendX는 실제 대화에서 나타나는 다중 의도 발화를 진정으로 처리할 수 있는 모델의 능력을 검증하기 위한 보다 엄밀하고 언어학적으로 다양한 벤치마크를 목표로 합니다.</p>
     </div>
     <figure class="paper-figure">
         <img src="https://arxiv.org/html/2403.18277v1/x3.png" alt="BlendX에서 연결의 복잡도와 방법론 측면 도식">
         <figcaption><strong>Figure 3.</strong> 연결(concatenation)의 복잡도(왼쪽)와 방법론(오른쪽) 측면의 도식. 각 접근법은 연결 과정에서 발생하는 가능한 변형(가운데)의 서로 다른 부분을 다룸.</figcaption>
     </figure>
     <div class="section">
-        <h2>방법</h2>
-        <p>BlendX는 두 가지 직교 차원을 따라 벤치마크를 구축합니다:</p>
-        <ul class="key-points">
-            <li><strong>복잡도 &mdash; 명시적 vs. 암시적:</strong> 명시적 연결은 다양한 접속사(예: <em>and, or, before, after, additionally</em>)를 사용합니다. 암시적 연결은 접속사를 완전히 제거하고, 생략, 대용어, 분사 구문 등을 활용하여 자연스러운 발화를 생성합니다.</li>
-            <li><strong>방법론 &mdash; Na&iuml;ve, Manual, Generative:</strong> Na&iuml;ve는 기존 MixX 방식을 재현하고, Manual은 다양한 접속어와 암시적 패턴을 적용하는 규칙 기반 휴리스틱을 사용하며, Generative는 SBERT 기반 유사도 필터링(코사인 유사도 &ge; 0.7)과 ChatGPT를 활용하여 자연스러운 다중 의도 발화를 생성합니다.</li>
-            <li><strong>복잡도 지표:</strong> 단어 수 감소(생략), 접속사 부재, 대명사 도입(대용어) 등 세 가지 통계 지표를 새롭게 제안하여, 데이터셋이 단순 연결 기준 대비 얼마나 어려운지를 정량화합니다.</li>
-        </ul>
-        <p>널리 사용되는 4개의 단일 의도 데이터셋(ATIS, SNIPS, Banking77, CLINC150)을 단일/이중/삼중 의도 발화 비율 3:5:2로 다중 의도 버전으로 확장합니다.</p>
+        <h2>제안 방법</h2>
+        <p>BlendX는 <strong>복잡도</strong>(명시적 vs. 암시적)와 <strong>방법론</strong>(Na&iuml;ve, Manual, Generative)의 두 가지 직교 차원을 따라 벤치마크를 구축하며, 데이터셋 난이도를 정량화하는 세 가지 새로운 복잡도 지표를 제안합니다.</p>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div>
+                    <div class="step-title">Na&iuml;ve 연결 (기준선)</div>
+                    <div class="step-desc">기존 MixX 방식을 재현하여, 4종의 표준 AND 계열 접속사(<em>and, and then, and also,</em> 콤마)만으로 단일 의도 발화를 결합합니다. 모든 데이터셋에서 단어 감소율이 0%인 직접 비교 기준선 역할을 합니다.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div>
+                    <div class="step-title">Manual 연결 (규칙 기반 휴리스틱)</div>
+                    <div class="step-desc">명시적 패턴(다양한 접속사: <em>or, before, after, additionally, meanwhile</em>)과 암시적 패턴(단어 수를 줄이는 생략, 대명사를 도입하는 대용어, 분사 구문)을 통해 다양한 언어학적 변환을 적용합니다. 데이터셋 전반에서 37~48%의 가장 높은 단어 감소율을 달성합니다.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div>
+                    <div class="step-title">Generative 연결 (ChatGPT + 유사도 기반 선택)</div>
+                    <div class="step-desc">ChatGPT를 활용하여 자연스러운 다중 의도 발화를 생성하며, SBERT 기반 유사도 필터링(코사인 유사도 임계값 &tau; = 0.7)으로 의미적 충실도를 보장합니다. 이 유사도 기반 선택은 ChatGPT의 오류율을 크게 감소시킵니다(예: ATIS에서 41% &rarr; 10%). 18~37%의 단어 감소율을 달성합니다.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div>
+                    <div class="step-title">새로운 복잡도 지표</div>
+                    <div class="step-desc">세 가지 이진 지표로 데이터셋 난이도를 정량화합니다: <strong>W(utt, n)</strong>은 연결 후 단어 수 감소(생략 감지), <strong>C(utt, n)</strong>은 접속사 부재(암시적 결합 감지), <strong>P(utt, n)</strong>은 대명사 도입(대용어 감지)을 측정합니다. 이 지표들은 BlendX가 MixX보다 객관적으로 우수함을 입증합니다.</div>
+                </div>
+            </div>
+        </div>
+        <p>널리 사용되는 4개의 단일 의도 데이터셋을 단일/이중/삼중 의도 발화 비율 3:5:2로 다중 의도 버전으로 확장합니다:</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>데이터셋</th><th>의도 수</th><th>훈련</th><th>검증</th><th>테스트</th><th>합계</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>SNIPS</td><td>7</td><td>50,625</td><td>2,613</td><td>2,615</td><td>55,853</td></tr>
+                <tr><td>ATIS</td><td>18</td><td>20,250</td><td>1,125</td><td>1,125</td><td>22,500</td></tr>
+                <tr><td>Banking77</td><td>77</td><td>36,390</td><td>2,009</td><td>2,021</td><td>40,420</td></tr>
+                <tr><td>CLINC150</td><td>147</td><td>54,896</td><td>2,889</td><td>2,977</td><td>60,762</td></tr>
+            </tbody>
+        </table>
     </div>
     <div class="section">
         <h2>실험 결과</h2>
+        <p>세 가지 대표 모델을 평가하였습니다: <strong>TFMN</strong>(임계값 기반 다중 의도 감지), <strong>SLIM</strong>(이진 분류 접근법), <strong>ChatGPT</strong>(인컨텍스트 러닝). MixX로 학습하고 BlendX로 평가하는 교차 평가 패러다임을 통해 모델의 치명적 약점을 드러냅니다.</p>
+        <h3>TFMN 성능 (정확도 %)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>학습</th><th>평가</th><th>SNIPS</th><th>ATIS</th><th>Banking77</th><th>CLINC150</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>MixX</td><td>MixX</td><td>95.68</td><td>77.98</td><td>76.61</td><td>85.88</td></tr>
+                <tr><td>MixX</td><td><strong>BlendX</strong></td><td><strong>52.51</strong></td><td><strong>42.51</strong></td><td><strong>37.31</strong></td><td><strong>42.45</strong></td></tr>
+                <tr><td>BlendX</td><td>BlendX</td><td>94.93</td><td>76.50</td><td>63.99</td><td>77.96</td></tr>
+            </tbody>
+        </table>
+        <h3>SLIM 성능 (정확도 %)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>학습</th><th>평가</th><th>SNIPS</th><th>ATIS</th><th>Banking77</th><th>CLINC150</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>MixX</td><td>MixX</td><td>95.97</td><td>77.10</td><td>83.71</td><td>88.67</td></tr>
+                <tr><td>MixX</td><td><strong>BlendX</strong></td><td><strong>93.51</strong></td><td><strong>72.80</strong></td><td><strong>69.89</strong></td><td><strong>73.39</strong></td></tr>
+                <tr><td>BlendX</td><td>BlendX</td><td>95.73</td><td>76.92</td><td>75.30</td><td>85.62</td></tr>
+            </tbody>
+        </table>
+        <h3>절제 실험: MixX로 학습한 TFMN의 BlendX 하위 집합별 성능 (정확도 %)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>방법</th><th>SNIPS</th><th>ATIS</th><th>Banking77</th><th>CLINC150</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Na&iuml;ve</td><td>95.32</td><td>73.23</td><td>62.30</td><td>80.73</td></tr>
+                <tr><td>Manual</td><td><strong>25.32</strong></td><td><strong>42.40</strong></td><td><strong>8.05</strong></td><td><strong>25.73</strong></td></tr>
+                <tr><td>Generative</td><td>81.58</td><td>53.93</td><td>27.95</td><td>60.17</td></tr>
+            </tbody>
+        </table>
         <ul class="key-points">
-            <li><strong>성능의 급격한 하락:</strong> MixX로 학습하고 BlendX로 평가하면 정확도가 최대 40%p 하락합니다(예: Banking77에서 TFMN 76.61% &rarr; 37.31%). 이는 기존 모델이 표면적 연결 패턴에 크게 의존하고 있음을 보여줍니다.</li>
-            <li><strong>평가 모델:</strong> TFMN(임계값 기반), SLIM(이진 분류), ChatGPT(인컨텍스트 러닝)를 평가하였으며, 모든 모델이 MixX 대비 BlendX에서 크게 어려움을 겪었습니다.</li>
-            <li><strong>구성 방법별 분석:</strong> 세 가지 구성 방법 중 Manual(암시적 패턴)이 가장 어렵고, Generative, Na&iuml;ve 순으로 나타나, 암시적 혼합이 난이도의 주요 원인임을 확인하였습니다.</li>
-            <li><strong>BlendX 학습 효과:</strong> BlendX로 학습하고 평가해도 MixX 전용 평가 대비 성능이 상당히 낮아, BlendX 자체의 본질적 복잡성을 입증합니다.</li>
+            <li><strong>급격한 교차 평가 성능 하락:</strong> MixX에서 BlendX 평가로 전환 시 TFMN 정확도가 최대 43%p 하락합니다(예: SNIPS 95.68% &rarr; 52.51%, Banking77 76.61% &rarr; 37.31%). 이는 기존 모델이 표면적 연결 패턴에 크게 의존하고 있음을 드러냅니다.</li>
+            <li><strong>Manual 패턴이 가장 어려움:</strong> 절제 실험 결과, Manual 연결(암시적 패턴)이 모델 성능을 가장 크게 저하시킵니다. Banking77에서 TFMN이 8.05%, SNIPS에서 25.32%까지 하락하여, 접속사 없는 암시적 혼합이 난이도의 주요 원인임을 확인합니다.</li>
+            <li><strong>SLIM은 더 강건하나 여전히 영향:</strong> SLIM은 이진 분류 접근법 덕분에 상대적으로 작은 하락(예: Banking77 83.71% &rarr; 69.89%)을 보이지만, 특히 Banking77과 CLINC150에서 의미 있는 성능 저하를 겪습니다.</li>
+            <li><strong>BlendX 학습으로도 격차 미해소:</strong> BlendX로 학습하고 평가해도(예: TFMN Banking77 63.99%) MixX 전용 평가(76.61%) 대비 성능이 상당히 낮아, 단순한 분포 이동을 넘어선 BlendX 자체의 본질적 복잡성을 입증합니다.</li>
+            <li><strong>유사도 기반 선택의 효과:</strong> SBERT 기반 유사도 필터링으로 ChatGPT 오류율이 ATIS에서 41%에서 10%로 크게 감소(코사인 유사도 0.214 &rarr; 0.758)하여, 통제된 생성의 중요성을 검증합니다.</li>
         </ul>
     </div>
     <div class="section">
         <h2>의의</h2>
-        <p>BlendX는 다중 의도 감지 연구의 치명적 사각지대를 드러냅니다. MixATIS/MixSNIPS에서 보고된 최신 성능은 실제 활용 능력을 크게 과대평가하고 있습니다. 언어학적으로 더 다양하고 엄밀한 벤치마크를 제공함으로써, BlendX는 얕은 연결 패턴에 의존하지 않고 구성적 의미론을 진정으로 이해하는 모델 개발의 방향을 제시합니다. 이는 프로덕션 환경에서 보다 강건한 목적 지향 대화 시스템을 구축하는 데 직접적인 시사점을 제공합니다.</p>
+        <div class="highlight-box">
+            <strong>핵심 시사점:</strong> MixATIS/MixSNIPS에서 보고된 최신 MID 성능은 실제 활용 능력을 크게 과대평가하고 있습니다. BlendX는 다중 의도 감지를 위한 보다 정직한 평가 프레임워크를 학계에 제공합니다.
+        </div>
+        <p>BlendX는 다중 의도 감지 분야에 세 가지 중요한 기여를 합니다:</p>
+        <ul class="key-points">
+            <li><strong>벤치마크의 약점 노출:</strong> 최대 40%p의 성능 하락을 입증함으로써, 기존 모델이 진정한 의미 이해가 아닌 얕은 패턴 매칭에 의존하고 있음을 밝혀, MID 분야의 인지된 진보에 의문을 제기합니다.</li>
+            <li><strong>확장된 평가 범위:</strong> 원본 데이터셋을 2개에서 4개로 확장(Banking77의 77개, CLINC150의 147개 의도 유형 추가)하여, 다양한 도메인과 의도 세분화를 아우르는 훨씬 포괄적인 평가를 가능하게 합니다.</li>
+            <li><strong>체계적 복잡도 프레임워크:</strong> 이차원 구성 프레임워크(복잡도 x 방법론)와 세 가지 새로운 통계 지표는 연구자들에게 데이터셋 난이도를 이해하고 측정하는 체계적 도구를 제공하여, 향후 벤치마크 개발의 기반이 됩니다.</li>
+            <li><strong>실용적 시사점:</strong> 프로덕션 대화 시스템에 대해, BlendX의 발견은 배포된 모델이 실제 사용자 발화에서 실험실 평가보다 훨씬 낮은 성능을 보일 수 있음을 시사하며, 보다 강건한 다중 의도 감지 접근법 개발의 필요성을 제기합니다.</li>
+        </ul>
     </div>
     <div class="section">
         <h2>링크</h2>

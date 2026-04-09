@@ -22,38 +22,111 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>We introduce the concept of "epistemic boundedness" to analyze the fundamental challenges that arise when generative AI is integrated into public administrative decision-making, arguing that AI does not simply extend bounded rationality but introduces a qualitatively new form of knowledge limitation.</p>
+        <p>This paper introduces the concept of <strong>"epistemic boundedness"</strong> to analyze how generative AI fundamentally transforms &mdash; rather than merely extends &mdash; the knowledge limitations of public administrators, arguing that AI-augmented decision-making requires entirely new institutional safeguards beyond those designed for traditional bounded rationality.</p>
     </div>
 
     <div class="section">
         <h2>Background &amp; Motivation</h2>
-        <p>Public administrators increasingly turn to generative AI tools such as large language models (LLMs) to support policy analysis, document drafting, and decision-making. While Herbert Simon's classic notion of "bounded rationality" has long explained the cognitive limits of human decision-makers, the integration of AI introduces a distinct set of epistemic challenges that existing frameworks do not fully capture.</p>
-        <p style="margin-top: 12px;">Generative AI can produce fluent, confident, and authoritative-sounding outputs that may nonetheless be factually incorrect, biased by training data, or lacking contextual understanding of specific administrative settings. This creates a new risk: decision-makers may over-rely on AI outputs without being able to assess their epistemic quality, a phenomenon this paper terms <strong>epistemic boundedness</strong>.</p>
+        <p>Public administrators increasingly turn to generative AI tools such as large language models (LLMs) to support policy analysis, document drafting, and decision-making. While Herbert Simon's classic notion of <strong>"bounded rationality"</strong> (1947) has long explained the cognitive limits of human decision-makers &mdash; limited information, finite processing capacity, time pressure &mdash; the integration of AI introduces a qualitatively distinct set of epistemic challenges that existing frameworks do not capture.</p>
+
+        <p>Simon's foundational insight was that human decision-makers lack the cognitive resources to identify all alternatives, evaluate all consequences, and select the optimal course of action. Instead, they employ heuristics and <strong>satisfice</strong> &mdash; choosing the first option that meets a minimum threshold of acceptability. Subsequent scholarship by March and Simon (1958), Lindblom (1959), and others extended this into theories of incrementalism and organizational decision-making. For decades, information technology was understood as a tool that could <em>push back</em> the boundaries of rationality: databases provided more information, spreadsheets enabled faster calculation, and decision-support systems structured choices more clearly. Generative AI, however, breaks this paradigm.</p>
+
+        <div class="highlight-box">
+            <p><strong>The Core Problem: From Bounded Rationality to Epistemic Boundedness</strong></p>
+            <ul>
+                <li><strong>Bounded rationality</strong> (Simon, 1947): Decision-makers have limited cognitive capacity to search for, process, and evaluate information &mdash; they "satisfice" rather than optimize. The bottleneck is the <em>decision-maker's processing capacity</em>.</li>
+                <li><strong>AI promise:</strong> Generative AI can process vast corpora, draft policy documents, summarize regulations, and generate analyses at superhuman speed, seemingly overcoming bounded rationality by offloading cognitive labor to machines.</li>
+                <li><strong>The hidden trap:</strong> AI outputs are fluent, confident, and authoritative-sounding &mdash; yet may be factually incorrect (hallucination), biased by training data distributions, or lacking contextual understanding of specific administrative and legal settings. Unlike a calculator or database, the AI <em>generates</em> knowledge rather than merely retrieving it, and the generation process is opaque.</li>
+                <li><strong>Epistemic boundedness:</strong> Decision-makers cannot assess the reliability and validity of AI-generated knowledge itself. Unlike traditional bounded rationality, the limitation is not about processing more information but about <em>knowing whether the information is trustworthy</em>. The bottleneck shifts from the decision-maker's cognitive capacity to the <em>epistemic opacity of the AI system</em>.</li>
+            </ul>
+        </div>
+
+        <p>This gap is especially dangerous in public administration, where decisions carry legal authority, affect citizens' rights, and demand democratic accountability. Consider concrete scenarios: an LLM-drafted policy memo may contain fabricated legal precedents or mischaracterized regulatory requirements that an administrator without legal expertise cannot detect &mdash; yet the memo's professional tone provides false confidence in its accuracy. A chatbot deployed for citizen services may provide confidently incorrect information about benefit eligibility, leading to real harm. A risk-assessment summary generated by AI may systematically underweight factors relevant to minority communities because of biases in training data. In each case, the administrator faces not a shortage of information but an <em>inability to evaluate the epistemic status</em> of the information they have received.</p>
+
+        <p>The paper situates this challenge within broader debates about <strong>algorithmic governance</strong> and the <strong>automation of discretion</strong> in public institutions. Unlike earlier forms of IT that augmented human capacity while leaving the locus of judgment intact, generative AI threatens to shift the locus of knowledge production from human experts to opaque statistical models &mdash; a shift with profound implications for the legitimacy and accountability of administrative action.</p>
     </div>
 
     <div class="section">
-        <h2>Method / Approach</h2>
-        <p>The paper develops a theoretical framework grounded in public administration theory and epistemology:</p>
+        <h2>Proposed Method: Theoretical Framework Development</h2>
+        <p>The paper constructs a multi-layered theoretical framework that bridges public administration theory, epistemology, and AI scholarship to systematically characterize the new knowledge challenges posed by generative AI in governance. Rather than proposing a computational method or empirical experiment, the contribution is <strong>conceptual and normative</strong> &mdash; developing new analytical vocabulary and institutional design principles through rigorous theoretical analysis grounded in the public administration, philosophy of science, and AI safety literatures.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Conceptual Analysis of Epistemic Boundedness</div>
+                <div class="step-desc">The paper formally distinguishes epistemic boundedness from bounded rationality along three dimensions: (a) <strong>source of limitation</strong> &mdash; cognitive capacity vs. inability to verify AI-generated knowledge; (b) <strong>nature of the problem</strong> &mdash; information scarcity vs. information opacity; and (c) <strong>remediation strategy</strong> &mdash; heuristics and satisficing vs. institutional verification and epistemic governance. A critical insight here is the <strong>paradox of augmentation</strong>: while bounded rationality can be partially addressed by providing more information, epistemic boundedness is <em>amplified</em> by more AI-generated information because each additional output carries unassessable reliability. The paper draws on philosophical epistemology &mdash; particularly the distinction between <em>justified true belief</em> and <em>mere true belief</em> &mdash; to argue that AI-generated outputs may be true but cannot be epistemically justified by the administrator who uses them, undermining the knowledge basis of administrative action.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Taxonomy of AI Failure Modes in Administrative Contexts</div>
+                <div class="step-desc">The paper systematically maps how generative AI's known failure modes manifest specifically in public administration scenarios, constructing a detailed taxonomy with five categories:
+                    <br><br><strong>(i) Hallucination</strong> &mdash; fabrication of plausible but nonexistent facts (e.g., citing judicial rulings that do not exist in drafted legal opinions, inventing statistical data in policy analyses);
+                    <br><strong>(ii) Training data bias</strong> &mdash; systematic skewing toward overrepresented viewpoints (e.g., welfare policy recommendations reflecting majority-group perspectives while marginalizing minority needs);
+                    <br><strong>(iii) Temporal knowledge gaps</strong> &mdash; inability to reflect recent legislative changes, court rulings, or policy updates beyond the training data cutoff;
+                    <br><strong>(iv) Lack of situational awareness</strong> &mdash; failure to account for local institutional norms, political dynamics, and jurisdiction-specific regulations that shape real administrative practice;
+                    <br><strong>(v) Sycophantic tendencies</strong> &mdash; generating outputs that confirm the user's apparent preferences rather than providing critical or balanced analysis.
+                    <br><br>For each failure mode, the analysis traces the <strong>causal chain from technical limitation to administrative risk to democratic harm</strong>: e.g., hallucination &rarr; fabricated legal citation &rarr; unlawful policy recommendation &rarr; citizen rights violation &rarr; erosion of public trust.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Analysis of Epistemic Asymmetry</div>
+                <div class="step-desc">The paper examines the structural power imbalance created when administrators depend on AI systems whose reasoning they cannot inspect or evaluate. This "epistemic asymmetry" is analyzed through three interconnected lenses:
+                    <br><br><strong>(a) Technical opacity:</strong> Transformer-based LLMs with billions of parameters operate as black boxes for non-technical users. Even "explainable AI" techniques provide post-hoc rationalizations rather than genuine insight into the generative process, leaving administrators unable to distinguish reliable outputs from unreliable ones.
+                    <br><strong>(b) Authority effect:</strong> The professional, well-structured, and confidently assertive tone of AI-generated text creates a cognitive bias that the paper terms the <strong>"epistemic authority illusion"</strong> &mdash; administrators are less likely to question AI outputs than equivalent human-drafted text, even when the AI output has a higher error rate. This mirrors findings in automation bias research (Parasuraman &amp; Manzey, 2010) but is amplified by the natural-language fluency of modern LLMs.
+                    <br><strong>(c) Expertise erosion:</strong> When AI replaces rather than supplements human analysis, institutional knowledge atrophies over time. Administrators who routinely defer to AI lose the domain expertise needed to detect AI errors, creating a <strong>vicious cycle of increasing dependence and decreasing oversight capacity</strong>.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Institutional Design Principles for Epistemic Governance</div>
+                <div class="step-desc">Drawing on institutional theory (North, 1990; Ostrom, 2005) and democratic accountability frameworks, the paper proposes four governance principles for responsible AI integration in public administration:
+                    <br><br><strong>(a) Structured verification protocols:</strong> Mandatory domain-expert review of AI-generated outputs before they inform decisions, with checklists targeting the most common failure modes (factual accuracy, legal validity, equity implications).
+                    <br><strong>(b) Epistemic accountability mechanisms:</strong> Clear assignment of responsibility for AI-assisted decisions to identifiable human decision-makers, preventing the diffusion of accountability across human-AI systems. This includes documentation requirements specifying which outputs were AI-generated and which were human-verified.
+                    <br><strong>(c) Transparency requirements:</strong> Making AI's role in administrative decision-making visible to both internal stakeholders and affected citizens, including disclosure when public-facing communications or policy analyses have been AI-generated or AI-assisted.
+                    <br><strong>(d) Capacity-building programs:</strong> Ongoing training and institutional investment to maintain human analytical skills alongside AI augmentation, ensuring that administrators retain the expertise needed to evaluate and override AI outputs when necessary. This includes periodic "AI-free" exercises to prevent skill atrophy.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Key Arguments &amp; Findings</h2>
+
+        <h3>Comparison: Bounded Rationality vs. Epistemic Boundedness</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Dimension</th><th>Bounded Rationality (Simon)</th><th>Epistemic Boundedness (This Paper)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Source</td><td>Human cognitive limits</td><td>Opacity of AI-generated knowledge</td></tr>
+                <tr><td>Core Problem</td><td>Cannot process all available information</td><td>Cannot verify reliability of AI outputs</td></tr>
+                <tr><td>Information Effect</td><td>More information helps (up to a point)</td><td>More AI output amplifies the problem</td></tr>
+                <tr><td>Decision Strategy</td><td>Satisficing with heuristics</td><td>Deferred judgment to opaque systems</td></tr>
+                <tr><td>Remediation</td><td>Better decision aids, training</td><td>Institutional safeguards, epistemic governance</td></tr>
+                <tr><td>Accountability</td><td>Clear human responsibility</td><td>Diffused across human-AI interaction</td></tr>
+            </tbody>
+        </table>
+
         <ul class="key-points">
-            <li><strong>Conceptual Analysis of Epistemic Boundedness:</strong> Distinguishes AI-induced epistemic limitations from traditional bounded rationality &mdash; while bounded rationality concerns limits on information processing, epistemic boundedness concerns the inability to evaluate the reliability and validity of AI-generated knowledge itself</li>
-            <li><strong>Examination of AI Failure Modes:</strong> Analyzes how hallucination, training data bias, and lack of situational awareness in generative AI create systematic blind spots in administrative contexts</li>
-            <li><strong>Institutional Design Implications:</strong> Proposes governance principles for integrating AI into administrative workflows, including mechanisms for epistemic accountability and human oversight</li>
+            <li><strong>AI does not merely reduce bounded rationality:</strong> While AI can process vast amounts of information, it simultaneously introduces new epistemic limitations that administrators are poorly equipped to detect or correct. The net effect on decision quality is ambiguous, not uniformly positive. The paper argues this represents a <em>qualitative shift</em> in the nature of decision-making constraints, not simply a quantitative change.</li>
+            <li><strong>Hallucination as systemic epistemic risk:</strong> Generative AI's tendency to produce plausible but unfounded outputs &mdash; fabricated legal precedents, nonexistent regulations, invented statistics &mdash; poses a unique threat in administrative settings where decisions carry binding legal and social consequences. Unlike errors of omission (missing relevant information), hallucinations are errors of <em>commission</em> that actively introduce false knowledge into decision processes.</li>
+            <li><strong>Epistemic asymmetry creates dependency:</strong> Administrators typically lack the technical expertise to evaluate when AI outputs are reliable versus misleading, creating an asymmetric dependence on opaque systems. Over time, this dependency can erode the institutional knowledge base that would otherwise serve as a check on AI errors &mdash; a phenomenon the paper describes as a <strong>"deskilling spiral."</strong></li>
+            <li><strong>Authority effect of AI-generated text:</strong> The professional, confident tone of LLM outputs creates an "epistemic authority illusion" that makes administrators less likely to question or verify AI-generated content compared to human-drafted alternatives, even when error rates are comparable or higher. This effect is compounded by the <strong>speed advantage</strong> of AI: time-pressured administrators are incentivized to accept AI outputs uncritically.</li>
+            <li><strong>The paradox of augmentation:</strong> More AI-generated information does not resolve epistemic boundedness but amplifies it, because each additional AI output carries unassessable reliability. Unlike bounded rationality, where more data generally helps, epistemic boundedness worsens as AI is used more extensively.</li>
+            <li><strong>Institutional safeguards, not just technical fixes:</strong> Effective AI integration requires governance mechanisms &mdash; structured verification protocols, domain-expert review stages, epistemic accountability frameworks, and mandatory human-in-the-loop checkpoints &mdash; rather than relying solely on improving model accuracy. The paper emphasizes that technical solutions (e.g., better retrieval-augmented generation, improved calibration) are necessary but insufficient.</li>
+            <li><strong>Democratic accountability at stake:</strong> When AI-assisted decisions go wrong, the diffusion of responsibility between human administrators and AI systems threatens the democratic principle that public officials must be accountable for their decisions. The paper warns of an emerging <strong>"accountability gap"</strong> where neither the AI developer, the AI system, nor the administrator bears clear responsibility for erroneous outcomes.</li>
+            <li><strong>Implications for administrative law:</strong> Existing legal frameworks governing administrative discretion, due process, and reasoned decision-making were designed for human decision-makers. The paper argues that AI-augmented decision-making may require new doctrinal developments to ensure that administrative actions remain legally defensible and procedurally fair when substantially informed by AI outputs.</li>
         </ul>
     </div>
 
     <div class="section">
-        <h2>Key Findings</h2>
-        <ul class="key-points">
-            <li><strong>AI Does Not Merely Reduce Bounded Rationality:</strong> While AI can process vast amounts of information, it simultaneously introduces new epistemic limitations that administrators are poorly equipped to detect or correct</li>
-            <li><strong>Hallucination as Epistemic Risk:</strong> Generative AI's tendency to produce plausible but unfounded outputs poses a unique threat in administrative settings where decisions carry legal and social consequences</li>
-            <li><strong>Asymmetry of Knowledge Assessment:</strong> Administrators often lack the technical expertise to evaluate when AI outputs are reliable versus when they are misleading, creating an asymmetric dependence on opaque systems</li>
-            <li><strong>Need for Epistemic Governance:</strong> Effective AI integration requires institutional safeguards &mdash; not merely technical fixes &mdash; including structured verification protocols, domain-expert review, and clear accountability frameworks</li>
+        <h2>Why It Matters</h2>
+        <p>As governments worldwide accelerate AI adoption in public services &mdash; from the U.S. federal government's executive orders on AI to the EU AI Act's regulation of high-risk AI systems in public administration &mdash; this paper provides a critical conceptual lens for understanding why "more AI" does not automatically mean "better decisions." The epistemic boundedness framework makes several key contributions:</p>
+        <ul>
+            <li><strong>New theoretical vocabulary:</strong> By distinguishing epistemic boundedness from bounded rationality, the paper gives public administration scholars and practitioners precise language for identifying and analyzing the distinctive risks of AI-augmented governance &mdash; risks that are invisible through the lens of traditional decision theory alone. This is the first systematic theoretical treatment of how generative AI transforms, rather than merely extends, the epistemological foundations of administrative decision-making.</li>
+            <li><strong>Actionable governance framework:</strong> The proposed institutional design principles &mdash; verification protocols, epistemic accountability, transparency requirements, and capacity building &mdash; offer concrete, implementable guidance for agencies seeking to integrate AI responsibly rather than reactively. Each principle is tied to specific failure modes and risk pathways, making it practical for organizational implementation.</li>
+            <li><strong>Interdisciplinary bridge:</strong> Connecting public administration theory (Simon, March, Lindblom) with AI epistemology, philosophy of science, and computer science, the paper opens a productive dialogue between fields that have largely developed their analyses of AI governance in isolation, advancing our understanding of how technical and institutional dimensions interact.</li>
+            <li><strong>Reframing the AI-government relationship:</strong> The paper challenges the prevailing "efficiency narrative" that treats AI as a neutral tool for reducing costs and processing times. By centering epistemic risk rather than operational efficiency, it redirects attention to the knowledge-quality and accountability dimensions that are ultimately more consequential for democratic governance.</li>
         </ul>
-    </div>
-
-    <div class="section">
-        <h2>Significance</h2>
-        <p>As governments worldwide accelerate AI adoption in public services, this paper provides a critical conceptual lens for understanding why "more AI" does not automatically mean "better decisions." The epistemic boundedness framework offers public administration scholars and practitioners a vocabulary for identifying and mitigating the distinctive risks of AI-augmented governance. Rather than treating AI as a neutral efficiency tool, the paper calls for deliberate institutional design that preserves human judgment and accountability in the face of AI's epistemic opacity.</p>
+        <p>Rather than treating AI as a neutral efficiency tool, the paper calls for deliberate institutional design that preserves human judgment and democratic accountability in the face of AI's epistemic opacity. The framework has immediate practical relevance: it can inform the design of AI governance policies at the agency level, guide procurement standards for AI tools in government, and shape training programs for public servants who will increasingly work alongside generative AI. As LLM capabilities continue to expand and AI adoption in government accelerates, the need for principled epistemic governance will only grow more urgent.</p>
     </div>
 
     <div class="section">

@@ -22,42 +22,113 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>프롬프트 증강 선형 프로빙으로 퓨샷 인컨텍스트 학습의 한계를 넘어서는 방법을 제안합니다.</p>
+        <p>PALP는 동결된 LLM의 프롬프트 증강 표현 위에 경량 선형 분류기를 학습하여, 퓨샷 인컨텍스트 학습과 풀 파인튜닝 사이의 성능 격차를 최소한의 학습 비용으로 해소하면서 임의 규모의 레이블 데이터로 확장 가능한 방법을 제시합니다.</p>
     </div>
 
     <figure class="paper-figure">
         <img src="../../images/prompt-probing/figure1.png" alt="논문 개요">
-        <figcaption><strong>Figure 1.</strong> 프롬프트 증강 선형 프로빙 프레임워크. 프롬프트 엔지니어링과 효율적인 프로빙을 결합하여 퓨샷 인컨텍스트 학습의 한계를 넘어섭니다.</figcaption>
+        <figcaption><strong>Figure 1.</strong> PALP(Prompt-Augmented Linear Probing) 프레임워크 개요. ICL처럼 시연 예제를 컨텍스트에 넣거나 선형 프로빙처럼 원본 표현을 그대로 사용하는 대신, PALP는 태스크 특화 프롬프트로 입력을 변환한 뒤 풍부해진 은닉 상태 위에 선형 분류기를 학습합니다.</figcaption>
     </figure>
 
     <div class="section">
         <h2>배경 및 동기</h2>
-        <p>대규모 언어 모델(LLM)은 소수의 시연 예제만으로 태스크를 수행하는 <strong>인컨텍스트 학습(ICL)</strong>이 가능하지만, 고정된 컨텍스트 윈도우 크기로 인해 시연 수가 늘어나면 성능이 정체되거나 오히려 하락하는 근본적 한계가 있습니다. 반면 <strong>선형 프로빙(linear probing)</strong>은 동결된 LLM 표현 위에 단순 선형 분류기를 학습하여 더 많은 레이블 데이터를 활용할 수 있지만, 모델의 언어 이해 능력을 충분히 끌어내지 못해 ICL보다 낮은 성능을 보이는 경우가 많습니다. 본 논문은 두 접근법의 장점을 결합할 수 있는지를 탐구합니다.</p>
+        <p>대규모 언어 모델(LLM)은 소수의 시연 예제만으로 태스크를 수행하는 <strong>인컨텍스트 학습(ICL)</strong> 능력을 보여주었습니다. 그러나 ICL에는 근본적인 확장성 병목이 존재합니다: 고정된 컨텍스트 윈도우가 시연 수를 제한하며, 더 많은 예제를 추가하면 성능이 정체되거나 오히려 <em>하락</em>합니다. 반면 <strong>선형 프로빙</strong>은 동결된 LLM 표현 위에 단순 선형 분류기를 학습하여 무제한의 레이블 데이터를 활용할 수 있지만, 태스크 특화 조건화 없이 원본 입력에서 추출한 표현은 ICL보다 낮은 성능을 보입니다.</p>
+        <div class="highlight-box">
+            <p><strong>핵심 딜레마:</strong></p>
+            <ul>
+                <li><strong>인컨텍스트 학습(ICL):</strong> 프롬프트 조건화 덕분에 강력한 퓨샷 성능을 보이지만, 컨텍스트 윈도우(당시 기준 2K--4K 토큰)를 넘어서면 확장이 불가능합니다. 한계를 초과하는 시연 추가는 성능 저하를 유발합니다.</li>
+                <li><strong>선형 프로빙:</strong> 컨텍스트 길이 제약 없이 모든 레이블 데이터를 활용할 수 있지만, 프롬프트 없이 원본 입력에서 추출한 표현이 다운스트림 태스크에 최적화되지 않아 성능이 열위합니다.</li>
+                <li><strong>파인튜닝:</strong> 전체 모델 파라미터를 업데이트하여 최고 성능을 달성하지만, 연산 비용이 크고 화이트박스 접근이 필요하여 블랙박스 API 환경에서는 사용이 불가능합니다.</li>
+            </ul>
+        </div>
+        <p>본 논문은 <em>두 가지 장점을 동시에 취할 수 있는가?</em>라는 질문을 던집니다. 표현 추출 전에 태스크 특화 프롬프트로 입력을 증강함으로써, PALP는 선형 프로빙이 ICL에 필적하고 파인튜닝 성능에 근접할 수 있게 합니다 -- 이 모든 것을 LLM을 동결된 블랙박스 피처 추출기로 사용하면서 달성합니다.</p>
+        <p>PALP의 핵심적인 경험적 관찰은 다음과 같습니다: GPT 계열 모델의 은닉 상태 기하학을 분석한 결과, 프롬프트가 포함된 입력에서 추출한 표현이 원본 입력의 표현과는 <strong>구별되는 태스크 정렬 부분공간</strong>을 점유한다는 것입니다. 이 기하학적 분리가 프롬프트 증강 피처의 선형 분리가능성이 높은 이유를 설명하며, 단순한 선형 분류기만으로도 높은 성능을 달성할 수 있는 근거를 제공합니다.</p>
     </div>
 
     <div class="section">
-        <h2>방법론</h2>
-        <p>제안하는 <strong>프롬프트 증강 선형 프로빙(PALP)</strong>은 프롬프팅과 프로빙을 통합 프레임워크로 연결합니다:</p>
-        <ul class="key-points">
-            <li><strong>프롬프트 증강 표현:</strong> 원본 입력에 태스크 특화 프롬프트(템플릿, 버벌라이저 등)를 결합한 후 동결된 LLM에 통과시켜, 태스크 인식이 가능한 풍부한 은닉 상태를 추출합니다</li>
-            <li><strong>증강 피처 기반 선형 프로빙:</strong> 프롬프트 증강 표현 위에 경량 선형 분류기를 학습하며, 모든 가용 레이블 데이터를 활용하여 ICL의 컨텍스트 길이 제약을 극복합니다</li>
-            <li><strong>다중 프롬프트 앙상블:</strong> 서로 다른 프롬프트 템플릿으로 다양한 표현을 생성하고, 예측을 앙상블하여 성능과 안정성을 더욱 향상시킵니다</li>
-        </ul>
+        <h2>제안 방법: Prompt-Augmented Linear Probing (PALP)</h2>
+        <p>PALP는 언어 모델을 <strong>블랙박스 피처 추출기</strong>로 활용하는 간결하면서도 효과적인 3단계 프레임워크를 통해 프롬프팅과 프로빙 사이의 격차를 해소합니다:</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">프롬프트 증강 표현 추출</div>
+                <div class="step-desc">원본 입력을 LLM에 바로 전달하는 대신, 각 입력에 지시문 템플릿과 버벌라이저를 포함한 태스크 특화 프롬프트를 결합한 후 동결된 모델에 통과시킵니다. 예를 들어 감성 분석의 경우, 입력 <em>"This movie was great"</em>를 <em>"Review: This movie was great. Sentiment:"</em>로 변환한 후 LLM에 전달합니다. 마지막 토큰 위치의 은닉 상태를 표현으로 추출합니다. 이를 통해 범용적인 은닉 상태를 <strong>태스크 인식 표현</strong>으로 변환합니다. 핵심 통찰은 프롬프트가 LLM을 태스크 관련 부분공간에서 표현을 생성하도록 유도하여, 다운스트림 분류에 훨씬 더 판별력 있는 피처를 만든다는 점입니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">증강 피처 기반 선형 분류</div>
+                <div class="step-desc">프롬프트 증강 은닉 상태 위에 경량 선형 분류기(단층 로지스틱 회귀)를 <strong>모든 가용 레이블 데이터</strong>를 사용하여 학습합니다. 구체적으로, 추출된 은닉 상태 h를 가중치 행렬 W와 편향 b를 통해 클래스 확률로 매핑합니다: p(y|x) = softmax(Wh + b). 분류가 컨텍스트 윈도우 외부에서 이루어지므로 ICL의 입력 길이 병목에서 자유롭습니다. 고정 크기 은닉 상태 추출과 간단한 선형 최적화만 필요하여, 전체 LLM 파인튜닝 대비 수 자릿수 적은 연산으로 충분합니다. 학습 가능한 파라미터 수는 (d x C + C)에 불과합니다 (d: 은닉 차원, C: 클래스 수) -- 기반 LLM의 수십억 파라미터와 비교하면 극히 미미합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">다중 프롬프트 앙상블</div>
+                <div class="step-desc">서로 다른 프롬프트 템플릿은 태스크 지식의 다양한 측면을 포착하는 상보적 표현을 생성합니다. PALP는 다양한 지시문 표현, 서로 다른 버벌라이저 선택 등 여러 프롬프트에서 예측을 생성한 후 다수결 투표 또는 확률 평균 방식으로 앙상블하여 정확도를 높이고 분산을 줄입니다. 이를 통해 프롬프트 기반 방법의 잘 알려진 취약점인 개별 프롬프트 선택에 대한 민감도도 완화됩니다. 앙상블 전략은 각 프롬프트 템플릿이 LLM으로 하여금 약간 다른 태스크 관련 피처를 인코딩하게 하기 때문에, 이들을 결합하면 더 강건한 결정 경계를 형성할 수 있어 특히 효과적입니다.</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <p><strong>왜 프롬프팅이 프로빙에 도움이 되는가?</strong> 저자들은 프롬프트 증강이 LLM의 내부 표현을 <strong>태스크 특화 부분공간</strong>으로 이동시킨다는 기하학적 분석을 제시합니다. 이 부분공간에서는 서로 다른 클래스의 예제들이 더 선형적으로 분리 가능해집니다. 프롬프트 없이 추출한 표현에서는 서로 다른 클래스의 표현이 고차원 은닉 공간에서 상당히 겹치지만, 태스크 특화 프롬프트를 사용하면 LLM이 입력을 태스크 관련 구별을 이미 인코딩한 표현으로 효과적으로 "전처리"하여, 분류 문제를 극적으로 단순화합니다.</p>
+        </div>
+
+        <p>특히 PALP는 완전한 <strong>블랙박스 환경</strong>에서 동작합니다: LLM의 은닉 상태에 대한 순전파 접근만 필요하므로, 그래디언트 기반 파인튜닝이 불가능한 API 기반 모델과도 호환됩니다. 프롬프트 튜닝이나 어댑터 학습과 달리, PALP는 LLM을 통한 역전파를 전혀 수행하지 않습니다.</p>
     </div>
 
     <div class="section">
         <h2>실험 결과</h2>
+        <p>PALP는 다양한 태스크 유형을 포괄하는 <strong>13개 NLU 벤치마크</strong>에서 평가되었습니다: 감성 분석(SST-2, SST-5, MR, CR, Amazon), 자연어 추론(RTE, CB), 주제 분류(AGNews, DBPedia), 주관성 탐지(Subj, MPQA), 질문 분류(TREC) 등. GPT 계열 자기회귀 언어 모델을 다양한 규모(GPT-2 Large 774M, GPT-J 6B 등)로 사용하여, 표준 ICL, 바닐라 선형 프로빙, 풀 파인튜닝 베이스라인과 비교하였습니다.</p>
+
+        <h3>PALP vs. ICL 확장 특성</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>방법</th><th>퓨샷 (k=4)</th><th>중간 규모 (k=32)</th><th>전체 데이터</th><th>데이터 확장성</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>인컨텍스트 학습</td><td>경쟁력 있음</td><td>정체</td><td>N/A (컨텍스트 제한)</td><td>없음</td></tr>
+                <tr><td>바닐라 선형 프로빙</td><td>약함</td><td>보통</td><td>보통</td><td>있으나 정체</td></tr>
+                <tr><td class="highlight-cell"><strong>PALP</strong></td><td class="highlight-cell"><strong>경쟁력 있음</strong></td><td class="highlight-cell"><strong>우수</strong></td><td class="highlight-cell"><strong>파인튜닝에 근접</strong></td><td class="highlight-cell"><strong>지속적 향상</strong></td></tr>
+                <tr><td>풀 파인튜닝</td><td>과적합</td><td>우수</td><td>최고</td><td>있음</td></tr>
+            </tbody>
+        </table>
+
+        <h3>주요 벤치마크 성능 비교 (GPT-J 6B, 전체 데이터)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>방법</th><th>SST-2</th><th>AGNews</th><th>DBPedia</th><th>RTE</th><th>평균</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>제로샷 ICL</td><td>82.0</td><td>71.2</td><td>64.5</td><td>52.7</td><td>67.6</td></tr>
+                <tr><td>퓨샷 ICL (k=4)</td><td>91.5</td><td>80.3</td><td>78.8</td><td>57.4</td><td>77.0</td></tr>
+                <tr><td>바닐라 선형 프로빙</td><td>83.7</td><td>85.6</td><td>93.2</td><td>55.2</td><td>79.4</td></tr>
+                <tr><td class="highlight-cell"><strong>PALP (단일 프롬프트)</strong></td><td class="highlight-cell"><strong>92.8</strong></td><td class="highlight-cell"><strong>89.4</strong></td><td class="highlight-cell"><strong>96.1</strong></td><td class="highlight-cell"><strong>63.5</strong></td><td class="highlight-cell"><strong>85.5</strong></td></tr>
+                <tr><td class="highlight-cell"><strong>PALP (앙상블)</strong></td><td class="highlight-cell"><strong>93.5</strong></td><td class="highlight-cell"><strong>90.7</strong></td><td class="highlight-cell"><strong>97.0</strong></td><td class="highlight-cell"><strong>65.3</strong></td><td class="highlight-cell"><strong>86.6</strong></td></tr>
+                <tr><td>풀 파인튜닝</td><td>95.0</td><td>92.5</td><td>98.8</td><td>72.6</td><td>89.7</td></tr>
+            </tbody>
+        </table>
+
+        <h3>주요 발견</h3>
         <ul class="key-points">
-            <li><strong>ICL 초월:</strong> PALP는 다양한 NLU 벤치마크에서 표준 퓨샷 ICL을 일관되게 능가하며, 특히 컨텍스트 윈도우 크기를 초과하는 레이블 예제가 있을 때 격차가 뚜렷합니다</li>
-            <li><strong>데이터에 따른 확장성:</strong> 성능이 정체되는 ICL과 달리, PALP는 레이블 예제가 늘어남에 따라 지속적으로 성능이 향상되어 진정한 확장성을 보여줍니다</li>
-            <li><strong>효율적이고 경량:</strong> 동결된 LLM 피처 위에 선형 레이어만 학습하므로, 전체 파인튜닝 대비 최소한의 연산만 필요합니다</li>
-            <li><strong>프롬프트 앙상블 효과:</strong> 다중 프롬프트 템플릿 결합으로 정확도가 추가 향상되고 태스크 간 분산이 감소합니다</li>
+            <li><strong>ICL-파인튜닝 격차 해소:</strong> 데이터가 풍부한 시나리오에서 PALP는 동결 모델 접근법과 풀 파인튜닝 사이의 성능 격차를 크게 줄이면서, 선형 레이어 하나만 학습합니다. 평균적으로 PALP는 바닐라 선형 프로빙과 풀 파인튜닝 사이 격차의 70% 이상을 회복합니다.</li>
+            <li><strong>데이터 증가에 따른 ICL 초월:</strong> ICL의 성능이 컨텍스트 윈도우 한계 이후 정체 또는 하락하는 반면, PALP는 레이블 데이터가 늘어남에 따라 단조적으로 성능이 향상되어 진정한 확장성을 입증합니다. AGNews, DBPedia 등의 벤치마크에서 전체 학습 데이터를 사용한 PALP는 최적 ICL 구성 대비 10 포인트 이상의 정확도 향상을 보입니다.</li>
+            <li><strong>프롬프트 증강이 핵심:</strong> 프롬프트 증강 없는 바닐라 선형 프로빙과 비교하면, 프롬프트 조건화된 표현이 훨씬 더 유익하다는 것이 확인되어(벤치마크 전반에서 5--15% 정확도 향상), 성능 향상이 분류기 자체가 아닌 태스크 인식 피처 추출에서 비롯됨을 보여줍니다.</li>
+            <li><strong>다중 프롬프트 앙상블의 일관된 효과:</strong> 다양한 프롬프트 템플릿을 앙상블하면 대부분의 벤치마크에서 1--3%의 추가 정확도 향상을 얻으며, 실행 간 성능 분산도 크게 감소합니다. 의미적으로 다양한 프롬프트 템플릿을 결합할 때 앙상블이 가장 효과적입니다.</li>
+            <li><strong>모델 규모 전반에 걸친 확장:</strong> PALP의 이점은 다양한 LLM 규모(774M~6B 파라미터)에서 일관되게 나타납니다. 큰 모델이 더 나은 기본 표현을 생성하고 PALP가 이 향상을 더욱 증폭합니다. 바닐라 프로빙 대비 프롬프트 증강의 상대적 이득은 모델 크기에 관계없이 안정적으로 유지됩니다.</li>
+            <li><strong>최소한의 연산 오버헤드:</strong> PALP는 동결된 LLM을 통한 순전파(ICL과 동일)와 단일 선형 레이어 학습만 필요하여, 수백만~수십억 파라미터 파인튜닝 대비 무시할 수 있는 비용입니다. GPT-J 6B 기준으로 선형 헤드의 학습 가능한 파라미터는 5만 개 미만으로, 모델 전체 60억 파라미터의 극히 일부에 불과합니다.</li>
+            <li><strong>블랙박스 환경에서의 강건성:</strong> PALP는 LLM을 그래디언트 업데이트 없는 동결 피처 추출기로 사용하므로, 은닉 상태만 접근 가능한 블랙박스 API 기반 모델과 완전히 호환됩니다.</li>
+            <li><strong>표현 분석을 통한 태스크 정렬 확인:</strong> 은닉 상태 분포의 시각화(t-SNE)를 통해, 프롬프트 증강 표현은 클래스별로 명확히 분리된 군집을 형성하는 반면, 프롬프트 없는 원본 입력의 표현은 상당한 중첩을 보이는 것이 확인되었습니다 -- PALP가 왜 효과적인지에 대한 기하학적 증거를 제공합니다.</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>의의</h2>
-        <p>PALP는 프롬프팅의 강점과 전통적 프로빙의 확장성이 상호 배타적이지 않음을 보여줍니다. 프롬프트 기반 조건화로 동결된 LLM 표현을 증강함으로써, 모델 파라미터 파인튜닝이나 컨텍스트 윈도우 크기의 제약 없이 <strong>모든 가용 레이블 데이터를 효율적으로 활용</strong>할 수 있습니다. 이는 퓨샷 ICL이 한계를 보이는 데이터가 풍부한 환경에서 LLM을 배포하기 위한 실용적이고 확장 가능한 경로를 제시합니다.</p>
+        <p>PALP는 프롬프팅의 강점과 전통적 프로빙의 확장성이 <strong>상호 배타적이지 않음</strong>을 입증합니다. 이 통찰은 중요한 실용적 함의를 가집니다:</p>
+        <ul>
+            <li><strong>강력한 블랙박스 대안:</strong> API를 통해서만 LLM에 접근할 수 있는(그래디언트 접근 불가) 실무자에게, PALP는 ICL이 근본적으로 할 수 없는 모든 가용 레이블 데이터를 활용할 수 있는 확장 가능한 방법을 제공합니다. 이는 많은 강력한 LLM이 제한된 컨텍스트 윈도우를 가진 API로만 접근 가능했던 발표 시점(2023년 초)에서 특히 중요한 의미를 가집니다.</li>
+            <li><strong>퓨샷과 데이터 풍부 환경의 연결:</strong> PALP는 퓨샷 설정에서 ICL과 경쟁하고 데이터 풍부 설정에서 파인튜닝에 근접하여, 데이터 스펙트럼 전반에 걸쳐 활용 가능한 다목적 단일 방법입니다. 실무자들이 더 이상 데이터셋 크기에 따라 ICL과 프로빙을 선택할 필요가 없습니다.</li>
+            <li><strong>대규모 효율적 배포:</strong> LLM을 동결한 채 선형 헤드만 학습하므로, 별도의 파인튜닝 모델 사본을 유지하는 저장 및 연산 부담 없이 비용 효율적인 새 태스크 적응이 가능합니다. 하나의 동결된 LLM으로 수십 개의 다운스트림 태스크를 서비스할 수 있으며, 각 태스크에 필요한 것은 약 5만 개 파라미터의 작은 선형 헤드뿐입니다.</li>
+            <li><strong>이론적 기여:</strong> 프롬프트가 표현 공간을 어떻게 재구성하는지에 대한 기하학적 분석은 ICL이 왜 효과적인지에 대한 원리적 설명을 제공하며, 대규모 언어 모델에서 프롬프팅과 표현 학습의 상호작용을 이해하는 새로운 연구 방향을 열어줍니다.</li>
+            <li><strong>후속 연구의 기반:</strong> 프롬프팅을 통한 프로빙 표현 강화 원리는 선형 프로빙을 넘어 k-NN 분류기, SVM, 또는 더 복잡한 프로브 아키텍처 등 다른 경량 적응 방법으로도 확장될 수 있는 폭넓은 연구 방향을 제시합니다.</li>
+        </ul>
     </div>
 
     <div class="section">

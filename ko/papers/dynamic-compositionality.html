@@ -22,35 +22,101 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>구조 인식 태그 표현을 통한 재귀 신경망의 동적 합성성 연구</p>
-        <figure class="paper-figure">
-            <img src="../../images/dynamic-compositionality/figure1.png" alt="논문 개요">
-            <figcaption><strong>Figure 2.</strong> SATA(Structure-Aware Tag Augmented) Tree-LSTM 아키텍처. 단어 트리-LSTM에 태그 트리-LSTM을 결합하여 동적 합성을 수행합니다.</figcaption>
-        </figure>
+        <p>각 트리 노드에서 구조 인식 태그 표현을 조건으로 합성 함수를 동적으로 변환하는 재귀 신경망 아키텍처(SATA Tree-LSTM)를 제안하여, 구문적으로 적응적인 문장 인코딩을 구현하고 감성 분석 및 자연어 추론 성능을 향상시킵니다.</p>
     </div>
+
+    <figure class="paper-figure">
+        <img src="../../images/dynamic-compositionality/figure1.png" alt="논문 개요">
+        <figcaption><strong>Figure 2.</strong> SATA(Structure-Aware Tag Augmented) Tree-LSTM 아키텍처. 단어 트리-LSTM에 태그 트리-LSTM을 결합하여 동적 합성을 수행합니다.</figcaption>
+    </figure>
+
     <div class="section">
-        <h2>배경</h2>
-        <p>재귀 신경망(RecNN)은 구문 분석 트리를 따라 단어 벡터를 상향식으로 합성하여 문장 표현을 구축합니다. 표준 RecNN의 핵심 한계는 관형어-명사 결합이든 두 절의 병합이든 모든 노드에서 <em>동일한</em> 합성 함수를 적용한다는 점입니다. 그러나 언어학적으로 서로 다른 구문 구조는 서로 다른 합성 연산을 요구합니다. 이러한 불일치가 전통적 재귀 모델의 표현력을 제한하며, 각 트리 노드에서 구문 문맥에 맞게 적응하는 <em>동적</em> 합성의 필요성을 촉발합니다.</p>
+        <h2>배경 및 동기</h2>
+        <p>재귀 신경망(RecNN)은 구문 분석 트리를 따라 단어 벡터를 상향식으로 합성하여 문장 표현을 구축합니다. 이러한 트리 구조 계산은 언어학적으로 동기가 부여되지만, 표준 RecNN은 관형어-명사 결합이든, 형용사-명사구 수식이든, 두 독립절의 병합이든 모든 노드에서 <em>동일한</em> 합성 함수를 적용합니다. 그러나 이 서로 다른 구문 구조는 근본적으로 다른 합성 연산을 요구합니다.</p>
+        <div class="highlight-box">
+            <p><strong>핵심 문제:</strong> 표준 Tree-LSTM은 구문 트리의 모든 노드에서 하나의 고정된 가중치 행렬 집합을 사용합니다. 즉, 다음과 같이 서로 다른 합성을 수행할 때도 동일한 변환을 적용합니다:</p>
+            <ul>
+                <li><strong>NP + VP &rarr; S</strong> (주어-술어 병합)</li>
+                <li><strong>DT + NN &rarr; NP</strong> (관형어-명사 결합)</li>
+                <li><strong>JJ + NN &rarr; NP</strong> (형용사-명사 수식)</li>
+                <li><strong>VP + PP &rarr; VP</strong> (동사구와 전치사구 부착)</li>
+            </ul>
+            <p>각 구문은 서로 다른 의미적 관계를 포함하지만, 모델은 모든 곳에서 동일한 변환을 적용합니다. 이러한 <em>정적 합성성</em>이 재귀 모델의 표현력을 제한합니다.</p>
+        </div>
+        <p>이 한계를 해결하려는 기존 시도들은 서로 다른 합성 행렬을 선택하기 위해 수작업 규칙에 의존하거나(예: MV-RNN), 과도하게 큰 파라미터 공간을 필요로 했습니다. 본 연구의 핵심 통찰은 구문 분석 트리에서 이미 제공되는 <strong>구성소 태그(constituency parse tags)</strong>가 합성 함수를 조건화하기 위한 자연스럽고 컴팩트한 신호를 제공하여, 파라미터 폭발 없이 각 노드의 구문적 역할에 적응하는 <em>동적</em> 합성을 가능하게 한다는 것입니다.</p>
     </div>
+
     <div class="section">
-        <h2>방법</h2>
+        <h2>제안 방법: SATA Tree-LSTM</h2>
+        <p>제안 모델인 <strong>SATA(Structure-Aware Tag Augmented) Tree-LSTM</strong>은 표준 단어 수준 Tree-LSTM과 병렬로 실행되는 태그 수준 재귀 네트워크를 도입합니다. 태그 표현은 각 트리 노드에서 합성 함수를 동적으로 조절하는 데 사용됩니다.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">태그 임베딩 및 태그 Tree-LSTM</div>
+                <div class="step-desc">구성소 구문 트리의 각 노드는 해당 구문 태그(예: NP, VP, S, PP)와 연결됩니다. 이 태그들은 연속 벡터로 임베딩되고, 별도의 태그 Tree-LSTM이 상향식으로 구조 인식 태그 표현을 계산합니다. 단순한 태그 조회와 달리, 이 표현은 트리 내에서 태그의 <em>문맥</em>을 포착합니다 &mdash; S 노드 아래의 NP는 PP 노드 아래의 NP와 다르게 표현됩니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">동적 가중치 생성</div>
+                <div class="step-desc">각 내부 노드에서 왼쪽 자식, 오른쪽 자식, 부모의 태그 표현을 연결(concatenate)하여 경량 파라미터 생성 네트워크에 입력합니다. 이 네트워크는 표준 Tree-LSTM 게이트(입력 게이트, 망각 게이트, 출력 게이트, 셀 후보)의 고정 파라미터를 대체하는 노드별 가중치 행렬과 편향 벡터를 생성합니다. 생성 네트워크는 단일 선형 변환과 재구성(reshaping)으로 구현되어 오버헤드를 최소화합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">구문 조건부 합성</div>
+                <div class="step-desc">동적으로 생성된 파라미터는 단어 수준에서 자식 은닉 상태를 합성하는 데 사용됩니다. 서로 다른 구문 구성(예: NP+VP vs. DT+NN)이 서로 다른 태그 표현 삼중체를 생성하므로, 모델은 자연스럽게 서로 다른 노드에서 서로 다른 합성 함수를 적용합니다. 트리 루트의 결과 은닉 상태가 문장 표현으로 사용되며, 모든 합성 단계에서 구문 인식이 반영됩니다.</div>
+            </div>
+        </div>
+
+        <p>이 아키텍처는 범용적이며 모든 이진 분기 Tree-LSTM 또는 Tree-GRU 변형에 적용할 수 있습니다. 태그 임베딩과 파라미터 생성 네트워크의 추가만 필요하며, 일반적으로 전체 파라미터 수 대비 15% 미만의 증가만 발생합니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>실험 결과</h2>
+        <p>모델은 두 가지 주요 NLP 벤치마크에서 평가됩니다: 감성 분석을 위한 <strong>Stanford Sentiment Treebank(SST)</strong>와 자연어 추론을 위한 <strong>Stanford Natural Language Inference(SNLI)</strong>. 두 과제 모두 높은 품질의 문장 표현을 요구하며 합성적 이해로부터 혜택을 받습니다.</p>
+
+        <h3>감성 분석 (SST)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>모델</th><th>SST-5 (세분류)</th><th>SST-2 (이진 분류)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Tree-LSTM (기준선)</td><td>51.0</td><td>88.0</td></tr>
+                <tr><td>Tree-LSTM + 태그 임베딩</td><td>51.6</td><td>88.2</td></tr>
+                <tr><td class="highlight-cell"><strong>SATA Tree-LSTM (제안)</strong></td><td class="highlight-cell"><strong>52.6</strong></td><td class="highlight-cell"><strong>89.2</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>자연어 추론 (SNLI)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>모델</th><th>테스트 정확도 (%)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Tree-LSTM (300D, 기준선)</td><td>85.9</td></tr>
+                <tr><td>SPINN</td><td>86.6</td></tr>
+                <tr><td class="highlight-cell"><strong>SATA Tree-LSTM (제안)</strong></td><td class="highlight-cell"><strong>87.2</strong></td></tr>
+            </tbody>
+        </table>
+
         <ul class="key-points">
-            <li><strong>구조 인식 태그 표현:</strong> 구문 분석 트리의 각 노드에 구문 태그(예: NP, VP, S)의 학습된 표현을 추가합니다. 이 태그 임베딩은 각 구성소의 구조적 역할을 인코딩하고 합성 함수의 조건 신호로 작용합니다.</li>
-            <li><strong>동적 합성 함수:</strong> 단일 고정 가중치 행렬 대신, 자식 및 부모의 태그 표현을 기반으로 각 노드의 합성 함수를 동적으로 생성합니다. 이를 통해 모델이 서로 다른 구문 구성(예: 형용사-명사 vs. 주어-동사)에 대해 서로 다른 변환을 적용할 수 있습니다.</li>
-            <li><strong>원활한 통합:</strong> 기존 RecNN 변형(TreeLSTM, TreeGRU)과 호환되며, 태그 임베딩과 경량 파라미터 생성 네트워크의 추가만으로 모든 구문 트리 위에 적용할 수 있습니다.</li>
+            <li><strong>일관된 성능 향상:</strong> SATA Tree-LSTM은 SST와 SNLI 모두에서 표준 Tree-LSTM 기준선을 능가하여, 구조 인식 동적 합성이 다양한 과제에서 더 높은 품질의 문장 임베딩을 생성함을 입증합니다.</li>
+            <li><strong>태그 임베딩만으로는 불충분:</strong> 동적 가중치 생성 없이 태그 임베딩을 단어 임베딩에 단순 연결하는 것은 미미한 성능 향상만 가져옵니다. 이는 핵심 기여가 태그 특징 추가가 아닌 합성 함수의 <em>동적 조절</em>에 있음을 확인합니다.</li>
+            <li><strong>구문 분석 품질에 강건:</strong> 골드 구성소 트리와 Stanford Parser의 자동 생성 구문 분석 모두에서 성능 향상이 유지되어, 실제 환경에서 구문 분석 오류에 대한 강건성을 보여줍니다.</li>
+            <li><strong>동적 행동의 정성적 증거:</strong> 생성된 가중치 행렬의 시각화를 통해 모델이 서로 다른 구문 구성에 대해 구별되는 합성 패턴을 학습함을 확인합니다. 예를 들어, 형용사-명사 합성은 주어-동사 합성과 현저히 다른 가중치 패턴을 생성하여, 모델이 진정으로 구문 구조에 맞게 처리를 적응시킴을 확인합니다.</li>
+            <li><strong>최소한의 파라미터 오버헤드:</strong> 태그 Tree-LSTM과 파라미터 생성 네트워크는 기본 모델 대비 상대적으로 적은 파라미터를 추가하여, 효율적이면서도 일관된 성능 향상을 달성합니다.</li>
         </ul>
     </div>
-    <div class="section">
-        <h2>결과</h2>
-        <ul class="key-points">
-            <li><strong>향상된 문장 표현:</strong> 감성 분석(SST)과 자연어 추론(SNLI)에서 표준 RecNN 대비 일관된 성능 향상을 달성하여, 구조 인식 합성이 더 높은 품질의 문장 임베딩을 생성함을 보여줍니다.</li>
-            <li><strong>정성적 분석:</strong> 학습된 합성 함수의 시각화를 통해 모델이 서로 다른 구문 패턴에 대해 구별되는 연산을 학습함을 확인하여, 동적 메커니즘이 의미 있는 언어적 구분을 포착함을 검증합니다.</li>
-            <li><strong>트리 품질과의 보완성:</strong> 골드 구문 트리와 자동 생성 구문 분석 모두에서 성능 향상이 유지되어, 동적 합성성이 구문 분석 오류에 강건함을 나타냅니다.</li>
-        </ul>
-    </div>
+
     <div class="section">
         <h2>의의</h2>
-        <p>본 연구는 언어학 이론과 신경망 설계 사이의 간극을 메웁니다. 모든 트리 노드를 동일하게 처리하는 대신 모델이 지역 구문 문맥에 맞게 연산을 적응시켜, 더 풍부하고 언어학적으로 근거 있는 문장 표현을 생성합니다. 단순한 구조적 신호를 신경망 아키텍처에 주입하는 것만으로도 의미 있는 개선을 얻을 수 있음을 보여주며, 구문 인식 NLP 모델 구축의 원칙적 방향을 제시합니다.</p>
+        <p>본 연구는 언어학 이론과 신경망 설계 사이의 중요한 간극을 메우며, 재귀적 합성을 <strong>구문적으로 인식</strong>하게 만듭니다. 그 기여는 여러 방향으로 확장됩니다:</p>
+        <ul>
+            <li><strong>원칙적인 동적 합성:</strong> 수작업 규칙이나 거대한 파라미터 행렬(예: MV-RNN의 단어별 행렬)에 의존하던 기존 연구와 달리, SATA는 구문 트리에서 이미 사용 가능한 구문 태그를 활용하여 동적 합성을 위한 원칙적이고 파라미터 효율적인 메커니즘을 제공합니다.</li>
+            <li><strong>언어학적 근거:</strong> 서로 다른 구문 구조가 서로 다른 의미 연산을 수반한다는 언어학적 직관을 구현합니다. 정성적 분석을 통해 모델이 언어학적 범주에 부합하는 의미 있는 합성 패턴을 발견함을 확인합니다.</li>
+            <li><strong>범용 프레임워크:</strong> SATA 메커니즘은 특정 RecNN 변형이나 과제에 종속되지 않습니다. 모든 트리 구조 신경망에 적용 가능하여, 구문 인식 NLP 모델을 위한 범용적 개선 방법입니다.</li>
+            <li><strong>후속 연구의 기반:</strong> 구조적 메타데이터에 기반하여 신경망 연산을 조건화하는 아이디어는 구조 인식 트랜스포머, 문법 인식 언어 모델, 구문 정보 활용 사전학습 목표 등 후속 연구에 영향을 미쳤습니다.</li>
+        </ul>
     </div>
     <div class="section">
         <h2>링크</h2>

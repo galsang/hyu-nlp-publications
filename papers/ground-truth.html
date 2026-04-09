@@ -22,49 +22,148 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A deeper analysis showing that ground-truth labels in demonstrations play a more significant role in in-context learning than previously believed.</p>
+        <p>Through two novel metrics -- Label-Correctness Sensitivity and Ground-truth Label Effect Ratio (GLER) -- this paper demonstrates that correct input-label mappings in demonstrations have a far greater impact on in-context learning than previously reported, with the effect modulated by prompt verbosity and model scale, overturning the influential claim by Min et al. (2022) that "ground-truth labels barely matter."</p>
     </div>
 
     <figure class="paper-figure">
         <img src="../images/ground-truth/figure1.png" alt="Paper overview">
-        <figcaption><strong>Figure 1.</strong> Demonstration of how ground-truth labels impact in-context learning. The paper provides a deeper analysis of the role of correct input-label mappings in ICL demonstrations.</figcaption>
+        <figcaption><strong>Figure 1.</strong> Overview of the experimental framework: The paper systematically varies label correctness in ICL demonstrations and measures downstream performance through the proposed Label-Correctness Sensitivity and GLER metrics across diverse configurations of models, tasks, and prompt templates.</figcaption>
     </figure>
 
     <div class="section">
         <h2>Background & Motivation</h2>
-        <p>In-context learning (ICL) enables large language models to perform tasks by conditioning on a few input-label demonstrations without any parameter updates. A surprising prior finding (Min et al., 2022) suggested that <strong>the correctness of labels in demonstrations barely matters</strong> -- models performed nearly as well with random labels. This counterintuitive result challenged our understanding of how ICL works. This paper takes a deeper look, arguing that ground-truth labels <strong>do</strong> matter and that previous conclusions were artifacts of limited experimental settings.</p>
+        <p>In-context learning (ICL) enables large language models to perform tasks by conditioning on a few input-label demonstrations, without any parameter updates. A surprising and influential finding by Min et al. (2022, "Rethinking the Role of Demonstrations") claimed that <strong>the correctness of labels in demonstrations barely matters</strong> -- models performed nearly as well even with randomly assigned labels. This counterintuitive result raised fundamental questions about what ICL actually learns from demonstrations and quickly became one of the most widely cited findings in the ICL literature.</p>
+        <div class="highlight-box">
+            <p><strong>The Core Puzzle This Paper Addresses:</strong></p>
+            <ul>
+                <li><strong>Counterintuitive prior finding:</strong> Min et al. (2022) reported that replacing ground-truth labels with random labels in ICL demonstrations had minimal effect on downstream performance, suggesting that demonstrations primarily serve as a formatting template rather than a source of input-label mappings.</li>
+                <li><strong>Limited experimental scope:</strong> The prior conclusion was drawn from a narrow set of models (mainly GPT-3 Davinci 175B), a small number of tasks, and specific verbose prompt templates -- raising questions about generalizability across broader settings.</li>
+                <li><strong>Lack of quantitative tools:</strong> No formal metrics existed to precisely measure and decompose the impact of label correctness on ICL performance, making rigorous comparison across different experimental settings difficult.</li>
+                <li><strong>Practical stakes:</strong> If labels truly do not matter, it would fundamentally change how practitioners construct demonstration sets for real-world ICL applications -- potentially allowing the use of cheap, noisy labels without performance cost.</li>
+                <li><strong>Decomposition gap:</strong> ICL performance gains come from multiple factors -- input distribution, label space, demonstration format, and input-label mappings -- but no prior work cleanly isolated and quantified the contribution of each component.</li>
+            </ul>
+        </div>
+        <p>Intrigued by this counterintuitive observation, the authors conduct an extensive re-examination using the GPT-3 family (Ada 350M, Babbage 1.3B, Curie 6.7B, Davinci 175B) and diverse classification benchmarks (SST-2, SST-5, MR, CR, AGNews, TREC, DBPedia, RTE, CB, and others). They introduce new quantitative metrics and reveal that ground-truth labels <strong>do</strong> matter significantly -- and that the prior conclusion was an artifact of specific, limited experimental configurations.</p>
     </div>
 
     <div class="section">
-        <h2>Method</h2>
-        <p>The paper conducts a comprehensive re-examination of the role of input-label mappings in ICL demonstrations:</p>
-        <ul class="key-points">
-            <li><strong>Broader evaluation scope:</strong> Extends experiments beyond the narrow settings of prior work, testing across diverse model families, scales, and task types to reveal conditions where label correctness matters significantly</li>
-            <li><strong>Noisy label analysis:</strong> Systematically varies the proportion of correct vs. random labels in demonstrations to measure the sensitivity of ICL to label quality</li>
-            <li><strong>Disentangling contributing factors:</strong> Separates the effects of input distribution, label space, input-label mapping correctness, and formatting to isolate what each component contributes to ICL performance</li>
-            <li><strong>Model scale investigation:</strong> Analyzes how model size affects sensitivity to ground-truth labels, revealing that larger models are better at leveraging correct demonstrations</li>
-        </ul>
+        <h2>Proposed Method: Quantifying the Impact of Ground-Truth Labels</h2>
+        <p>The paper introduces two novel metrics and conducts a systematic multi-factor analysis to quantify how much ground-truth labels contribute to ICL performance. The key insight is to decompose the overall ICL gain into distinct components -- format, label space, input distribution, and ground-truth label mapping -- and measure the relative contribution of each.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Decomposing ICL Performance</div>
+                <div class="step-desc">The authors decompose the total performance gain from in-context demonstrations into four additive components: (a) <strong>format effect</strong> -- the gain from seeing the input-label structure; (b) <strong>label space effect</strong> -- the gain from exposure to the set of possible labels; (c) <strong>input distribution effect</strong> -- the gain from seeing task-relevant inputs; and (d) <strong>ground-truth label effect</strong> -- the additional gain from correct input-label mappings. This decomposition enables precise isolation of each factor's contribution.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Label-Correctness Sensitivity</div>
+                <div class="step-desc">A metric that measures how sensitive a model's ICL performance is to the correctness of demonstration labels. By systematically replacing ground-truth labels with random labels at varying proportions (0%, 25%, 50%, 75%, 100% random), this metric captures the degree to which a model relies on correct input-label mappings versus other demonstration components. A steep performance decline with increasing label noise indicates high sensitivity -- the model is genuinely learning from correct demonstrations.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Ground-truth Label Effect Ratio (GLER)</div>
+                <div class="step-desc">A complementary metric that quantifies the <em>relative</em> contribution of ground-truth labels to the total ICL performance gain. GLER is defined as the ratio of the ground-truth label effect to the total ICL gain (performance with correct labels minus zero-shot performance). A GLER of 0 means labels contribute nothing beyond format/distribution effects; a GLER of 1 means all ICL gains come from correct label mappings. This enables direct, normalized comparison across models, tasks, and prompt designs.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Multi-Factor Experimental Analysis</div>
+                <div class="step-desc">Using these metrics, the authors conduct experiments across multiple dimensions: (a) <strong>4 model scales</strong> in the GPT-3 family (350M to 175B parameters), (b) <strong>12+ classification tasks</strong> spanning binary, ternary, and multi-class settings (SST-2, SST-5, MR, CR, AGNews, TREC, DBPedia, RTE, CB, etc.), (c) <strong>3 prompt template designs</strong> ranging from minimal (input-label pairs only) to verbose (with full task descriptions and instructions), and (d) <strong>varying numbers of demonstrations</strong> (4 to 32 shots). This systematic coverage reveals the conditions under which ground-truth labels become critical.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">5</div>
+                <div class="step-title">Identifying Key Controlling Factors</div>
+                <div class="step-desc">Through ablation studies and controlled experiments, the authors identify two key factors that modulate the importance of ground-truth labels: <strong>prompt template verbosity</strong> (verbose templates with task descriptions effectively encode label semantics in the template itself, reducing reliance on demonstration labels) and <strong>model scale</strong> (larger models such as Davinci 175B are significantly better at leveraging correct demonstrations, while smaller models like Ada 350M show weak sensitivity). These factors explain why prior work, which used verbose prompts with a single large model, reached a different conclusion.</div>
+            </div>
+        </div>
     </div>
 
     <div class="section">
-        <h2>Results</h2>
+        <h2>Experimental Results</h2>
+        <p>The authors evaluate across the GPT-3 family (Ada 350M, Babbage 1.3B, Curie 6.7B, Davinci 175B) and a comprehensive set of text classification benchmarks covering sentiment analysis, topic classification, question classification, and natural language inference. The two proposed metrics reveal clear patterns that were obscured in prior work.</p>
+
+        <h3>Models and Benchmarks</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>Parameters</th><th>Tasks Evaluated</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>GPT-3 Ada</td><td>350M</td><td rowspan="4">SST-2, SST-5, MR, CR, AGNews, TREC, DBPedia, RTE, CB, and others (12+ tasks spanning binary to 14-class classification)</td></tr>
+                <tr><td>GPT-3 Babbage</td><td>1.3B</td></tr>
+                <tr><td>GPT-3 Curie</td><td>6.7B</td></tr>
+                <tr><td>GPT-3 Davinci</td><td>175B</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Key Findings: Label-Correctness Sensitivity</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Factor</th><th>Low Sensitivity (labels seem unimportant)</th><th>High Sensitivity (labels clearly matter)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Prompt Verbosity</td><td>Verbose templates with detailed task descriptions</td><td>Minimal templates with no task instructions</td></tr>
+                <tr><td>Model Scale</td><td>Smaller models (Ada 350M, Babbage 1.3B)</td><td>Larger models (Curie 6.7B, Davinci 175B)</td></tr>
+                <tr><td>Task Complexity</td><td>Simple binary classification (e.g., SST-2, MR)</td><td>Fine-grained multi-class classification (e.g., AGNews, TREC, DBPedia)</td></tr>
+                <tr><td>Number of Demonstrations</td><td>Very few demonstrations (4-shot)</td><td>More demonstrations (16-32 shot)</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Ground-truth Label Effect Ratio (GLER) Analysis</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Experimental Configuration</th><th>GLER Trend</th><th>Interpretation</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Minimal prompt + Davinci 175B</td><td>High GLER</td><td>Ground-truth labels contribute substantially to ICL performance; the model actively learns from correct mappings</td></tr>
+                <tr><td>Verbose prompt + Ada 350M</td><td>Low GLER</td><td>Other factors (formatting, task description in template) dominate; labels add little beyond what the template provides</td></tr>
+                <tr><td>Multi-class tasks (AGNews, TREC)</td><td>Higher GLER than binary tasks</td><td>More label options increase reliance on correct mappings since the label space cannot be inferred from format alone</td></tr>
+                <tr><td>Increasing demonstration count</td><td>GLER tends to increase</td><td>More examples amplify the learning signal from correct labels, compounding the benefit of accurate demonstrations</td></tr>
+                <tr><td class="highlight-cell">Min et al. (2022) setup</td><td class="highlight-cell">Low GLER</td><td class="highlight-cell">The specific combination of verbose prompts used by Min et al. artificially suppressed the ground-truth label effect</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Performance Decomposition: What Drives ICL Gains?</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Component</th><th>Minimal Prompt</th><th>Verbose Prompt</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Format effect</td><td>Small contribution</td><td>Moderate contribution</td></tr>
+                <tr><td>Label space effect</td><td>Moderate contribution</td><td>Large contribution (template encodes label semantics)</td></tr>
+                <tr><td>Input distribution effect</td><td>Moderate contribution</td><td>Moderate contribution</td></tr>
+                <tr><td class="highlight-cell"><strong>Ground-truth label effect</strong></td><td class="highlight-cell"><strong>Large contribution (dominant factor)</strong></td><td class="highlight-cell"><strong>Small contribution (masked by template)</strong></td></tr>
+            </tbody>
+        </table>
+
         <ul class="key-points">
-            <li><strong>Ground-truth labels do matter:</strong> Contrary to prior claims, correct input-label mappings yield substantial performance gains, especially when evaluated across a broader set of conditions</li>
-            <li><strong>Model scale amplifies label sensitivity:</strong> Larger models are significantly more sensitive to the correctness of demonstration labels, increasingly benefiting from ground-truth mappings</li>
-            <li><strong>Task complexity plays a role:</strong> For more complex or fine-grained classification tasks, the gap between correct and random labels becomes more pronounced</li>
-            <li><strong>Label noise degrades gracefully:</strong> Performance degrades proportionally as the fraction of incorrect labels increases, confirming that each correct demonstration contributes meaningful learning signal</li>
+            <li><strong>Ground-truth labels do matter -- significantly:</strong> Across a broad range of configurations, correct input-label mappings yield substantial performance gains over random labels. On multi-class tasks with minimal prompts, the performance gap between correct and random labels can exceed 10-20 absolute points.</li>
+            <li><strong>Prompt verbosity is a key confound:</strong> Verbose prompt templates that include task descriptions effectively encode label information in the template itself, reducing the model's reliance on demonstration labels. This explains why Min et al. (2022), who used verbose templates, found labels to be unimportant -- the template was already "telling" the model what each label means.</li>
+            <li><strong>Larger models leverage labels more effectively:</strong> As model scale increases from Ada (350M) to Davinci (175B), models become significantly more sensitive to label correctness, extracting stronger learning signals from correct input-label mappings. Smaller models lack the capacity to fully utilize the information in correct demonstrations.</li>
+            <li><strong>Task granularity amplifies the effect:</strong> For fine-grained classification tasks with many classes (e.g., TREC with 6 classes, AGNews with 4 classes, DBPedia with 14 classes), the gap between correct and random labels widens considerably, as the label space becomes harder to infer from format alone.</li>
+            <li><strong>Performance degrades proportionally with noise:</strong> Systematically increasing the fraction of incorrect labels (0% to 100% random) leads to roughly proportional performance degradation, confirming that each correct demonstration provides a meaningful and additive learning signal.</li>
+            <li><strong>Prior conclusions were configuration-specific:</strong> The finding that "labels don't matter" holds only under a specific combination of verbose prompts and smaller models -- it does not generalize to the broader ICL landscape. When the experimental scope is broadened, the importance of ground-truth labels becomes unmistakable.</li>
+            <li><strong>GLER reveals hidden structure:</strong> The decomposition via GLER shows that in the settings studied by Min et al. (2022), the ground-truth label effect was genuinely small -- but not because labels are inherently unimportant; rather, because the verbose prompt template was already providing equivalent information through its task description.</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>This work corrects an influential misconception in the ICL literature and restores the intuition that <strong>correct demonstrations teach models meaningful input-label mappings</strong>, not just formatting or label space priors. The findings have practical implications: when constructing demonstration sets for ICL, practitioners should prioritize label accuracy. More broadly, the paper deepens our understanding of the mechanism behind in-context learning and highlights the importance of rigorous, broad experimental evaluation before drawing sweeping conclusions.</p>
+        <p>This work makes four important contributions to the understanding and practice of in-context learning:</p>
+        <ul>
+            <li><strong>Corrects an influential misconception:</strong> The claim that ground-truth labels are unimportant for ICL had become widely accepted and cited across the NLP community. This paper provides rigorous evidence that correct demonstrations <em>do</em> teach models meaningful input-label mappings, restoring a key intuition about how ICL works and prompting the community to re-evaluate its assumptions.</li>
+            <li><strong>Introduces principled evaluation metrics:</strong> Label-Correctness Sensitivity and GLER provide the first formal, quantitative tools for measuring and decomposing the impact of demonstration quality on ICL. These metrics enable standardized comparison across future studies and have been adopted by subsequent work on ICL analysis.</li>
+            <li><strong>Offers actionable guidance for practitioners:</strong> The identification of prompt verbosity and model scale as key controlling factors gives practitioners clear design guidelines: when using larger models with minimal prompts, prioritizing label accuracy in demonstrations is especially critical for strong ICL performance. Conversely, when label noise is unavoidable, using more verbose templates can help compensate.</li>
+            <li><strong>Advances mechanistic understanding of ICL:</strong> The decomposition of ICL performance into format, label space, input distribution, and ground-truth label components provides a principled framework for understanding <em>what</em> models learn from demonstrations, contributing to the broader effort to demystify the mechanisms underlying in-context learning in large language models.</li>
+        </ul>
     </div>
 
     <div class="section">
         <h2>Links</h2>
         <div class="links-section">
             <a href="https://aclanthology.org/2022.emnlp-main.155/" target="_blank" class="paper-link">ACL Anthology</a>
+            <a href="https://arxiv.org/abs/2205.12685" target="_blank" class="paper-link">arXiv Paper</a>
+            <a href="https://aclanthology.org/2022.emnlp-main.155.mp4" target="_blank" class="paper-link">Presentation Video</a>
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">

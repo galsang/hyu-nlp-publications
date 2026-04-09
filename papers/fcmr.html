@@ -25,7 +25,7 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A benchmark that evaluates multimodal multi-hop reasoning across text reports, tables, and charts in the financial domain at 3 difficulty levels. Even the best-performing model achieves only 30.4% on the Hard level.</p>
+        <p>FCMR is a 2,199-instance benchmark for evaluating multimodal LLMs on cross-modal multi-hop reasoning across financial text reports, tables, and charts at three difficulty tiers, revealing that even the best model (Claude 3.5 Sonnet) achieves only 30.4% accuracy on the hardest tier requiring three-hop reasoning.</p>
     </div>
 
     <figure class="paper-figure">
@@ -34,20 +34,25 @@
     </figure>
 
     <div class="section">
-        <h2>Background & Motivation</h2>
-        <p>Real-world financial analysis requires <strong>comprehensively</strong> reading text reports, verifying numbers in tables, and identifying trends in charts. However, existing benchmarks had two critical problems:</p>
+        <h2>Background &amp; Motivation</h2>
+        <p>Real-world financial analysis demands synthesizing information across multiple modalities simultaneously -- reading text reports, verifying numbers in tables, and identifying trends in charts. MMQA, the leading cross-modal multi-hop reasoning benchmark, suffers from two critical limitations that undermine its reliability as an evaluation tool:</p>
         <div class="highlight-box">
-            <p><strong>Data Contamination:</strong> GPT-4o achieves 43.4% on MMQA without images — suggesting that existing benchmarks may already be included in training data. On FCMR, performance without images drops to 14.71%, significantly reducing contamination risk.</p>
+            <p><strong>Data Contamination:</strong> GPT-4o achieves 43.4% on the most challenging part of MMQA <em>without relying on visual hints</em> (vs. 63.4% with images), suggesting the benchmark data may already be present in model pretraining corpora. MMQA's reliance on Wikipedia further exacerbates this risk. On FCMR, performance without charts drops to 14.71% (near the 12.28% random baseline), confirming robustness against contamination.</p>
         </div>
+        <div class="highlight-box">
+            <p><strong>Lack of Complex Queries:</strong> Only 0.8% of MMQA instances require genuine three-hop cross-modal reasoning involving all three modalities (text, table, image). This severely limits evaluation of models' ability to perform deep multi-step integration across data formats.</p>
+        </div>
+        <p>FCMR addresses both issues by grounding its data in financial filings (SEC EDGAR 10-K reports and WRDS Compustat financial statements from the top 101 companies by net sales), covering five years (2019--2023), and explicitly constructing Easy (1-hop), Medium (2-hop), and Hard (3-hop) difficulty tiers.</p>
     </div>
 
     <figure class="paper-figure">
         <img src="https://arxiv.org/html/2412.12567v2/x2.png" alt="Hard-level example">
-        <figcaption><strong>Figure 2.</strong> Hard-level example: Requires 3-hop cross-modal reasoning — identifying company information from text, verifying financial figures from tables, and analyzing trends from charts.</figcaption>
+        <figcaption><strong>Figure 2.</strong> Hard-level example: Requires 3-hop cross-modal reasoning -- identifying company information from text, verifying financial figures from tables, and analyzing trends from charts.</figcaption>
     </figure>
 
     <div class="section">
         <h2>Proposed Method: CMRGen Pipeline</h2>
+        <p>The <strong>Cross-Modal Multi-Hop Reasoning Generator (CMRGen)</strong> is an automated framework that constructs benchmark instances across three stages. Each instance presents three statements that may or may not be true, requiring the model to select all correct ones (0--3 correct answers possible). The dataset totals 2,199 instances: 757 Easy, 728 Medium, and 714 Hard.</p>
 
         <figure class="paper-figure">
             <img src="https://arxiv.org/html/2412.12567v2/x3.png" alt="CMRGen framework">
@@ -57,32 +62,76 @@
         <div class="method-steps">
             <div class="method-step">
                 <div class="step-num">1</div>
-                <div class="step-title">Data Construction</div>
-                <div class="step-desc">SEC EDGAR 10-K reports (text) + WRDS Compustat (tables) + matplotlib/plotly (charts)</div>
+                <div class="step-title">Input Data Construction</div>
+                <div class="step-desc"><strong>Text:</strong> SEC EDGAR 10-K reports (Items 1, 2, 7, 7A, 8) from top 101 companies by net sales. <strong>Tables:</strong> WRDS Compustat Annual Simplified Financial Statements (70 columns after preprocessing) spanning 2019--2023. <strong>Charts:</strong> Four types (line, bar, scatter, pie) generated from table columns using matplotlib, seaborn, and plotly -- covering 98% of chart types found in actual 10-K filings.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">2</div>
-                <div class="step-title">Question Generation</div>
-                <div class="step-desc">Trend, Ranking, Conditional, and Arithmetic operation templates</div>
+                <div class="step-title">Statement Generation</div>
+                <div class="step-desc">Single-modal one-hop statements are created via GPT-4o-mini using five template types: <strong>Fact-Checking (FC)</strong>, <strong>Conditional Threshold (CT)</strong>, <strong>Arithmetic (AR)</strong>, <strong>Trend (TR)</strong>, and <strong>Ranking (RK)</strong>. Multi-hop statements are composed by combining: 1-hop + 1-hop = 2-hop (Medium), and 2-hop + 1-hop = 3-hop (Hard), ensuring genuine cross-modal reasoning chains.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">3</div>
-                <div class="step-title">Paraphrasing & Filtering</div>
-                <div class="step-desc">2-stage LLM paraphrasing + bias removal, at $0.004 per question</div>
+                <div class="step-title">Paraphrasing &amp; Filtering</div>
+                <div class="step-desc">Two-stage lexical/syntactic paraphrasing using GPT-4o, followed by semantic verification with Claude 3.5 Sonnet. Quality metrics: Word Position Deviation = 0.2 and Lexical Deviation = 0.45, both surpassing established paraphrase benchmarks (MRPC, PAWS). Hard-level instances undergo additional human expert review. Cost: only $0.004 per question.</div>
             </div>
         </div>
     </div>
 
     <div class="section">
         <h2>Experimental Results</h2>
+        <p>Models are evaluated in a zero-shot Chain-of-Thought setting with no task-specific tuning. Tables are provided in JSON format.</p>
+
+        <h3>Main MLLM Performance</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>Easy</th><th>Medium</th><th>Hard</th><th>Average</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Claude 3.5 Sonnet</td><td>75.43%</td><td>50.82%</td><td class="highlight-cell">30.39%</td><td>52.21%</td></tr>
+                <tr><td>GPT-4o</td><td>64.20%</td><td>43.70%</td><td>24.37%</td><td>44.09%</td></tr>
+                <tr><td>Gemini 1.5 Pro</td><td>63.01%</td><td>31.18%</td><td>22.27%</td><td>38.82%</td></tr>
+                <tr><td>Gemini 1.5 Flash</td><td>57.33%</td><td>26.65%</td><td>13.43%</td><td>32.80%</td></tr>
+                <tr><td>GPT-4o mini</td><td>49.14%</td><td>21.98%</td><td>13.03%</td><td>28.05%</td></tr>
+                <tr><td>Llama 3.2 90B-Vision</td><td colspan="4" style="text-align:center;">Open-source best, but below proprietary models</td></tr>
+                <tr><td>Random Baseline</td><td>12.20%</td><td>12.91%</td><td>12.28%</td><td>12.46%</td></tr>
+            </tbody>
+        </table>
+
+        <h3>LLM + DePlot (Chart-to-Table Conversion)</h3>
         <table class="results-table">
             <thead>
                 <tr><th>Model</th><th>Easy</th><th>Medium</th><th>Hard</th></tr>
             </thead>
             <tbody>
-                <tr><td>Claude 3.5 Sonnet</td><td>75.43%</td><td>50.82%</td><td class="highlight-cell">30.39%</td></tr>
-                <tr><td>GPT-4o</td><td>64.20%</td><td>43.70%</td><td>24.37%</td></tr>
-                <tr><td>Gemini 1.5 Pro</td><td>-</td><td>-</td><td>Low</td></tr>
+                <tr><td>Claude 3.5 Sonnet + DePlot</td><td>66.84%</td><td>46.15%</td><td class="highlight-cell">36.13%</td></tr>
+                <tr><td>GPT-4o + DePlot</td><td>68.69%</td><td>49.18%</td><td>32.91%</td></tr>
+            </tbody>
+        </table>
+        <p>Notably, DePlot conversion <strong>improved Hard-level performance</strong> for both models (Claude: 30.39% &rarr; 36.13%; GPT-4o: 24.37% &rarr; 32.91%), suggesting that current MLLMs' visual chart interpretation remains imperfect.</p>
+
+        <h3>Error Analysis by Modality (Claude 3.5 Sonnet, 90 statements)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Level</th><th>Text</th><th>Table</th><th>Chart</th><th>Total Errors</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Easy</td><td>4%</td><td>21%</td><td>75%</td><td>24</td></tr>
+                <tr><td>Medium</td><td>16%</td><td>19%</td><td>65%</td><td>31</td></tr>
+                <tr><td>Hard</td><td>14%</td><td>32%</td><td>54%</td><td>41</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Accuracy by Chart Type (Claude 3.5 Sonnet)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Chart Type</th><th>Easy</th><th>Medium</th><th>Hard</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Pie</td><td>84.31%</td><td>N/A</td><td>N/A</td></tr>
+                <tr><td>Bar</td><td>78.60%</td><td>50.00%</td><td>29.20%</td></tr>
+                <tr><td>Line</td><td>74.89%</td><td>52.70%</td><td>39.22%</td></tr>
+                <tr><td>Scatter</td><td>71.01%</td><td>49.79%</td><td>23.44%</td></tr>
             </tbody>
         </table>
 
@@ -92,16 +141,18 @@
         </figure>
 
         <ul class="key-points">
-            <li><strong>Ceiling of Best Performance:</strong> Even Claude 3.5 Sonnet achieves only 30.39% accuracy on Hard</li>
-            <li><strong>Key Bottleneck:</strong> The information retrieval stage is the biggest failure factor — finding the right information is the hardest part</li>
-            <li><strong>Error Types:</strong> Chart trend interpretation errors (35 cases), ranking judgment mistakes (16 cases), numerical interpretation errors (17 cases)</li>
-            <li><strong>Optimization Potential:</strong> Applying modality integration + 4-stage reasoning + Self-Refine improves Hard from 32% to 46%</li>
+            <li><strong>Performance Ceiling:</strong> Even the best model (Claude 3.5 Sonnet) achieves only 30.39% on Hard, with an average of 52.21% across all tiers -- far from practical deployment in financial analysis</li>
+            <li><strong>Information Retrieval is the Bottleneck:</strong> Manual analysis of 40 samples across four reasoning stages (Planning, Modality Identification, Information Retrieval, Information Reasoning) reveals that failure to extract the correct information from the identified modality is the most common error</li>
+            <li><strong>Chart Understanding is Weakest:</strong> Charts account for 75% of errors at the Easy level and 54% at Hard. Scatter plots are the most challenging chart type (23.44% Hard accuracy) due to less structured representations</li>
+            <li><strong>Conservative Bias:</strong> All models exhibit a tendency to default to "false" under uncertainty, with statement-level precision (74.27%) significantly exceeding recall (47.99%) for Claude on Hard</li>
+            <li><strong>Dominant Error Types:</strong> Trend assessment errors (35 cases), data/value interpretation mistakes (17 cases), ranking errors (16 cases), and difficulty with negative numbers</li>
+            <li><strong>Optimization Headroom:</strong> Combining modality integration + 4-stage reasoning + Self-Refine on 100 Hard samples improves accuracy from 32% to 46%, but saturates there -- dedicated approaches are needed. Advanced reasoning models (o1: 43%, Gemini 2.0 Flash Thinking: 39%) also fail to close the gap</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>Finance is a domain where accuracy is paramount. For AI to assist in financial analysis, it must accurately connect and reason across multiple data formats. FCMR is a benchmark that is <strong>robust against data contamination</strong> while reflecting real financial settings, with the practical advantage of large-scale generation at only $0.004 per question.</p>
+        <p>Finance is a high-stakes domain where accuracy is non-negotiable. For AI to meaningfully assist in financial analysis, it must reliably integrate and reason across heterogeneous data formats -- yet FCMR reveals that current state-of-the-art multimodal LLMs are far from this capability. The benchmark makes three lasting contributions: (1) it is <strong>robust against data contamination</strong> (near-random performance without charts), (2) it systematically evaluates <strong>genuine multi-hop cross-modal reasoning</strong> up to three hops, and (3) the CMRGen framework enables <strong>scalable, low-cost dataset generation</strong> at $0.004 per question, with potential extensibility to other domains such as law, medicine, and engineering.</p>
     </div>
 
     <div class="section">

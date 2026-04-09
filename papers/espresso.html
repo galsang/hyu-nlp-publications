@@ -22,35 +22,146 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A passage retrieval method for conversational recommender systems</p>
+        <p>ESPRESSO introduces adaptive item selection and relevance-based groupwise learning for passage retrieval in conversational recommender systems, achieving up to 35.91% higher Hit@3 than the best of 8 competing methods and significantly improving the factuality of generated recommendation responses.</p>
         <figure class="paper-figure">
             <img src="../images/espresso/figure1.png" alt="Paper overview">
-            <figcaption><strong>Figure 1.</strong> ESPRESSO framework: A retrieval-augmented CRS that incorporates adaptive item selection and relevance-based passage retrieval for high-quality conversational recommendation.</figcaption>
+            <figcaption><strong>Figure 1.</strong> A retrieval-augmented CRS framework that follows ESPRESSO's proposed directions. Given a user's dialog (e.g., asking for a Jackie Chan movie recommendation), the recommendation module selects items (e.g., "Rumble in the Bronx"), the passage retrieval module retrieves factual passages describing the item, and the generation module produces a grounded response. A labeling module generates pseudo-relevant passage labels for training.</figcaption>
         </figure>
     </div>
     <div class="section">
         <h2>Background &amp; Motivation</h2>
-        <p>Conversational Recommender Systems (CRS) not only suggest items but also generate natural-language explanations for their recommendations. However, these explanations are often factually incorrect or generic. Incorporating passage retrieval can ground responses in real information, but two critical challenges remain: (1) retrieved passages may not reflect actual user preferences, and (2) there is typically no training supervision available for the passage retrieval module in CRS settings.</p>
+        <p>Conversational Recommender Systems (CRS) provide tailored recommendation responses via a chat interface, including both a preferred item and an accompanying explanation. The implementation of CRS consists of two core components: (1) a <strong>recommendation module</strong> that predicts items a user is likely to prefer, and (2) a <strong>generation module</strong> that delivers recommendation responses containing not only the recommended item but also an explanation. However, since language models primarily rely on intrinsic knowledge for generating responses, CRS are prone to producing <strong>factually incorrect explanations</strong> (i.e., hallucinations), particularly when the model lacks sufficient knowledge about the recommended items.</p>
+        <p>A natural solution is to employ <strong>retrieval-augmentation strategies</strong>: given a dialog, first retrieve passages describing the features of recommended items, then generate a response grounded in those passages. However, the authors point out that existing passage retrieval methods are insufficient for properly serving CRS in their original forms, because they are neither designed nor trained to retrieve passages that <em>align well with user preferences</em>.</p>
+        <div class="highlight-box">
+            <p><strong>Two Essential Directions for Passage Retrieval in CRS:</strong></p>
+            <ul>
+                <li><strong>Direction 1 -- Align retrieval with user preferences:</strong> The passage retrieval module should utilize the items selected by the recommendation module as additional input. Existing CRS methods typically select a fixed number of items (e.g., only the top-1 item). If this top-1 predicted item does not match the user's actual preference, all retrieved passages will be irrelevant, harming response quality.</li>
+                <li><strong>Direction 2 -- Train retrieval with pseudo-relevant labels:</strong> CRS datasets do not provide explicit passage-level relevance labels. Manually labeling which passages are relevant requires significant human labor and cost, especially since CRS responses often involve lengthy descriptions. The passage retrieval module should therefore be trained using pseudo-relevant passages determined by an automatic labeling module.</li>
+            </ul>
+        </div>
+        <p>The key insight of this work is that naively following these two directions is insufficient -- the recommendation module can make mistakes (selecting wrong items) and the labeling module can produce noisy labels (mislabeled passages). ESPRESSO is the first work in the CRS domain to propose robust methods that address both sources of error, through <em>adaptive item selection</em> and <em>relevance-based groupwise learning</em>.</p>
     </div>
     <div class="section">
-        <h2>Method: Two Core Components</h2>
+        <h2>Proposed Method</h2>
+        <p>ESPRESSO (<strong>E</strong>nhanced pa<strong>S</strong>sage retrieval a<strong>P</strong>p<strong>R</strong>oach via adaptiv<strong>E</strong> item <strong>S</strong>election and relevance-ba<strong>S</strong>ed gr<strong>O</strong>upwise learning) operates within a three-module CRS framework, as illustrated in Figure 2 of the paper. The overall process is: (1) the recommendation module predicts user preferences based on the dialog and profile, then adaptively selects items; (2) the passage retrieval module retrieves top-K relevant passages based on the dialog and selected items; (3) the generation module (RALM) produces a recommendation response grounded in the retrieved passages.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Preference Estimation</div>
+                <div class="step-desc">Given a dialog D, the recommendation module first predicts a preference score for each item i using a BERT-based encoder. The dialog and user profile f (e.g., age, gender) are concatenated and encoded into a d-dimensional representation via BERT. The preference score is computed as the dot product between this representation and a learnable item embedding: <em>y_rec_i = w_i * BERT_CLS([D : f])</em>. This provides a ranked list of candidate items ordered by predicted user preference.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Adaptive Item Selection</div>
+                <div class="step-desc">Instead of always using just the top-1 predicted item, ESPRESSO adaptively selects a <em>variable number</em> of items based on the recommendation module's confidence. A confidence score C(i) is computed via softmax over preference scores for all items. Items are selected in descending order of confidence until the cumulative confidence exceeds a threshold (sigma_conf, e.g., 70%). For example, if the top-1 item has 50% confidence and the top-2 has 35%, both are selected (cumulative 85% > 70%). This ensures the user's preferred item is included even when the top-1 prediction is wrong, while avoiding noise from low-confidence items. When the top-1 prediction is confident enough, only that single item is used.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Dual-Encoder Passage Retrieval</div>
+                <div class="step-desc">The dialog D and selected items S are concatenated into an enhanced dialog D_bar = [D : S]. A dual-encoder architecture with two Transformer encoders (E_D for dialogs, E_P for passages) encodes both the enhanced dialog and each passage p in the corpus C into d-dimensional representations. The retrieval score is computed via dot-product similarity: <em>y_ret_p = h_D_bar * (h_p)^T</em>. The top-K passages with the highest retrieval scores are returned. Pre-trained encoders from existing methods (e.g., Contriever, CoT-MAE) can be used as initialization for E_D and E_P.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Pseudo-Relevant Passage Labeling</div>
+                <div class="step-desc">Since CRS datasets lack explicit passage-level labels, ESPRESSO automatically generates training labels using a two-stage labeling module. First, an <em>enhanced response</em> is constructed by concatenating the ground-truth response r, the target item i_r, and the user's last utterance u_T: <em>r_bar = [r : i_r : u_T]</em>. This enhanced response is scored against all passages using BM25 to capture lexical similarity, selecting the top-10 candidates. Then, GPT-4o reranks these 10 candidates based on deeper semantic relatedness, producing the final top-M pseudo-relevant passages Q = [q_1, q_2, ..., q_M] (where M &lt; 10). This two-stage process combines the efficiency of BM25 with the semantic understanding of a large language model.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">5</div>
+                <div class="step-title">Relevance-Based Groupwise Learning</div>
+                <div class="step-desc">Standard contrastive learning treats each pseudo-relevant passage independently, but some may be mislabeled by the imperfect labeling module. ESPRESSO addresses this through a novel grouping strategy based on the intuition that while a single pseudo-relevant passage may be mislabeled, the probability of <em>all</em> elements in a group being irrelevant decreases exponentially with group size. Specifically, subgroups are formed by pairing each passage with all higher-ranked ones: G_j = [q_1, q_2, ..., q_j]. The model is trained so that the <em>average</em> retrieval score of each subgroup exceeds the score of negative passages (hard negatives + in-batch negatives), using the loss: <em>L = -log sum_{G_j} exp(y_ret_G_j) / (exp(y_ret_G_j) + sum_{z in Z} exp(y_ret_z))</em>. Lower-ranked passages (more likely to be mislabeled) are always grouped with higher-ranked, more reliable passages, ensuring robust training.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">6</div>
+                <div class="step-title">Retrieval-Augmented Response Generation</div>
+                <div class="step-desc">The top-K retrieved passages R are fed to a retrieval-augmented language model (RALM). The generation module produces each token by marginalizing over retrieved passages: <em>Pr(y_i | D, p, y_{1:i-1}) = sum_{p in R} Pr_eta(p | D, S) * Pr_theta(y_i | D, p, y_{1:i-1})</em>, where eta are the ESPRESSO parameters and theta are the generative LM parameters. The generative backbone can be BART-large or LLaMA2, enabling both smaller specialized models and larger LLMs to benefit from ESPRESSO's improved retrieval.</div>
+            </div>
+        </div>
+    </div>
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <p>ESPRESSO is evaluated on two CRS datasets: <strong>DuRecDial2.0</strong> (a public English CRS dataset with bilingual parallel dialogs) and <strong>KoRecDial</strong> (a private non-English CRS dataset). Both datasets have human-annotated related knowledge for each response, used as ground-truth relevant passages. ESPRESSO is compared against 8 passage retrieval baselines and 8 response generation baselines.</p>
+
+        <h3>Passage Retrieval Accuracy (Hit@K)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Method</th><th colspan="3">DuRecDial2.0</th><th colspan="3">KoRecDial</th></tr>
+                <tr><th></th><th>H@1</th><th>H@3</th><th>H@5</th><th>H@1</th><th>H@3</th><th>H@5</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>BM25</td><td>0.260</td><td>0.425</td><td>0.529</td><td>0.059</td><td>0.142</td><td>0.206</td></tr>
+                <tr><td>DPR</td><td>0.384</td><td>0.485</td><td>0.538</td><td>0.127</td><td>0.277</td><td>0.372</td></tr>
+                <tr><td>RAG</td><td>0.100</td><td>0.120</td><td>0.122</td><td>0.005</td><td>0.007</td><td>0.007</td></tr>
+                <tr><td>KERS</td><td>0.291</td><td>0.415</td><td>0.460</td><td>0.091</td><td>0.177</td><td>0.219</td></tr>
+                <tr><td>DSI</td><td>0.376</td><td>0.453</td><td>0.484</td><td>0.059</td><td>0.091</td><td>0.108</td></tr>
+                <tr><td>Contriever</td><td>0.393</td><td>0.497</td><td>0.550</td><td>0.123</td><td>0.278</td><td>0.371</td></tr>
+                <tr><td>RankGPT</td><td>0.339</td><td>0.460</td><td>0.529</td><td>0.101</td><td>0.164</td><td>0.206</td></tr>
+                <tr><td>CoT-MAE</td><td>0.406</td><td>0.504</td><td>0.561</td><td>0.134</td><td>0.283</td><td>0.392</td></tr>
+                <tr><td>OURS+DPR</td><td>0.514</td><td>0.675</td><td>0.725</td><td>0.153</td><td>0.314</td><td>0.414</td></tr>
+                <tr><td>OURS+Contriever</td><td>0.520</td><td>0.685</td><td>0.735</td><td>0.141</td><td>0.313</td><td>0.423</td></tr>
+                <tr><td class="highlight-cell"><strong>OURS+CoT-MAE</strong></td><td class="highlight-cell"><strong>0.523</strong></td><td class="highlight-cell"><strong>0.685</strong></td><td class="highlight-cell"><strong>0.738</strong></td><td class="highlight-cell"><strong>0.154</strong></td><td class="highlight-cell"><strong>0.315</strong></td><td class="highlight-cell"><strong>0.423</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>Adaptive Item Selection Analysis</h3>
+        <p>The authors analyze how different item selection strategies affect retrieval accuracy, breaking down by whether the top-1 predicted item matches the ground-truth (G=top-1, covering 79.4% of test samples) or not (G!=top-1, 20.6%).</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Selection Method</th><th>G=top-1</th><th>G!=top-1</th><th>Overall</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>S=top-1 (fixed)</td><td><strong>0.815</strong></td><td>0.003</td><td>0.648</td></tr>
+                <tr><td>S=top-N (fixed, N=2)</td><td>0.749</td><td><strong>0.160</strong></td><td>0.628</td></tr>
+                <tr><td class="highlight-cell"><strong>S=top-sigma_conf (adaptive, 70%)</strong></td><td class="highlight-cell">0.810</td><td class="highlight-cell">0.156</td><td class="highlight-cell"><strong>0.675</strong></td></tr>
+            </tbody>
+        </table>
+        <p>When the top-1 prediction is correct, using only that item achieves 0.815 Hit@3 -- adding more items introduces noise. When the top-1 is wrong, fixed top-1 selection catastrophically fails (0.003), while expanding the pool helps. The adaptive method achieves near-best accuracy in <em>both</em> scenarios, yielding the highest overall accuracy (0.675) with a 4.2% gain over top-1 and 7.5% over top-N.</p>
+
+        <h3>Groupwise Learning Strategy Comparison</h3>
+        <p>Three learning strategies are compared as the number of pseudo-relevant passages M varies from 1 to 3: standard contrastive learning (CL), naive groupwise learning (GL, single group of all passages), and relevance-based groupwise learning (RGL, nested subgroups). When M &gt; 1, both grouping methods consistently outperform CL, validating that grouping mitigates mislabeling noise. RGL further outperforms GL by grouping lower-ranked (less reliable) passages only with higher-ranked (more reliable) ones, achieving the best Hit@3 of 0.685 at M=2.</p>
+
+        <h3>Impact on Response Generation (BLEU Scores)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Method</th><th colspan="3">DuRecDial2.0</th><th colspan="3">KoRecDial</th></tr>
+                <tr><th></th><th>BLEU2</th><th>BLEU3</th><th>BLEU4</th><th>BLEU2</th><th>BLEU3</th><th>BLEU4</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>GPT2-base</td><td>0.080</td><td>0.040</td><td>0.020</td><td>0.065</td><td>0.032</td><td>0.018</td></tr>
+                <tr><td>BART-large</td><td>0.132</td><td>0.083</td><td>0.051</td><td>-</td><td>-</td><td>-</td></tr>
+                <tr><td>RAG</td><td>0.161</td><td>0.108</td><td>0.072</td><td>0.100</td><td>0.056</td><td>0.034</td></tr>
+                <tr><td>UniMIND</td><td>0.147</td><td>0.083</td><td>0.055</td><td>0.092</td><td>0.050</td><td>0.028</td></tr>
+                <tr><td>LLaMA2</td><td>0.144</td><td>0.094</td><td>0.060</td><td>-</td><td>-</td><td>-</td></tr>
+                <tr><td>BART(ESPRESSO)</td><td>0.197</td><td>0.137</td><td>0.093</td><td class="highlight-cell"><strong>0.123</strong></td><td class="highlight-cell"><strong>0.073</strong></td><td class="highlight-cell"><strong>0.045</strong></td></tr>
+                <tr><td class="highlight-cell"><strong>LLaMA2(ESPRESSO)</strong></td><td class="highlight-cell"><strong>0.209</strong></td><td class="highlight-cell"><strong>0.147</strong></td><td class="highlight-cell"><strong>0.103</strong></td><td>-</td><td>-</td><td>-</td></tr>
+            </tbody>
+        </table>
+
         <ul class="key-points">
-            <li><strong>Adaptive Item Selection:</strong> A mechanism that ensures retrieved passages align with actual user preferences by adaptively selecting which recommended items to retrieve passages for, preventing misalignment between recommendations and supporting evidence.</li>
-            <li><strong>Relevance-Based Groupwise Learning:</strong> A novel training strategy that addresses the supervision gap by enabling the passage retrieval module to learn effectively from implicit relevance signals, even without explicit passage-level labels.</li>
+            <li><strong>Up to 35.91% improvement in passage retrieval:</strong> OURS+CoT-MAE outperforms the best baseline (CoT-MAE) by 28.82%/35.91%/31.55% in Hit@1/Hit@3/Hit@5 on DuRecDial2.0 and 14.93%/11.31%/7.91% on KoRecDial.</li>
+            <li><strong>Orthogonal enhancement across backbones:</strong> Applying ESPRESSO's two core ideas to DPR, Contriever, and CoT-MAE consistently and substantially improves all three, demonstrating that the ideas are backbone-agnostic. For example, OURS+DPR improves DPR by 33.85%/39.18%/34.76% in H@1/H@3/H@5 on DuRecDial2.0.</li>
+            <li><strong>Task-specific supervision outperforms GPT-4o:</strong> Fine-tuned CoT-MAE outperforms RankGPT (which uses GPT-4o for reranking) by up to 19.76% in Hit@1 on DuRecDial2.0, underscoring that domain-specific training is more effective than zero-shot LLM reranking for CRS passage retrieval.</li>
+            <li><strong>Retrieval quality directly drives generation quality:</strong> As passage retrieval accuracy increases, response generation BLEU scores improve proportionally. BART(OURS+CoT-MAE) enhances BLEU scores by up to 16.25% compared to BART(CoT-MAE), confirming the tight coupling between retrieval and generation quality.</li>
+            <li><strong>ESPRESSO outperforms even larger models:</strong> RAG (which leverages retrieved passages) outperforms GPT2-large and LLaMA2 despite having fewer parameters, highlighting that retrieval augmentation is more impactful than model scale alone. BART(ESPRESSO) further outperforms RAG by 22.36%/26.85%/29.17% on DuRecDial2.0.</li>
+            <li><strong>GPTEval confirms quality gains:</strong> Beyond BLEU scores, GPTEval evaluations demonstrate that ESPRESSO significantly outperforms competitors in informativeness, fluency, and relevance of generated responses, providing a more holistic assessment of response quality.</li>
         </ul>
     </div>
     <div class="section">
-        <h2>Results</h2>
-        <p>ESPRESSO achieves up to 36% higher Hit@3 accuracy compared to the best of 8 competing methods. Integrating ESPRESSO-retrieved passages also meaningfully improves the overall quality and factual grounding of CRS responses.</p>
-    </div>
-    <div class="section">
         <h2>Why It Matters</h2>
-        <p>As conversational AI becomes more prevalent in e-commerce and content platforms, providing accurate and trustworthy explanations alongside recommendations is essential for user trust. ESPRESSO demonstrates that targeted passage retrieval can substantially improve explanation quality in CRS without requiring expensive manual annotation.</p>
+        <p>As conversational AI becomes more prevalent in e-commerce and content platforms, providing accurate and trustworthy explanations alongside item recommendations is essential for user trust. ESPRESSO makes several important contributions:</p>
+        <ul>
+            <li><strong>First principled approach to passage retrieval for CRS:</strong> ESPRESSO is the first method in the CRS domain to (1) adaptively select a variable number of items from the recommendation module based on confidence scores, and (2) apply groupwise contrastive learning that accounts for relevance ranks. Both ideas are novel contributions to the CRS literature.</li>
+            <li><strong>Practical and modular design:</strong> The two core ideas are orthogonal to the choice of retrieval backbone -- they can be plugged into any existing neural retrieval model (DPR, Contriever, CoT-MAE) to boost its performance. This makes ESPRESSO a flexible enhancement rather than a replacement, lowering the barrier to adoption.</li>
+            <li><strong>Addresses hallucination in recommendation:</strong> By grounding CRS responses in retrieved factual passages, ESPRESSO directly tackles the hallucination problem that plagues generative recommendation systems. GPTEval metrics confirm improvements in informativeness, relevance, and fluency.</li>
+            <li><strong>No manual annotation required:</strong> The automatic labeling pipeline (BM25 candidate selection + GPT-4o semantic reranking) eliminates the need for expensive human annotation of passage relevance, making the approach scalable to new domains and datasets.</li>
+            <li><strong>Robust to upstream errors:</strong> Both ideas are designed to handle imperfect inputs gracefully -- adaptive item selection handles incorrect top-1 predictions from the recommendation module, and relevance-based groupwise learning handles mislabeled pseudo-relevant passages from the labeling module. This robustness is critical for real-world deployment.</li>
+        </ul>
     </div>
     <div class="section">
         <h2>Links</h2>
         <div class="links-section">
             <a href="https://ojs.aaai.org/index.php/AAAI/article/view/33300" target="_blank" class="paper-link">AAAI Proceedings</a>
+            <a href="https://github.com/Bigdasgit/ESPRESSO" target="_blank" class="paper-link">Code (GitHub)</a>
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">

@@ -22,45 +22,143 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>Enriching Korean word representations by leveraging Hanja (Chinese character) information</p>
+        <p>Hanja-level SISG enriches Korean word embeddings by incorporating Hanja (Chinese character) n-grams into the Skip-gram scoring function, optionally initializing them with pre-trained Chinese embeddings for cross-lingual transfer, and demonstrates gains on word analogy, word similarity, news headline generation, and sentiment analysis.</p>
         <figure class="paper-figure">
             <img src="../images/korean-hanja/figure1.png" alt="Paper overview">
-            <figcaption><strong>Figure 1.</strong> Enriching Korean word representations with Hanja (Chinese character) information, leveraging the etymological connection between Korean and Chinese characters.</figcaption>
+            <figcaption><strong>Figure 1.</strong> A Korean word showing its form and multi-level meanings. The Sino-Korean word "사회맞춤형" consists of Hangul phonograms (KR) and Hanja logograms (HJ). Although Hanja annotation is optional, it offers deeper insight into the word meaning due to its association with Chinese characters (CN).</figcaption>
         </figure>
-    </div>
-    <div class="section">
-        <h2>Background & Motivation</h2>
-        <p>A large portion of the Korean vocabulary originates from Sino-Korean words (Hanja), where each syllable carries specific meaning rooted in Chinese characters. For example, the Korean word "university" (대학, 大學) consists of syllables meaning "big" (大) and "learning" (學). Standard word embedding methods treat Korean words as opaque surface forms and miss this rich etymological structure.</p>
-        <div class="highlight-box">
-            <p><strong>Limitation:</strong> Existing subword-based approaches (e.g., character or jamo decomposition) only capture surface-level morphological information and fail to exploit the semantic information encoded in Hanja origins.</p>
-        </div>
-        <div class="highlight-box">
-            <p><strong>Innovation:</strong> This work proposes going beyond surface forms by mapping Korean words to their underlying Hanja representations, injecting deep etymological semantics directly into word embeddings.</p>
-        </div>
     </div>
 
     <div class="section">
-        <h2>Method</h2>
-        <p>The proposed approach augments word representation models by incorporating Hanja-level information alongside standard Korean character representations. A Hanja lookup maps Sino-Korean syllables to their corresponding Chinese characters, and these are composed into word-level representations.</p>
+        <h2>Background & Motivation</h2>
+        <p>Korean and Chinese share a deep historical and cultural connection. A set of logograms very similar to Chinese characters, called <strong>Hanja</strong>, served as the sole medium for written Korean until <strong>Hangul</strong> was created in 1443. As a result, a substantial portion of Korean words are <strong>Sino-Korean</strong> (한자어) -- words of Chinese origin that can be written in both Hanja and Hangul, with the latter now commonplace in modern Korean.</p>
+        <div class="highlight-box">
+            <p><strong>Phonograms vs. Logograms:</strong> Korean Hangul characters are <em>phonograms</em> -- they encode pronunciation but not meaning. In contrast, Hanja characters are <em>logograms</em>, where each character carries its own lexical meaning. For example, the word "사회맞춤형" contains the Hanja sequence 社會 (society) and 型 (type/style), while the Hangul syllables "맞춤" (customized) have no Hanja equivalent. This semantic richness of Hanja is invisible to standard word embeddings that only operate on Hangul surface forms.</p>
+        </div>
+        <div class="highlight-box">
+            <p><strong>Limitation of Existing Subword Methods:</strong> Prior approaches for Korean word representations -- character-level (syllable) n-grams (Bojanowski et al., 2017) and jamo-level n-grams (Park et al., 2018) -- capture orthographic patterns at the surface level but miss the deeper semantic structure encoded in Hanja origins. The agglutinative nature of Korean further limits the effectiveness of these surface-only methods, as sub-character and inter-character information specific to Korean understanding remains uncaptured.</p>
+        </div>
+        <div class="highlight-box">
+            <p><strong>Key Insight -- Cross-Lingual Transfer via Hanja:</strong> Since Hanja characters share deep roots with Chinese characters (with many having one-to-one correspondence), mapping Korean words to their Hanja equivalents creates a bridge to Chinese. This enables <em>character-level cross-lingual knowledge transfer</em>: pre-trained Chinese character embeddings (Li et al., 2018) can be used to initialize Hanja n-gram vectors, injecting semantic knowledge across languages without any parallel corpus. This is the first work to introduce character-level cross-lingual transfer learning based on etymological grounds.</p>
+        </div>
+        <p>The paper's core hypothesis is simple yet powerful: native Koreans intuitively use Hanja to resolve the ambiguity of Sino-Korean words, because each Hanja logogram contains more lexical meaning than its Hangul phonogram counterpart. <em>Can we replicate this human heuristic in word embeddings?</em></p>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method</h2>
+        <p>The proposed model, <strong>Hanja-level SISG</strong> (Hanja-level Subword Information Skip-Gram), extends the Skip-gram framework by progressively incorporating three levels of subword information into the scoring function. The architecture builds on existing work -- SG (Mikolov et al., 2013), SISG (Bojanowski et al., 2017), and Jamo-level SISG (Park et al., 2018) -- adding a new Hanja n-gram level on top.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Automatic Hanja Annotation</div>
+                <div class="step-desc">The entire Korean corpus is automatically annotated with Hanja using the Hanjaro tagger, the state-of-the-art public Hanja tagger. Each Sino-Korean word is decomposed into its constituent Hanja sequences. For example, in "사회맞춤형", the tagger identifies two Hanja sequences: 社會 (from "사회") and 型 (from "형"), while "맞춤" (pure Korean) has no Hanja mapping.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Multi-Level Scoring Function</div>
+                <div class="step-desc">The Skip-gram scoring function is extended hierarchically. <strong>Level 1 (SISG):</strong> character-level (syllable) n-grams from 1 to 6 are added to the base word vector. <strong>Level 2 (Jamo-level SISG):</strong> jamo-level n-grams from 3 to 5 are added, capturing sub-character structure (e.g., ㄱ, ㅏ, ㄴ). <strong>Level 3 (Hanja-level SISG):</strong> Hanja n-grams extracted from the annotated Hanja sequences are added. Each Hanja sequence is bounded by special begin/end tokens, and n-grams of configurable length (1-3 or 1-4) are extracted. The final scoring function sums dot products of all n-gram vectors with the context word vector.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Cross-Lingual Initialization (Optional)</div>
+                <div class="step-desc">Since Hanja and simplified Chinese characters can be mapped by one-to-one correspondence, the Hanja n-gram vectors can be initialized with state-of-the-art pre-trained Chinese character embeddings (Li et al., 2018) before Skip-gram training begins. This transfers semantic knowledge from large Chinese corpora into the Korean embedding space. The variant without Chinese initialization (randomly initialized Hanja) is denoted SISG(cjhr), while the full model is SISG(cjh).</div>
+            </div>
+        </div>
+
         <ul class="key-points">
-            <li><strong>Hanja Decomposition:</strong> Korean words are mapped to their Hanja equivalents using a dictionary, revealing the underlying semantic components of each syllable</li>
-            <li><strong>Multi-Level Composition:</strong> Word representations are built by combining surface-level Korean character embeddings with deeper Hanja character embeddings through a composition function</li>
-            <li><strong>Flexible Integration:</strong> The Hanja-enhanced representations can be plugged into existing word embedding frameworks (e.g., Skip-gram, GloVe) as a drop-in improvement</li>
+            <li><strong>Additive Composition:</strong> All three levels of n-gram vectors are summed with the context vector via dot products in the scoring function -- a clean, modular extension of the standard Skip-gram objective trained with negative sampling</li>
+            <li><strong>Separate Vocabulary:</strong> Unlike approaches using shared BPE vocabulary, Hanja n-grams form a separate vocabulary from Hangul n-grams, preserving the distinct semantic information of each writing system</li>
+            <li><strong>Graceful Degradation:</strong> For words without Hanja mappings (pure Korean or loanwords), the Hanja n-gram set is simply empty, and the model naturally falls back to character + jamo representations</li>
+            <li><strong>Open Source:</strong> Code and pre-trained models are publicly available at <a href="https://github.com/kaniblu/hanja-sisg" target="_blank">github.com/kaniblu/hanja-sisg</a></li>
         </ul>
     </div>
 
     <div class="section">
-        <h2>Results</h2>
+        <h2>Experimental Results</h2>
+        <p>The method is evaluated on intrinsic tasks (word analogy and word similarity) and two downstream tasks (Korean news headline generation and sentiment analysis). The training corpus is based on the dataset from Park et al. (2018) with additional data cleansing (removing non-Korean sentences, unifying number tags).</p>
+
+        <h3>Word Analogy Test</h3>
+        <p>Using the Korean word analogy dataset (10,000 quadruples with semantic and syntactic categories from Park et al., 2018), the metric is <strong>cosine distance</strong> (lower is better) between predicted and target analogy vectors.</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>Semantic</th><th>Syntactic</th><th>All (Avg.)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>SG</td><td>0.42</td><td>0.49</td><td>0.45</td></tr>
+                <tr><td>SISG(c) -- syllable n-grams</td><td>0.45</td><td>0.59</td><td>0.52</td></tr>
+                <tr><td>SISG(cj) -- + jamo n-grams</td><td>0.39</td><td>0.48</td><td>0.44</td></tr>
+                <tr><td class="highlight-cell"><strong>SISG(cjh3) -- + Hanja (1-3)</strong></td><td class="highlight-cell"><strong>0.34</strong></td><td class="highlight-cell"><strong>0.45</strong></td><td class="highlight-cell"><strong>0.39</strong></td></tr>
+                <tr><td class="highlight-cell"><strong>SISG(cjh4) -- + Hanja (1-4)</strong></td><td class="highlight-cell"><strong>0.34</strong></td><td class="highlight-cell"><strong>0.45</strong></td><td class="highlight-cell"><strong>0.40</strong></td></tr>
+                <tr><td>SISG(cjhr) -- random init</td><td>0.35</td><td>0.46</td><td>0.40</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Word Similarity Test (Korean WS353)</h3>
+        <p>Evaluates correlation between word vector distances and human-annotated similarity scores. Higher Pearson/Spearman correlations are better.</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>Pearson</th><th>Spearman</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>SG</td><td>0.60</td><td>0.62</td></tr>
+                <tr><td>SISG(c) -- syllable n-grams</td><td>0.62</td><td>0.61</td></tr>
+                <tr><td>SISG(cj) -- + jamo n-grams</td><td>0.66</td><td>0.67</td></tr>
+                <tr><td>SISG(cjh3) -- + Hanja (1-3)</td><td>0.63</td><td>0.63</td></tr>
+                <tr><td>SISG(cjh4) -- + Hanja (1-4)</td><td>0.62</td><td>0.61</td></tr>
+                <tr><td>SISG(cjhr) -- random init</td><td>0.65</td><td>0.64</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Korean News Headline Generation</h3>
+        <p>A novel downstream task using 840,205 Korean news articles (published Jan--Feb 2017, covering balanced categories such as politics, sports, world). An encoder-decoder model (bidirectional LSTM encoder + LSTM decoder, hidden size 512, with Bahdanau attention) generates a headline from the first three sentences of the article body. Word embeddings initialize the encoder. Split is 8:1:1 for train/validation/test.</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Embeddings</th><th>BLEU-1</th><th>BLEU-2</th><th>BLEU-3</th><th>BLEU-4</th><th>PPL</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>None (random)</td><td>26.02</td><td>7.76</td><td>3.08</td><td>1.38</td><td>5.335</td></tr>
+                <tr><td>SG</td><td>30.33</td><td>10.20</td><td>4.29</td><td>1.98</td><td>4.122</td></tr>
+                <tr><td>SISG(c)</td><td>31.34</td><td>10.96</td><td>4.69</td><td>2.19</td><td>3.942</td></tr>
+                <tr><td>SISG(cj)</td><td>31.78</td><td>11.17</td><td>4.80</td><td>2.25</td><td>3.938</td></tr>
+                <tr><td class="highlight-cell"><strong>SISG(cjh3)</strong></td><td class="highlight-cell"><strong>32.03</strong></td><td class="highlight-cell"><strong>11.25</strong></td><td class="highlight-cell"><strong>4.83</strong></td><td class="highlight-cell"><strong>2.27</strong></td><td class="highlight-cell"><strong>3.941</strong></td></tr>
+                <tr><td class="highlight-cell"><strong>SISG(cjh4)</strong></td><td class="highlight-cell"><strong>32.02</strong></td><td class="highlight-cell"><strong>11.34</strong></td><td class="highlight-cell"><strong>4.92</strong></td><td class="highlight-cell"><strong>2.30</strong></td><td class="highlight-cell"><strong>3.909</strong></td></tr>
+            </tbody>
+        </table>
+
+        <h3>Sentiment Analysis (NSMC)</h3>
+        <p>Evaluated on the Naver Sentiment Movie Corpus (200K movie reviews, positive/negative labels; split 100K/50K/50K). A basic LSTM encoder (hidden size 300) with feed-forward + softmax classifier is used to isolate the effect of input embeddings. Results are averaged over 3 runs with different random seeds.</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Embeddings</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>F1</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>SISG(c)</td><td>77.43</td><td>75.89</td><td>80.41</td><td>78.08</td></tr>
+                <tr><td>SISG(cj)</td><td>83.16</td><td>82.36</td><td>84.66</td><td>83.50</td></tr>
+                <tr><td>SISG(cjh3)</td><td>81.61</td><td>81.23</td><td>82.28</td><td>81.75</td></tr>
+                <tr><td>SISG(cjh4)</td><td>82.25</td><td>82.57</td><td>81.77</td><td>82.17</td></tr>
+            </tbody>
+        </table>
+
         <ul class="key-points">
-            <li><strong>Word Similarity:</strong> Significant improvements on Korean word similarity benchmarks, demonstrating that Hanja information captures semantic relationships missed by surface forms</li>
-            <li><strong>Analogy Tasks:</strong> Enhanced performance on word analogy tasks, where the compositional semantics of Hanja provide strong relational cues</li>
-            <li><strong>Downstream NLP Tasks:</strong> Improvements on Korean NLP tasks including text classification and named entity recognition, showing the practical value of Hanja-enriched embeddings</li>
+            <li><strong>Strong analogy improvements:</strong> SISG(cjh3) achieves the best overall analogy score (0.39 avg. cosine distance), significantly outperforming all baselines including jamo-level SISG (0.44), with the largest gains on semantic analogies</li>
+            <li><strong>Cross-lingual transfer helps analogies:</strong> Pre-trained Chinese initialization (SISG(cjh3): 0.39) outperforms random initialization (SISG(cjhr): 0.40), confirming that knowledge transfers across the Hanja-Chinese bridge</li>
+            <li><strong>Trade-offs in word similarity:</strong> Hanja-level models improve over pure character-level SISG(c) on similarity but do not surpass jamo-level SISG(cj), possibly due to the relatively small WS353 evaluation set being prone to statistical bias</li>
+            <li><strong>Consistent headline generation gains:</strong> SISG(cjh4) achieves the best BLEU-4 (2.30) and lowest perplexity (3.909), explained by formal Korean texts (news articles) containing more Sino-Korean words where Hanja awareness gives an edge</li>
+            <li><strong>Competitive on sentiment:</strong> While SISG(cj) leads on NSMC (spoken/informal text with fewer Sino-Korean words), Hanja-level models remain competitive and substantially outperform character-only SISG(c), demonstrating general applicability</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>Why It Matters</h2>
-        <p>This paper demonstrates that language-specific etymological knowledge can substantially improve word representations. For Korean, where over 60% of the vocabulary has Sino-Korean origins, Hanja provides a powerful and largely untapped source of semantic information. The approach highlights that going beyond surface-level subword tokenization to incorporate deeper linguistic structure is a valuable direction for building better NLP systems for morphologically rich and historically layered languages.</p>
+        <p>This paper makes a compelling case that <strong>language-specific etymological knowledge</strong> is a valuable and underexploited resource for building better word representations. The key contributions and implications are:</p>
+        <ul>
+            <li><strong>First etymological cross-lingual transfer:</strong> This is the first work to introduce character-level cross-lingual transfer learning based on etymological grounds, using a separated vocabulary approach (as opposed to shared BPE vocabulary). By treating Hanja as a bridge between Korean and Chinese, the paper demonstrates a novel form of transfer that requires no parallel data -- only a dictionary-based character mapping.</li>
+            <li><strong>Beyond surface-level tokenization:</strong> While most subword approaches (BPE, character, jamo) focus on surface orthography, this work shows that incorporating deeper logographic structure can yield better representations, especially for tasks involving formal/written Korean. This insight generalizes to other languages with layered etymological histories (e.g., Japanese with Kanji, Vietnamese with Han-Nom).</li>
+            <li><strong>A new evaluation paradigm:</strong> The introduction of Korean news headline generation (840K articles) as a downstream evaluation task provides a practical, large-scale benchmark for Korean NLP, complementing the smaller intrinsic evaluation datasets available at the time.</li>
+            <li><strong>Practical simplicity:</strong> The approach is a modular extension of Skip-gram -- adding Hanja n-grams to the scoring function requires no change to the training pipeline. Code and models are publicly released for easy adoption.</li>
+            <li><strong>Honest limitations:</strong> The paper transparently discusses the dependence on the Hanja tagger (which may introduce errors, especially on spoken/informal text) and identifies developing an end-to-end system that does not rely on external taggers as important future work.</li>
+        </ul>
     </div>
 
     <div class="section">

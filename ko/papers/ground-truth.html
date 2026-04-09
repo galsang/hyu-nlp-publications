@@ -22,49 +22,148 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>인컨텍스트 학습 시연에서 정답 레이블이 이전에 알려진 것보다 훨씬 중요한 역할을 한다는 심층 분석을 제시합니다.</p>
+        <p>두 가지 새로운 지표 -- Label-Correctness Sensitivity와 Ground-truth Label Effect Ratio (GLER) -- 를 통해, 시연에서의 올바른 입력-레이블 매핑이 인컨텍스트 학습에 이전 보고보다 훨씬 큰 영향을 미치며, 그 효과가 프롬프트 상세도와 모델 규모에 의해 조절됨을 밝혀, Min et al. (2022)의 "정답 레이블은 거의 중요하지 않다"는 영향력 있는 주장을 뒤집습니다.</p>
     </div>
 
     <figure class="paper-figure">
         <img src="../../images/ground-truth/figure1.png" alt="논문 개요">
-        <figcaption><strong>Figure 1.</strong> 정답 레이블이 인컨텍스트 학습에 미치는 영향을 보여줍니다. 올바른 입력-레이블 매핑이 ICL 시연에서 어떤 역할을 하는지 심층 분석합니다.</figcaption>
+        <figcaption><strong>Figure 1.</strong> 실험 프레임워크 개요: ICL 시연에서 레이블 정확성을 체계적으로 변화시키고, 제안된 Label-Correctness Sensitivity 및 GLER 지표를 통해 다양한 모델, 태스크, 프롬프트 템플릿 설정에서의 하류 성능을 측정합니다.</figcaption>
     </figure>
 
     <div class="section">
         <h2>배경 및 동기</h2>
-        <p>인컨텍스트 학습(ICL)은 대규모 언어 모델이 파라미터 업데이트 없이 소수의 입력-레이블 시연만으로 태스크를 수행하는 능력입니다. 이전 연구(Min et al., 2022)에서는 <strong>시연의 레이블 정확성이 거의 중요하지 않다</strong>는 놀라운 결과를 보고했으며, 무작위 레이블로도 거의 동등한 성능을 보인다고 주장했습니다. 이 직관에 반하는 결론은 ICL의 작동 원리에 대한 이해에 의문을 제기했습니다. 본 논문은 이를 재검토하여, 정답 레이블이 <strong>실제로 중요하며</strong> 이전 결론이 제한된 실험 설정의 산물임을 밝힙니다.</p>
+        <p>인컨텍스트 학습(ICL)은 대규모 언어 모델이 파라미터 업데이트 없이 소수의 입력-레이블 시연만으로 태스크를 수행할 수 있게 하는 능력입니다. Min et al. (2022, "Rethinking the Role of Demonstrations")의 영향력 있는 연구에서는 <strong>시연의 레이블 정확성이 거의 중요하지 않다</strong>는 놀라운 결과를 보고했으며, 무작위 레이블로도 거의 동등한 성능을 보인다고 주장했습니다. 이 직관에 반하는 결과는 ICL이 시연으로부터 실제로 무엇을 학습하는지에 대한 근본적인 의문을 제기했으며, ICL 문헌에서 가장 널리 인용되는 발견 중 하나가 되었습니다.</p>
+        <div class="highlight-box">
+            <p><strong>본 논문이 다루는 핵심 문제:</strong></p>
+            <ul>
+                <li><strong>직관에 반하는 기존 발견:</strong> Min et al. (2022)은 ICL 시연에서 정답 레이블을 무작위 레이블로 교체해도 하류 성능에 미미한 영향만 있다고 보고하며, 시연이 주로 포맷팅 템플릿의 역할만 한다고 시사했습니다.</li>
+                <li><strong>제한된 실험 범위:</strong> 기존 결론은 주로 GPT-3 Davinci (175B)를 중심으로 한 좁은 범위의 모델, 소수의 태스크, 특정 상세형 프롬프트 템플릿에서 도출되어 일반화 가능성에 의문이 있습니다.</li>
+                <li><strong>정량적 도구의 부재:</strong> 레이블 정확성이 ICL에 미치는 영향을 정밀하게 측정하고 분해할 공식적인 지표가 존재하지 않아, 설정 간 엄밀한 비교가 어려웠습니다.</li>
+                <li><strong>실용적 중요성:</strong> 만약 레이블이 정말로 중요하지 않다면, 실제 ICL 응용에서 저렴하고 노이즈가 있는 레이블로도 시연 세트를 구성할 수 있어, 실무 방식이 근본적으로 달라져야 합니다.</li>
+                <li><strong>분해(decomposition)의 공백:</strong> ICL 성능 향상은 입력 분포, 레이블 공간, 시연 포맷, 입력-레이블 매핑 등 여러 요인에서 비롯되지만, 각 구성 요소의 기여를 깔끔하게 분리하여 정량화한 선행 연구가 없었습니다.</li>
+            </ul>
+        </div>
+        <p>이 직관에 반하는 관찰에 흥미를 느낀 저자들은 GPT-3 패밀리(Ada 350M, Babbage 1.3B, Curie 6.7B, Davinci 175B)와 다양한 분류 벤치마크(SST-2, SST-5, MR, CR, AGNews, TREC, DBPedia, RTE, CB 등)를 사용한 광범위한 재검토를 수행합니다. 새로운 정량적 지표를 도입하여, 정답 레이블이 <strong>실제로 중요하며</strong>, 기존 결론이 특정한 제한된 실험 설정의 산물이었음을 밝힙니다.</p>
     </div>
 
     <div class="section">
-        <h2>방법론</h2>
-        <p>ICL 시연에서 입력-레이블 매핑의 역할을 포괄적으로 재검토합니다:</p>
-        <ul class="key-points">
-            <li><strong>확장된 평가 범위:</strong> 이전 연구의 좁은 설정을 넘어, 다양한 모델 패밀리, 규모, 태스크 유형에 걸쳐 실험하여 레이블 정확성이 유의미한 조건을 밝힙니다</li>
-            <li><strong>노이즈 레이블 분석:</strong> 시연에서 정답 대 무작위 레이블의 비율을 체계적으로 변화시켜 ICL의 레이블 품질 민감도를 측정합니다</li>
-            <li><strong>기여 요인 분리:</strong> 입력 분포, 레이블 공간, 입력-레이블 매핑 정확성, 포맷팅의 효과를 분리하여 각 구성 요소의 ICL 성능 기여도를 개별적으로 분석합니다</li>
-            <li><strong>모델 규모 조사:</strong> 모델 크기가 정답 레이블 민감도에 미치는 영향을 분석하여, 큰 모델이 올바른 시연을 더 잘 활용함을 보여줍니다</li>
-        </ul>
+        <h2>제안 방법: 정답 레이블의 영향 정량화</h2>
+        <p>본 논문은 두 가지 새로운 지표를 도입하고, 체계적인 다요인 분석을 통해 정답 레이블이 ICL 성능에 기여하는 정도를 정량화합니다. 핵심 아이디어는 전체 ICL 향상을 포맷, 레이블 공간, 입력 분포, 정답 레이블 매핑이라는 개별 구성 요소로 분해하여 각각의 상대적 기여도를 측정하는 것입니다.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">ICL 성능 분해</div>
+                <div class="step-desc">저자들은 인컨텍스트 시연으로 인한 전체 성능 향상을 네 가지 가산적(additive) 구성 요소로 분해합니다: (a) <strong>포맷 효과</strong> -- 입력-레이블 구조를 보는 것에서 오는 향상; (b) <strong>레이블 공간 효과</strong> -- 가능한 레이블 집합에 노출되는 것에서 오는 향상; (c) <strong>입력 분포 효과</strong> -- 태스크 관련 입력을 보는 것에서 오는 향상; (d) <strong>정답 레이블 효과</strong> -- 올바른 입력-레이블 매핑에서 오는 추가 향상. 이 분해를 통해 각 요인의 기여를 정밀하게 분리할 수 있습니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Label-Correctness Sensitivity</div>
+                <div class="step-desc">모델의 ICL 성능이 시연 레이블의 정확성에 얼마나 민감한지를 측정하는 지표입니다. 정답 레이블을 다양한 비율(0%, 25%, 50%, 75%, 100% 무작위)로 체계적으로 교체하면서, 모델이 올바른 입력-레이블 매핑에 의존하는 정도를 포착합니다. 레이블 노이즈 증가에 따른 급격한 성능 하락은 높은 민감도를 나타내며, 모델이 올바른 시연으로부터 진정으로 학습하고 있음을 의미합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Ground-truth Label Effect Ratio (GLER)</div>
+                <div class="step-desc">전체 ICL 성능 향상에 대한 정답 레이블의 <em>상대적</em> 기여도를 정량화하는 보완적 지표입니다. GLER은 정답 레이블 효과와 전체 ICL 향상(정답 레이블 성능 - 제로샷 성능)의 비율로 정의됩니다. GLER 0은 레이블이 포맷/분포 효과 이상의 기여가 없음을, GLER 1은 모든 ICL 향상이 올바른 레이블 매핑에서 비롯됨을 의미합니다. 이를 통해 모델, 태스크, 프롬프트 설계 간의 직접적이고 정규화된 비교가 가능해집니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">다요인 실험 분석</div>
+                <div class="step-desc">이 지표들을 활용하여 다양한 차원에 걸친 실험을 수행합니다: (a) GPT-3 패밀리의 <strong>4가지 모델 규모</strong>(350M~175B 파라미터), (b) 이진, 3-클래스, 다중 클래스 설정을 포괄하는 <strong>12개 이상의 분류 태스크</strong>(SST-2, SST-5, MR, CR, AGNews, TREC, DBPedia, RTE, CB 등), (c) 최소형(입력-레이블 쌍만)부터 상세형(전체 태스크 설명 및 지시 포함)까지 <strong>3가지 프롬프트 템플릿 설계</strong>, (d) <strong>다양한 시연 수</strong>(4~32샷). 이러한 체계적 범위를 통해 정답 레이블이 중요해지는 조건을 밝힙니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">5</div>
+                <div class="step-title">핵심 조절 요인 식별</div>
+                <div class="step-desc">소거 연구와 통제 실험을 통해 정답 레이블의 중요도를 조절하는 두 가지 핵심 요인을 식별합니다: <strong>프롬프트 템플릿 상세도</strong>(태스크 설명을 포함한 상세한 템플릿은 레이블 의미를 템플릿 자체에 인코딩하여 시연 레이블에 대한 의존도를 줄임)와 <strong>모델 규모</strong>(Davinci 175B와 같은 대형 모델은 올바른 시연을 효과적으로 활용하는 반면, Ada 350M과 같은 소형 모델은 약한 민감도를 보임). 이 요인들은 상세한 프롬프트를 단일 대형 모델에 사용한 기존 연구가 왜 다른 결론에 도달했는지를 설명합니다.</div>
+            </div>
+        </div>
     </div>
 
     <div class="section">
         <h2>실험 결과</h2>
+        <p>저자들은 GPT-3 패밀리(Ada 350M, Babbage 1.3B, Curie 6.7B, Davinci 175B)와 감성 분석, 주제 분류, 질문 분류, 자연어 추론을 포괄하는 포괄적인 텍스트 분류 벤치마크에 걸쳐 평가를 수행합니다. 제안된 두 지표는 기존 연구에서 가려져 있던 명확한 패턴을 드러냅니다.</p>
+
+        <h3>모델 및 벤치마크</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>모델</th><th>파라미터</th><th>평가 태스크</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>GPT-3 Ada</td><td>350M</td><td rowspan="4">SST-2, SST-5, MR, CR, AGNews, TREC, DBPedia, RTE, CB 등 (이진~14-클래스 분류를 포괄하는 12개 이상의 태스크)</td></tr>
+                <tr><td>GPT-3 Babbage</td><td>1.3B</td></tr>
+                <tr><td>GPT-3 Curie</td><td>6.7B</td></tr>
+                <tr><td>GPT-3 Davinci</td><td>175B</td></tr>
+            </tbody>
+        </table>
+
+        <h3>핵심 발견: Label-Correctness Sensitivity</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>요인</th><th>낮은 민감도 (레이블이 중요하지 않아 보임)</th><th>높은 민감도 (레이블이 확실히 중요함)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>프롬프트 상세도</td><td>태스크 설명이 포함된 상세한 템플릿</td><td>태스크 지시 없는 최소형 템플릿</td></tr>
+                <tr><td>모델 규모</td><td>소형 모델 (Ada 350M, Babbage 1.3B)</td><td>대형 모델 (Curie 6.7B, Davinci 175B)</td></tr>
+                <tr><td>태스크 복잡도</td><td>단순 이진 분류 (예: SST-2, MR)</td><td>세분화된 다중 클래스 분류 (예: AGNews, TREC, DBPedia)</td></tr>
+                <tr><td>시연 수</td><td>매우 적은 시연 (4-shot)</td><td>더 많은 시연 (16-32 shot)</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Ground-truth Label Effect Ratio (GLER) 분석</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>실험 설정</th><th>GLER 경향</th><th>해석</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>최소형 프롬프트 + Davinci 175B</td><td>높은 GLER</td><td>정답 레이블이 ICL 성능에 실질적으로 기여; 모델이 올바른 매핑으로부터 적극적으로 학습</td></tr>
+                <tr><td>상세형 프롬프트 + Ada 350M</td><td>낮은 GLER</td><td>다른 요인(포맷팅, 템플릿의 태스크 설명)이 지배적; 레이블이 템플릿이 제공하는 것 이상의 기여가 미미</td></tr>
+                <tr><td>다중 클래스 태스크 (AGNews, TREC)</td><td>이진 태스크보다 높은 GLER</td><td>레이블 선택지가 많을수록 올바른 매핑에 대한 의존도 증가 -- 포맷만으로 레이블 공간을 유추하기 어려움</td></tr>
+                <tr><td>시연 수 증가</td><td>GLER 증가 경향</td><td>더 많은 예시가 올바른 레이블의 학습 신호를 증폭하여 정확한 시연의 이점이 누적됨</td></tr>
+                <tr><td class="highlight-cell">Min et al. (2022) 설정</td><td class="highlight-cell">낮은 GLER</td><td class="highlight-cell">Min et al.이 사용한 상세형 프롬프트의 특정 조합이 정답 레이블 효과를 인위적으로 억제</td></tr>
+            </tbody>
+        </table>
+
+        <h3>성능 분해: ICL 향상의 동인은 무엇인가?</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>구성 요소</th><th>최소형 프롬프트</th><th>상세형 프롬프트</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>포맷 효과</td><td>작은 기여</td><td>보통 기여</td></tr>
+                <tr><td>레이블 공간 효과</td><td>보통 기여</td><td>큰 기여 (템플릿이 레이블 의미를 인코딩)</td></tr>
+                <tr><td>입력 분포 효과</td><td>보통 기여</td><td>보통 기여</td></tr>
+                <tr><td class="highlight-cell"><strong>정답 레이블 효과</strong></td><td class="highlight-cell"><strong>큰 기여 (지배적 요인)</strong></td><td class="highlight-cell"><strong>작은 기여 (템플릿에 의해 가려짐)</strong></td></tr>
+            </tbody>
+        </table>
+
         <ul class="key-points">
-            <li><strong>정답 레이블은 중요합니다:</strong> 이전 주장과 달리, 올바른 입력-레이블 매핑은 특히 더 넓은 조건에서 평가할 때 상당한 성능 향상을 가져옵니다</li>
-            <li><strong>모델 규모와 레이블 민감도:</strong> 큰 모델은 시연 레이블의 정확성에 유의미하게 더 민감하며, 정답 매핑으로부터 점점 더 큰 이득을 얻습니다</li>
-            <li><strong>태스크 복잡도의 역할:</strong> 더 복잡하거나 세분화된 분류 태스크에서 정답과 무작위 레이블 간의 성능 격차가 더욱 뚜렷해집니다</li>
-            <li><strong>레이블 노이즈의 점진적 영향:</strong> 잘못된 레이블의 비율이 증가함에 따라 성능이 비례적으로 하락하여, 각 올바른 시연이 의미 있는 학습 신호를 제공함을 확인합니다</li>
+            <li><strong>정답 레이블은 확실히 중요합니다:</strong> 광범위한 설정에 걸쳐, 올바른 입력-레이블 매핑은 무작위 레이블 대비 상당한 성능 향상을 가져옵니다. 최소형 프롬프트에서의 다중 클래스 태스크의 경우, 정답과 무작위 레이블 간의 성능 격차가 10~20 절대 포인트를 초과할 수 있습니다.</li>
+            <li><strong>프롬프트 상세도가 핵심 교란 요인:</strong> 태스크 설명을 포함한 상세한 프롬프트 템플릿은 레이블 정보를 템플릿 자체에 효과적으로 인코딩하여, 시연 레이블에 대한 모델의 의존도를 줄입니다. 이것이 상세한 템플릿을 사용한 Min et al. (2022)이 레이블이 중요하지 않다는 결론에 도달한 이유입니다 -- 템플릿이 이미 모델에게 각 레이블의 의미를 "알려주고" 있었습니다.</li>
+            <li><strong>큰 모델일수록 레이블을 더 효과적으로 활용:</strong> 모델 규모가 Ada (350M)에서 Davinci (175B)로 증가할수록, 모델은 레이블 정확성에 유의미하게 더 민감해지며, 올바른 입력-레이블 매핑에서 더 강한 학습 신호를 추출합니다. 소형 모델은 올바른 시연의 정보를 완전히 활용할 능력이 부족합니다.</li>
+            <li><strong>태스크 세분도가 효과를 증폭:</strong> 많은 클래스를 가진 세분화된 분류 태스크(예: TREC 6클래스, AGNews 4클래스, DBPedia 14클래스)에서는 정답과 무작위 레이블 간의 성능 격차가 상당히 커지며, 이는 포맷만으로는 레이블 공간을 유추하기 어려워지기 때문입니다.</li>
+            <li><strong>노이즈에 비례한 성능 하락:</strong> 잘못된 레이블의 비율을 체계적으로 증가(0%~100% 무작위)시키면 대략 비례적으로 성능이 하락하여, 각 올바른 시연이 의미 있고 가산적인 학습 신호를 제공함을 확인합니다.</li>
+            <li><strong>기존 결론은 설정에 종속적:</strong> "레이블이 중요하지 않다"는 발견은 상세한 프롬프트와 소형 모델의 특정 조합에서만 성립하며, 더 넓은 ICL 환경으로 일반화되지 않습니다. 실험 범위를 확장하면 정답 레이블의 중요성이 명백해집니다.</li>
+            <li><strong>GLER이 숨겨진 구조를 드러냄:</strong> GLER을 통한 분해 분석은 Min et al. (2022)이 연구한 설정에서 정답 레이블 효과가 진정으로 작았음을 보여줍니다 -- 그러나 이는 레이블이 본질적으로 중요하지 않기 때문이 아니라, 상세한 프롬프트 템플릿이 태스크 설명을 통해 이미 동등한 정보를 제공하고 있었기 때문입니다.</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>의의</h2>
-        <p>본 연구는 ICL 문헌에서 영향력 있었던 오해를 바로잡고, <strong>올바른 시연이 모델에 의미 있는 입력-레이블 매핑을 가르친다</strong>는 직관을 복원합니다. 이는 실용적 함의가 있습니다: ICL을 위한 시연 세트를 구성할 때 레이블 정확성을 우선시해야 합니다. 더 넓게는, 인컨텍스트 학습의 메커니즘에 대한 이해를 심화하고, 성급한 결론을 내리기 전에 엄밀하고 광범위한 실험적 검증의 중요성을 강조합니다.</p>
+        <p>본 연구는 인컨텍스트 학습의 이해와 실전에 네 가지 중요한 기여를 합니다:</p>
+        <ul>
+            <li><strong>영향력 있는 오해를 바로잡음:</strong> 정답 레이블이 ICL에 중요하지 않다는 주장은 NLP 커뮤니티 전반에서 널리 받아들여지고 인용되었습니다. 본 논문은 올바른 시연이 <em>실제로</em> 모델에 의미 있는 입력-레이블 매핑을 가르친다는 엄밀한 증거를 제시하여, ICL의 작동 원리에 대한 핵심적 직관을 복원하고 커뮤니티의 가정을 재평가하도록 촉구합니다.</li>
+            <li><strong>원칙적 평가 지표 도입:</strong> Label-Correctness Sensitivity와 GLER은 시연 품질이 ICL에 미치는 영향을 측정하고 분해하기 위한 최초의 공식적이고 정량적인 도구로, 향후 연구에서의 표준화된 비교를 가능하게 하며 후속 ICL 분석 연구에서 채택되었습니다.</li>
+            <li><strong>실무자를 위한 실용적 지침 제공:</strong> 프롬프트 상세도와 모델 규모를 핵심 조절 요인으로 식별함으로써, 실무자들에게 명확한 설계 가이드라인을 제공합니다: 큰 모델을 최소형 프롬프트와 함께 사용할 때, 시연의 레이블 정확성을 우선시하는 것이 강력한 ICL 성능을 위해 특히 중요합니다. 반대로, 레이블 노이즈가 불가피한 경우에는 더 상세한 템플릿을 사용하여 보상할 수 있습니다.</li>
+            <li><strong>ICL의 메커니즘적 이해 발전:</strong> ICL 성능을 포맷, 레이블 공간, 입력 분포, 정답 레이블 구성 요소로 분해함으로써, 모델이 시연으로부터 <em>무엇을</em> 학습하는지 이해하기 위한 원칙적 프레임워크를 제공하며, 대규모 언어 모델에서의 인컨텍스트 학습 메커니즘을 해명하려는 더 넓은 연구 노력에 기여합니다.</li>
+        </ul>
     </div>
 
     <div class="section">
         <h2>링크</h2>
         <div class="links-section">
             <a href="https://aclanthology.org/2022.emnlp-main.155/" target="_blank" class="paper-link">ACL Anthology</a>
+            <a href="https://arxiv.org/abs/2205.12685" target="_blank" class="paper-link">arXiv Paper</a>
+            <a href="https://aclanthology.org/2022.emnlp-main.155.mp4" target="_blank" class="paper-link">발표 영상</a>
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">

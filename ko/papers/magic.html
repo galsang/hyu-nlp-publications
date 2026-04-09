@@ -25,7 +25,7 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>RAG 시스템에서 검색된 문서 간 지식 충돌을 지식 그래프를 활용하여 체계적으로 생성하고, 멀티홉 추론 환경에서 충돌 탐지 및 위치 파악 능력을 평가하는 벤치마크입니다.</p>
+        <p>지식 그래프 기반으로 1,080개 인스턴스를 체계적으로 구축한 RAG 문맥 간 충돌 벤치마크로, 8가지 충돌 유형(단일/멀티홉 x 1-4개 충돌)을 다루며, 최고 성능 LLM조차 위치 파악 정확도 55%에 그쳐 인간(83.3%) 대비 큰 격차를 보임을 밝혔습니다.</p>
     </div>
 
     <figure class="paper-figure">
@@ -35,10 +35,17 @@
 
     <div class="section">
         <h2>배경 및 동기</h2>
-        <p>검색 증강 생성(RAG)은 외부 문서를 검색하여 LLM 응답을 강화하는 기법입니다. 그런데 검색된 문서들이 <strong>서로 모순</strong>되거나 <strong>모델의 내부 지식과 충돌</strong>하면 어떻게 될까요?</p>
+        <p>검색 증강 생성(RAG)은 외부 문서를 검색하여 LLM 응답을 강화하는 기법입니다. 그런데 검색된 문서들이 <strong>서로 모순</strong>되면 어떤 일이 벌어질까요? 이러한 <em>문맥 간 충돌(inter-context conflict)</em> 문제는 안전한 RAG 배포에 핵심적이지만, 기존 벤치마크는 그 복잡성을 충분히 반영하지 못합니다.</p>
         <div class="highlight-box">
-            <p><strong>기존 벤치마크의 한계:</strong> 기존 데이터셋(ECON, WikiContradict)은 78%가 단일홉 충돌로 구성되어 단순한 모순만 다룹니다. 실제 환경에서는 여러 문서를 연결해야만 발견할 수 있는 복잡한 모순이 훨씬 더 흔합니다.</p>
+            <p><strong>기존 벤치마크의 네 가지 한계:</strong></p>
+            <ul>
+                <li><strong>좁은 태스크 범위:</strong> 기존 데이터셋(ECON: 168개, WikiContradict: 103개)은 정답 후보 간 충돌만 다루는 QA 설정에 국한되어 있습니다.</li>
+                <li><strong>과도하게 단순한 구성:</strong> 개체 치환(entity substitution)에 의존하여 실제 환경의 미묘한 지식 충돌을 포착하지 못합니다.</li>
+                <li><strong>제한적인 충돌 유형:</strong> 단일홉과 멀티홉 충돌을 체계적으로 구분하지 않으며, 기존 인스턴스의 ~78%가 단일홉에 불과합니다.</li>
+                <li><strong>문맥 간 충돌 연구 부족:</strong> 대부분의 연구가 파라메트릭 지식과 외부 지식 간 충돌에 집중하고, 다수 검색 문서 간 충돌은 간과합니다.</li>
+            </ul>
         </div>
+        <p>실제 환경에서는 <strong>멀티홉 추론</strong>이 필요하고 <strong>여러 충돌이 동시에 존재</strong>하는 경우가 훨씬 흔합니다. MAGIC은 이 네 가지 한계를 모두 해결하는 확장 가능한 KG 기반 프레임워크를 제시합니다.</p>
     </div>
 
     <div class="section">
@@ -49,21 +56,23 @@
             <figcaption><strong>Figure 2.</strong> MAGIC 프레임워크의 전체 구조: Wikidata5M에서 서브그래프를 추출하고, 지식 충돌을 생성한 뒤, 자연어 문서로 변환합니다.</figcaption>
         </figure>
 
+        <p>MAGIC은 <strong>Wikidata5M</strong>(약 2,000만 트리플릿) 기반의 3단계 파이프라인으로, 7개 의미 영역(인물, 지리, 조직, 창작물, 클래스/개념, 인과관계, 일반)에 걸친 46개 관계 유형에서 1,080개 인스턴스를 생성합니다.</p>
+
         <div class="method-steps">
             <div class="method-step">
                 <div class="step-num">1</div>
                 <div class="step-title">서브그래프 추출</div>
-                <div class="step-desc">Wikidata5M의 825개 관계를 46개로 필터링하고, DFS 순회를 통해 서브그래프 추출</div>
+                <div class="step-desc">Wikidata5M의 825개 관계 중 (a) 의미적 명확성과 (b) 멀티홉 추론 체인 지원 가능성을 기준으로 46개를 선별합니다. 깊이 우선 탐색(DFS)으로 서브그래프를 추출하되, 서브그래프당 최대 15개 간선, 노드당 최대 5개 간선으로 제한하고, DFS 깊이를 무작위로 결정하여 구조적 다양성을 확보합니다.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">2</div>
                 <div class="step-title">충돌 생성</div>
-                <div class="step-desc">서브그래프 수준의 few-shot 프롬프팅으로 o3-mini를 활용하여 다양한 충돌 생성, 인간 검증 포함</div>
+                <div class="step-desc">OpenAI o3-mini가 대상 시드 트리플릿과 주변 서브그래프 맥락을 입력받아 few-shot 프롬프팅(관계 유형당 검증된 3개 예시)으로 충돌을 생성합니다. 추론 홉 수(단일/멀티) x 충돌 수(1/2/3/4)의 두 차원에서 8가지 충돌 유형을 생성합니다. 2단계 인간 검증(생성 전 데모 필터링 + 생성 후 전문가 리뷰)으로 품질을 보장합니다.</div>
             </div>
             <div class="method-step">
                 <div class="step-num">3</div>
-                <div class="step-title">텍스트 변환</div>
-                <div class="step-desc">GPT-4o-mini로 자연어 변환; Claude 3.5 Sonnet으로 트리플릿 커버리지 검증 (정확도: 95.21%)</div>
+                <div class="step-title">KG-텍스트 변환</div>
+                <div class="step-desc">GPT-4o-mini가 서브그래프를 의미 관계를 보존하며 자연어로 변환합니다. Claude 3.5 Sonnet이 자동으로 트리플릿 커버리지를 검증하며, 충돌 트리플릿 정확도 95.21%, 전체 서브그래프 트리플릿 정확도 82.04%를 달성합니다. 167개 샘플에 대한 인간 검수로 높은 신뢰성을 확인했습니다.</div>
             </div>
         </div>
 
@@ -71,45 +80,82 @@
             <img src="https://arxiv.org/html/2507.21544v3/x4.png" alt="네 가지 충돌 유형">
             <figcaption><strong>Figure 4.</strong> 네 가지 충돌 유형: 단일홉/멀티홉 x 단일충돌/다중충돌의 조합으로 다양한 난이도 수준의 평가가 가능합니다.</figcaption>
         </figure>
+
+        <h3>데이터셋 구성</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>유형</th><th>1개 충돌</th><th>2개 충돌</th><th>3개 충돌</th><th>4개 충돌</th><th>합계</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>단일홉</td><td>208</td><td>154</td><td>80</td><td>50</td><td>492</td></tr>
+                <tr><td>멀티홉</td><td>300</td><td>158</td><td>80</td><td>50</td><td>588</td></tr>
+                <tr><td class="highlight-cell"><strong>합계</strong></td><td class="highlight-cell"><strong>508</strong></td><td class="highlight-cell"><strong>312</strong></td><td class="highlight-cell"><strong>160</strong></td><td class="highlight-cell"><strong>100</strong></td><td class="highlight-cell"><strong>1,080</strong></td></tr>
+            </tbody>
+        </table>
     </div>
 
     <div class="section">
         <h2>실험 결과</h2>
-        <p>MAGIC은 1,080개 인스턴스로 구성되며 두 가지 능력을 평가합니다: <strong>충돌 식별(ID)</strong>과 <strong>충돌 위치 파악(LOC)</strong>.</p>
+        <p>5개 LLM을 두 가지 지표로 평가합니다: <strong>충돌 식별(ID)</strong> -- 충돌 존재 여부의 이진 판별(3회 추론 중 1회라도 실패 시 0점), <strong>충돌 위치 파악(LOC)</strong> -- 모든 충돌 위치를 정확히 찾아야만 만점. 다단계 프롬프팅 전략(충돌 수 + 추론 과정 + 충돌 문장 추출)이 단순 이진 프롬프팅 대비 최대 <strong>39.41%</strong> 향상을 보였습니다.</p>
 
+        <h3>벤치마크 간 비교 (5개 모델 평균)</h3>
         <table class="results-table">
             <thead>
                 <tr><th>벤치마크</th><th>ID 점수 (%)</th><th>LOC 점수 (%)</th></tr>
             </thead>
             <tbody>
-                <tr><td>ECON (기존)</td><td>74.73</td><td>57.09</td></tr>
-                <tr><td>WikiContradict (기존)</td><td>69.93</td><td>55.74</td></tr>
-                <tr><td class="highlight-cell">MAGIC (제안)</td><td class="highlight-cell">64.54</td><td class="highlight-cell">40.51</td></tr>
+                <tr><td>ECON (168개 인스턴스)</td><td>74.73</td><td>57.09</td></tr>
+                <tr><td>WikiContradict (103개 인스턴스)</td><td>69.93</td><td>55.74</td></tr>
+                <tr><td class="highlight-cell">MAGIC (1,080개 인스턴스)</td><td class="highlight-cell">64.54</td><td class="highlight-cell">40.51</td></tr>
+            </tbody>
+        </table>
+
+        <h3>MAGIC에서의 모델별 성능</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>모델</th><th>ID 점수 (%)</th><th>LOC 점수 (%)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Mixtral 8x7B</td><td>37.92</td><td>17.40</td></tr>
+                <tr><td>Llama 3.1 70B</td><td>72.86</td><td>37.92</td></tr>
+                <tr><td>Claude 3.5 Haiku</td><td>60.28</td><td>42.50</td></tr>
+                <tr><td>OpenAI o1</td><td>68.06</td><td>49.72</td></tr>
+                <tr><td class="highlight-cell">GPT-4o-mini</td><td class="highlight-cell">83.61</td><td class="highlight-cell">55.00</td></tr>
+                <tr><td><em>인간 기준</em></td><td><em>92.50</em></td><td><em>83.30</em></td></tr>
             </tbody>
         </table>
 
         <div class="figures-row">
             <figure class="paper-figure">
                 <img src="https://arxiv.org/html/2507.21544v3/x9.png" alt="충돌 유형별 성능">
-                <figcaption><strong>Figure 7.</strong> 충돌 유형별 성능: 멀티홉 충돌(46.13%)이 단일홉 충돌(70.91%)보다 훨씬 어렵습니다.</figcaption>
+                <figcaption><strong>Figure 7.</strong> 충돌 유형별 성능: 멀티홉 충돌이 모든 모델에서 단일홉 충돌보다 훨씬 어렵습니다.</figcaption>
             </figure>
             <figure class="paper-figure">
                 <img src="https://arxiv.org/html/2507.21544v3/x11.png" alt="맥락 길이 영향">
-                <figcaption><strong>Figure 9.</strong> 맥락 길이가 증가할수록 충돌 탐지 성능이 저하됩니다.</figcaption>
+                <figcaption><strong>Figure 9.</strong> 맥락 길이가 증가할수록 ID와 LOC 모두 하락하며, LOC의 하락폭이 더 큽니다.</figcaption>
             </figure>
         </div>
 
         <ul class="key-points">
-            <li><strong>최고 성능:</strong> GPT-4o-mini가 ID 83.61%, LOC 55%로 최고 성능을 보이지만, 인간 성능(ID 92.5%, LOC 83.3%)에는 여전히 크게 못 미침</li>
-            <li><strong>멀티홉 vs 단일홉:</strong> 멀티홉 충돌에서 평균 ID 점수가 70.91%에서 46.13%로 급격히 하락</li>
-            <li><strong>위치 파악의 어려움:</strong> 충돌의 정확한 위치를 찾는 것이 존재 여부를 탐지하는 것보다 훨씬 어려움 (LOC << ID)</li>
-            <li><strong>맥락 효과:</strong> 문서 길이가 증가할수록 성능 저하</li>
+            <li><strong>MAGIC이 더 어렵다:</strong> 기존 벤치마크 대비 평균 ID ~10%, LOC ~17% 하락하여 난이도가 크게 높음을 확인했습니다.</li>
+            <li><strong>멀티홉이 핵심 병목:</strong> 평균 ID가 단일홉 ~71%에서 멀티홉 ~55%로, LOC는 ~63%에서 ~29%로 급감합니다. 멀티홉 추론은 현재 LLM의 주요 약점입니다.</li>
+            <li><strong>탐지 vs. 위치 파악 격차:</strong> 충돌 존재를 탐지해도 정확한 출처를 찾는 것은 훨씬 어렵습니다 (평균 LOC 40.51% vs. ID 64.54%).</li>
+            <li><strong>충돌 수 증가 = 탐지는 쉬워지고, 위치 파악은 어려워짐:</strong> 충돌이 많을수록 존재 자체는 명확해지나, 모든 위치를 찾아내기는 더 어렵습니다.</li>
+            <li><strong>인간-LLM 격차:</strong> 최고 모델(GPT-4o-mini)도 인간 대비 ID 8.89%, LOC 28.30% 뒤처져 큰 개선 여지가 있습니다.</li>
+            <li><strong>의미 영역의 영향:</strong> 클래스/개념 관계가 가장 쉽고(~68-73%), 조직 관계가 가장 큰 편차(14.52-75.86%)를 보입니다. "captain", "mother" 관계는 쉽고, "work location", "father" 관계는 매우 어렵습니다.</li>
+            <li><strong>맥락 길이 효과:</strong> 문서 길이가 길어질수록 ID와 LOC 모두 저하되며, 특히 LOC의 하락이 급격합니다.</li>
+            <li><strong>프롬프팅 전략의 중요성:</strong> 다단계 프롬프팅(충돌 수 + 추론 + 추출)이 단순 예/아니오 프롬프팅 대비 최대 39.41% 향상을 가져왔습니다.</li>
         </ul>
     </div>
 
     <div class="section">
         <h2>왜 중요한가?</h2>
-        <p>RAG는 현재 가장 널리 사용되는 LLM 배포 패턴입니다. 검색 결과의 모순이 탐지되지 않으면 잘못된 정보가 사용자에게 전달될 수 있습니다. MAGIC은 지식 그래프의 <strong>해석 가능한 구조</strong>를 활용하여 충돌의 원인과 결과를 추적하고, 실제 환경에서 흔한 <strong>멀티홉 충돌</strong>을 최초로 체계적으로 평가합니다.</p>
+        <p>RAG가 LLM 프로덕션 배포의 주류 패러다임이 되면서, 상충하는 정보를 견고하게 처리하는 능력은 안전하고 신뢰할 수 있는 시스템 구축에 필수적입니다. MAGIC은 세 가지 측면에서 기여합니다:</p>
+        <ul>
+            <li><strong>최초의 체계적 KG 기반 충돌 벤치마크:</strong> 명시적 지식 그래프 구조에 충돌을 기반함으로써, 기존의 개체 치환 방식과 달리 충돌의 원인과 위치를 해석 가능하게 분석할 수 있습니다.</li>
+            <li><strong>포괄적 충돌 분류 체계:</strong> 단일/멀티홉 x 1-4개 충돌의 8가지 범주로 기존 데이터셋보다 훨씬 넓은 범위의 실제 충돌 시나리오를 포괄합니다.</li>
+            <li><strong>모델 개선을 위한 실질적 통찰:</strong> 멀티홉 추론이 핵심 병목(LOC 63%에서 29%로 하락)이라는 발견과 위치 파악에서의 28%p 인간-LLM 격차는 충돌 인식 RAG 시스템 연구의 구체적 방향을 제시합니다.</li>
+        </ul>
     </div>
 
     <div class="section">
