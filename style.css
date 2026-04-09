@@ -12,10 +12,11 @@
     --tag-bench: #dbeafe; --tag-bench-text: #1e40af;
     --tag-dialog: #d1fae5; --tag-dialog-text: #065f46;
     --tag-rag: #ede9fe; --tag-rag-text: #5b21b6;
-    --tag-nlp: #fce7f3; --tag-nlp-text: #9d174d;
+    --tag-knowledge: #e0e7ff; --tag-knowledge-text: #3730a3;
     --tag-safety: #fee2e2; --tag-safety-text: #991b1b;
+    --tag-unlearning: #fce7f3; --tag-unlearning-text: #9d174d;
     --tag-ir: #ccfbf1; --tag-ir-text: #134e4a;
-    --tag-multi: #e0e7ff; --tag-multi-text: #3730a3;
+    --tag-multi: #c7d2fe; --tag-multi-text: #4338ca;
     --tag-detect: #fef9c3; --tag-detect-text: #854d0e;
     --tag-kg: #f3e8ff; --tag-kg-text: #6b21a8;
 }
@@ -93,22 +94,23 @@ a:hover { text-decoration: underline; }
 
 .paper-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .tag { font-size: 0.75rem; padding: 2px 10px; border-radius: 12px; font-weight: 500; }
-.tag-confidence { background: var(--tag-conf); color: var(--tag-conf-text); }
-.tag-benchmark { background: var(--tag-bench); color: var(--tag-bench-text); }
-.tag-dialogue { background: var(--tag-dialog); color: var(--tag-dialog-text); }
-.tag-rag { background: var(--tag-rag); color: var(--tag-rag-text); }
-.tag-nlp { background: var(--tag-nlp); color: var(--tag-nlp-text); }
-.tag-safety { background: var(--tag-safety); color: var(--tag-safety-text); }
-.tag-ir { background: var(--tag-ir); color: var(--tag-ir-text); }
-.tag-multimodal { background: var(--tag-multi); color: var(--tag-multi-text); }
-.tag-detection { background: var(--tag-detect); color: var(--tag-detect-text); }
-.tag-kg { background: var(--tag-kg); color: var(--tag-kg-text); }
-.tag-repr { background: #dbeafe; color: #1e40af; }
-.tag-parsing { background: #e0f2fe; color: #075985; }
-.tag-reasoning { background: #fef3c7; color: #92400e; }
-.tag-domain { background: #d1fae5; color: #065f46; }
-.tag-icl { background: #fce7f3; color: #9d174d; }
-.tag-efficiency { background: #f3e8ff; color: #6b21a8; }
+.tag-confidence { background: #fef3c7; color: #92400e; }
+.tag-benchmark { background: #dbeafe; color: #1e40af; }
+.tag-dialogue { background: #d1fae5; color: #065f46; }
+.tag-rag { background: #ede9fe; color: #5b21b6; }
+.tag-knowledge { background: #e0e7ff; color: #3730a3; }
+.tag-safety { background: #fee2e2; color: #991b1b; }
+.tag-unlearning { background: #fce7f3; color: #9d174d; }
+.tag-ir { background: #ccfbf1; color: #134e4a; }
+.tag-multimodal { background: #c7d2fe; color: #4338ca; }
+.tag-detection { background: #fef9c3; color: #854d0e; }
+.tag-kg { background: #f3e8ff; color: #6b21a8; }
+.tag-repr { background: #bfdbfe; color: #1e3a8a; }
+.tag-parsing { background: #a7f3d0; color: #064e3b; }
+.tag-reasoning { background: #fed7aa; color: #9a3412; }
+.tag-domain { background: #99f6e4; color: #115e59; }
+.tag-icl { background: #fbcfe8; color: #831843; }
+.tag-efficiency { background: #ddd6fe; color: #5b21b6; }
 
 .paper-oneliner { font-size: 0.9rem; color: var(--text-light); margin-top: 10px; }
 
