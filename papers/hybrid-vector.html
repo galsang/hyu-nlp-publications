@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hybrid-Vector Retrieval for Visually Rich Documents: Combining Single-Vector Efficiency and Multi-Vector Accuracy - HYU NLP Lab</title>
+    <title>Hybrid-Vector Retrieval for Visually Rich Documents - HYU NLP Lab</title>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -19,29 +19,86 @@
         <div class="authors">Juyeon Kim, Geon Lee, Dongwon Choi, Taeuk Kim, Kijung Shin</div>
     </div>
 </div>
+
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A hybrid vector retrieval approach for visually rich documents combining text and visual information</p>
+        <p>A two-stage retrieval framework (HEAVEN) that achieves 99.87% of multi-vector accuracy while reducing computation by 99.82% for visually rich document retrieval.</p>
     </div>
+
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2510.22215v1/x1.png" alt="Efficiency-accuracy trade-off comparison showing HEAVEN's position">
+        <figcaption><strong>Figure 1.</strong> Efficiency-accuracy trade-off comparison showing HEAVEN's position relative to single-vector and multi-vector baselines.</figcaption>
+    </figure>
+
     <div class="section">
-        <h2>Key Points</h2>
+        <h2>Background & Motivation</h2>
+        <p>Visually rich documents (PDFs with tables, charts, layouts) require retrieval methods that understand visual structure. <strong>Single-vector methods</strong> are efficient but inaccurate; <strong>multi-vector methods</strong> are accurate but computationally expensive. HEAVEN bridges this gap by combining the best of both worlds.</p>
+        <div class="highlight-box">
+            <p><strong>Core Challenge:</strong> How can we achieve multi-vector-level accuracy at single-vector-level cost for retrieving visually rich documents at production scale?</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method: HEAVEN Framework</h2>
+        <p>HEAVEN is a two-stage hybrid retrieval framework that combines single-vector efficiency for initial candidate retrieval with multi-vector precision for reranking, while introducing novel techniques to minimize computation at each stage.</p>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2510.22215v1/x2.png" alt="HEAVEN pipeline overview">
+            <figcaption><strong>Figure 2.</strong> Overview of the HEAVEN pipeline: fast candidate retrieval followed by precise reranking with filtered query tokens.</figcaption>
+        </figure>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Fast Candidate Retrieval</div>
+                <div class="step-desc">Single-vector search over Visually-Summarized Pages (VS-Pages) that assemble representative visual layouts for efficient initial filtering</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Precise Reranking</div>
+                <div class="step-desc">Multi-vector reranking with query tokens filtered by linguistic importance to reduce redundant computation</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>ViMDOC Benchmark</h2>
+        <p>We introduce <strong>ViMDOC</strong>, the first benchmark for visually rich, multi-document, long-document retrieval, addressing a critical gap in existing evaluation resources.</p>
         <ul class="key-points">
-            <li>Improves document retrieval performance through hybrid vector representations that combine textual and visual information</li>
-            <li>Presents effective retrieval strategies for documents rich in visual elements such as layouts, tables, and figures</li>
+            <li><strong>76,347 pages</strong> across 1,379 documents</li>
+            <li><strong>10,904 queries</strong> with diverse question types</li>
+            <li><strong>55.4 pages</strong> average document length</li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <ul class="key-points">
+            <li><strong>99.87% Recall@1 preservation</strong> compared to full multi-vector retrieval</li>
+            <li><strong>99.82% FLOPs reduction</strong> per query</li>
+            <li>Consistent performance across multiple benchmarks and document types</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>As enterprises deal with millions of PDF documents, efficient yet accurate retrieval is critical. HEAVEN makes production-scale deployment practical by <strong>dramatically reducing computational cost while maintaining quality</strong>, enabling visually-aware document search at scale without sacrificing the accuracy that multi-vector methods provide.</p>
+    </div>
+
     <div class="section">
         <h2>Links</h2>
         <div class="links-section">
-            <a href="https://nlp.hanyang.ac.kr/home/publications" target="_blank" class="paper-link">Lab Page</a>
+            <a href="https://arxiv.org/abs/2510.22215" target="_blank" class="paper-link">arXiv Paper</a>
         </div>
     </div>
+
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-ir">Information Retrieval</span>
         <span class="tag tag-multimodal">Multimodal</span>
     </div>
 </div>
+
 <div class="footer">
     <p><a href="../index.html">&#8592; Back to All Publications</a></p>
     <p style="margin-top:8px;">Hanyang University NLP Lab | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>

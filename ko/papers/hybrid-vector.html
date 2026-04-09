@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hybrid-Vector Retrieval for Visually Rich Documents: Combining Single-Vector Efficiency and Multi-Vector Accuracy - HYU NLP Lab</title>
+    <title>Hybrid-Vector Retrieval for Visually Rich Documents - HYU NLP Lab</title>
     <link rel="stylesheet" href="../../style.css">
 </head>
 <body>
@@ -19,29 +19,86 @@
         <div class="authors">Juyeon Kim, Geon Lee, Dongwon Choi, Taeuk Kim, Kijung Shin</div>
     </div>
 </div>
+
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>시각적으로 풍부한 문서 검색을 위해 단일 벡터의 효율성과 다중 벡터의 정확성을 결합하는 하이브리드 접근법</p>
+        <p>시각적으로 풍부한 문서 검색에서 다중 벡터 정확도의 99.87%를 유지하면서 연산량을 99.82% 절감하는 2단계 검색 프레임워크(HEAVEN)를 제안합니다.</p>
     </div>
+
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2510.22215v1/x1.png" alt="HEAVEN의 효율성-정확도 트레이드오프 비교">
+        <figcaption><strong>Figure 1.</strong> 단일 벡터 및 다중 벡터 기준 대비 HEAVEN의 효율성-정확도 트레이드오프 비교.</figcaption>
+    </figure>
+
     <div class="section">
-        <h2>핵심 내용</h2>
+        <h2>배경 및 동기</h2>
+        <p>시각적으로 풍부한 문서(표, 차트, 레이아웃이 포함된 PDF)는 시각적 구조를 이해하는 검색 방법을 필요로 합니다. <strong>단일 벡터 방법</strong>은 효율적이지만 부정확하고, <strong>다중 벡터 방법</strong>은 정확하지만 연산 비용이 매우 높습니다. HEAVEN은 양쪽의 장점을 결합하여 이 간극을 해소합니다.</p>
+        <div class="highlight-box">
+            <p><strong>핵심 과제:</strong> 프로덕션 규모에서 시각적으로 풍부한 문서를 검색할 때, 단일 벡터 수준의 비용으로 다중 벡터 수준의 정확도를 어떻게 달성할 수 있는가?</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>제안 방법: HEAVEN 프레임워크</h2>
+        <p>HEAVEN은 초기 후보 검색에는 단일 벡터의 효율성을, 재순위화에는 다중 벡터의 정밀성을 결합하는 2단계 하이브리드 검색 프레임워크로, 각 단계에서 연산을 최소화하는 새로운 기법을 도입합니다.</p>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2510.22215v1/x2.png" alt="HEAVEN 파이프라인 개요">
+            <figcaption><strong>Figure 2.</strong> HEAVEN 파이프라인 개요: 빠른 후보 검색 후 필터링된 쿼리 토큰을 이용한 정밀 재순위화.</figcaption>
+        </figure>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">빠른 후보 검색</div>
+                <div class="step-desc">대표적인 시각 레이아웃을 조합한 Visually-Summarized Pages(VS-Pages)에 대한 단일 벡터 검색으로 효율적인 초기 필터링 수행</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">정밀 재순위화</div>
+                <div class="step-desc">언어적 중요도에 따라 필터링된 쿼리 토큰을 사용한 다중 벡터 재순위화로 불필요한 연산 절감</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>ViMDOC 벤치마크</h2>
+        <p>시각적으로 풍부한 다중 문서, 긴 문서 검색을 위한 최초의 벤치마크인 <strong>ViMDOC</strong>을 소개하며, 기존 평가 자원의 중요한 공백을 메웁니다.</p>
         <ul class="key-points">
-            <li>텍스트와 시각 정보를 결합한 하이브리드 벡터 표현을 통해 문서 검색 성능을 향상</li>
-            <li>레이아웃, 표, 그림 등 시각적 요소가 풍부한 문서에 대한 효과적인 검색 전략을 제시</li>
+            <li>1,379개 문서에 걸친 <strong>76,347 페이지</strong></li>
+            <li>다양한 질문 유형의 <strong>10,904개 쿼리</strong></li>
+            <li>문서당 평균 <strong>55.4 페이지</strong></li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>실험 결과</h2>
+        <ul class="key-points">
+            <li>전체 다중 벡터 검색 대비 <strong>Recall@1 99.87% 유지</strong></li>
+            <li>쿼리당 <strong>FLOPs 99.82% 절감</strong></li>
+            <li>다양한 벤치마크와 문서 유형에서 일관된 성능</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>연구의 의의</h2>
+        <p>기업이 수백만 건의 PDF 문서를 다루는 상황에서 효율적이면서도 정확한 검색은 매우 중요합니다. HEAVEN은 다중 벡터 방법이 제공하는 정확도를 희생하지 않으면서 <strong>연산 비용을 획기적으로 절감</strong>하여, 시각 인식 기반 문서 검색의 프로덕션 규모 배포를 실현 가능하게 합니다.</p>
+    </div>
+
     <div class="section">
         <h2>링크</h2>
         <div class="links-section">
-            <a href="https://nlp.hanyang.ac.kr/home/publications" target="_blank" class="paper-link">Lab Page</a>
+            <a href="https://arxiv.org/abs/2510.22215" target="_blank" class="paper-link">arXiv Paper</a>
         </div>
     </div>
+
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-ir">Information Retrieval</span>
         <span class="tag tag-multimodal">Multimodal</span>
     </div>
 </div>
+
 <div class="footer">
     <p><a href="../index.html">&#8592; 전체 논문 목록으로 돌아가기</a></p>
     <p style="margin-top:8px;">한양대학교 자연어처리 연구실 | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>

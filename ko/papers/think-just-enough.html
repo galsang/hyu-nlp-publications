@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Think Just Enough: Leveraging Self-Assessed Confidence for Adaptive Reasoning in Language Models - HYU NLP Lab</title>
+    <title>Think Just Enough - HYU NLP Lab</title>
     <link rel="stylesheet" href="../../style.css">
 </head>
 <body>
@@ -19,29 +19,97 @@
         <div class="authors">Junyeob Kim, Sang-goo Lee, Taeuk Kim</div>
     </div>
 </div>
+
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>자기 평가 신뢰도를 활용하여 언어 모델이 필요한 만큼만 추론을 수행하는 효율적 적응형 추론 방법</p>
+        <p>토큰 수준 logprobs의 Shannon 엔트로피를 신뢰도 신호로 활용하여 선택적 조기 종료를 가능하게 하는 프레임워크로, 정확도 손실 없이 25-50%의 연산 절감을 달성합니다.</p>
     </div>
+
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2510.08146v2/x1.png" alt="모델-데이터셋 조합별 연산 효율성 향상">
+        <figcaption><strong>Figure 1.</strong> 모델-데이터셋 조합별 연산 효율성 향상: 정확도를 유지하면서 25-50% 토큰 절감 달성.</figcaption>
+    </figure>
+
     <div class="section">
-        <h2>핵심 내용</h2>
-        <ul class="key-points">
-            <li>모델의 자기 평가 신뢰도를 기반으로 추론 깊이를 동적으로 조절하여 불필요한 연산을 절감</li>
-            <li>효율성과 정확성의 균형을 맞추는 적응형 추론 전략을 제안</li>
-        </ul>
+        <h2>배경 및 동기</h2>
+        <p>고급 추론 모델(o1, QwQ 등)은 간단한 질문에도 긴 사고 과정을 생성하여 상당한 연산을 낭비합니다. <strong>모델이 이미 충분히 확신하고 있을 때 이를 감지하고 조기에 중단할 수 있을까요?</strong></p>
+        <div class="highlight-box">
+            <p><strong>핵심 통찰:</strong> 토큰 수준 logprobs에서 계산한 Shannon 엔트로피는 모델이 정답을 맞출 수 있는 질문과 그렇지 않은 질문을 강력하게 구분하는 신뢰할 수 있는 모델 내재적 신뢰도 신호를 제공합니다.</p>
+        </div>
     </div>
+
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2510.08146v2/x2.png" alt="3단계 프레임워크 개요">
+        <figcaption><strong>Figure 2.</strong> 3단계 프레임워크 개요: 신뢰도 평가, 임계값 선택, 조기 종료 결정.</figcaption>
+    </figure>
+
+    <div class="section">
+        <h2>제안 방법</h2>
+        <p>프레임워크는 softmax 정규화 후 상위 20개 logprobs에서 Shannon 엔트로피를 계산한 다음, 이론적으로 근거가 있는 임계값을 적용하여 추론을 조기에 중단할지 계속할지 결정합니다.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">신뢰도 평가</div>
+                <div class="step-desc">토큰 logprobs에서 Shannon 엔트로피를 계산하여 모델의 답변에 대한 확신 정도를 정량화</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">임계값 선택</div>
+                <div class="step-desc">4가지 이론적 근거 기반 방법 중 하나를 적용하여 신뢰도 기준점 결정</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">조기 종료</div>
+                <div class="step-desc">신뢰도가 선택된 임계값을 초과하는지에 따라 추론 중단 또는 계속 결정</div>
+            </div>
+        </div>
+
+        <p style="margin-top: 16px;">4가지 임계값 방법:</p>
+        <ul class="key-points">
+            <li><strong>Entropy Mean:</strong> 평균 엔트로피를 기준점으로 사용하는 보수적 기준선</li>
+            <li><strong>Information-Theoretic Optimal:</strong> 최적 판별을 위한 정보 이득 최대화</li>
+            <li><strong>Bayesian Optimal:</strong> 전체 분류 오류 최소화</li>
+            <li><strong>Scale-Invariant Universal:</strong> 재보정 없이 여러 모델에 적용 가능</li>
+        </ul>
+        <p>기본 배포에는 <strong>5-10개 예제</strong>만 필요하며, 완전한 최적화에는 <strong>25개 이상의 예제</strong>가 필요합니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>실험 결과</h2>
+        <ul class="key-points">
+            <li>모든 모델-데이터셋 조합에서 <strong>25-50% 토큰 절감</strong></li>
+            <li>높은 신뢰도 질문에 대해 <strong>88-100% 정확도</strong></li>
+            <li><strong>정확도 손실 제로</strong> (전체 성능 저하 없음)</li>
+            <li><strong>Cohen's d: 0.66-1.95</strong> (신뢰도 판별의 강한 효과 크기)</li>
+            <li>GPT OSS 120B/20B, Qwen3-30B에서 AIME'24, AIME'25, GPQA Diamond로 평가</li>
+        </ul>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2510.08146v2/x7.png" alt="정확도-효율성 트레이드오프의 Pareto 분석">
+            <figcaption><strong>Figure 3.</strong> 다양한 임계값 구성에 따른 정확도-효율성 트레이드오프 Pareto 분석.</figcaption>
+        </figure>
+    </div>
+
+    <div class="section">
+        <h2>연구의 의의</h2>
+        <p>추론 모델이 주류가 됨에 따라 연산 비용이 병목이 됩니다. 본 연구는 <strong>필요한 곳에 연산을 지능적으로 배분</strong>하여 품질 손실 없이 25-50%의 비용을 절감할 수 있음을 보여줍니다. 이는 비용에 민감한 프로덕션 환경에서 추론 모델을 대규모로 배포하는 데 직접적인 시사점을 가집니다.</p>
+    </div>
+
     <div class="section">
         <h2>링크</h2>
         <div class="links-section">
-            <a href="https://nlp.hanyang.ac.kr/home/publications" target="_blank" class="paper-link">Lab Page</a>
+            <a href="https://aclanthology.org/2026.findings-eacl.263/" target="_blank" class="paper-link">ACL Anthology</a>
         </div>
     </div>
+
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-confidence">Confidence</span>
         <span class="tag tag-nlp">NLP Fundamentals</span>
     </div>
 </div>
+
 <div class="footer">
     <p><a href="../index.html">&#8592; 전체 논문 목록으로 돌아가기</a></p>
     <p style="margin-top:8px;">한양대학교 자연어처리 연구실 | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>

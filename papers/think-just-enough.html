@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Think Just Enough: Leveraging Self-Assessed Confidence for Adaptive Reasoning in Language Models - HYU NLP Lab</title>
+    <title>Think Just Enough - HYU NLP Lab</title>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -19,29 +19,97 @@
         <div class="authors">Junyeob Kim, Sang-goo Lee, Taeuk Kim</div>
     </div>
 </div>
+
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>An efficient reasoning method that leverages model self-assessed confidence to perform only the necessary amount of thinking</p>
+        <p>A framework that uses Shannon entropy from token-level logprobs as a confidence signal to enable selective early stopping, achieving 25-50% computational savings with zero accuracy degradation.</p>
     </div>
+
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2510.08146v2/x1.png" alt="Computational efficiency gains across model-dataset combinations">
+        <figcaption><strong>Figure 1.</strong> Computational efficiency gains across model-dataset combinations, showing 25-50% token reduction while maintaining accuracy.</figcaption>
+    </figure>
+
     <div class="section">
-        <h2>Key Points</h2>
-        <ul class="key-points">
-            <li>Dynamically adjusts reasoning depth based on the model's self-assessed confidence, reducing unnecessary computation</li>
-            <li>Proposes an adaptive reasoning strategy that balances efficiency and accuracy</li>
-        </ul>
+        <h2>Background & Motivation</h2>
+        <p>Advanced reasoning models (like o1, QwQ) generate long chains of thought even for simple questions, wasting significant computation. <strong>Can we detect when the model is already confident enough and stop early?</strong></p>
+        <div class="highlight-box">
+            <p><strong>Key Insight:</strong> Shannon entropy computed from token-level logprobs provides a reliable, model-intrinsic confidence signal that strongly discriminates between questions the model can and cannot answer correctly.</p>
+        </div>
     </div>
+
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2510.08146v2/x2.png" alt="Three-step framework overview">
+        <figcaption><strong>Figure 2.</strong> Overview of the three-step framework: confidence assessment, threshold selection, and early stopping decision.</figcaption>
+    </figure>
+
+    <div class="section">
+        <h2>Proposed Method</h2>
+        <p>The framework computes Shannon entropy from the top-20 logprobs after softmax normalization, then applies theoretically grounded thresholds to decide whether to stop reasoning early or continue.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Confidence Assessment</div>
+                <div class="step-desc">Compute Shannon entropy from token logprobs to quantify the model's certainty about its answer</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Threshold Selection</div>
+                <div class="step-desc">Apply one of 4 theoretically grounded methods to determine the confidence cutoff</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Early Stopping</div>
+                <div class="step-desc">Stop or continue reasoning based on whether confidence exceeds the selected threshold</div>
+            </div>
+        </div>
+
+        <p style="margin-top: 16px;">Four threshold methods:</p>
+        <ul class="key-points">
+            <li><strong>Entropy Mean:</strong> Conservative baseline using average entropy as the cutoff</li>
+            <li><strong>Information-Theoretic Optimal:</strong> Maximizes information gain for optimal discrimination</li>
+            <li><strong>Bayesian Optimal:</strong> Minimizes overall classification error</li>
+            <li><strong>Scale-Invariant Universal:</strong> Works across different models without recalibration</li>
+        </ul>
+        <p>The framework requires only <strong>5-10 examples</strong> for basic deployment and <strong>25+ examples</strong> for full optimization.</p>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <ul class="key-points">
+            <li><strong>25-50% token reduction</strong> across all model-dataset pairs</li>
+            <li><strong>88-100% accuracy</strong> for high-confidence questions</li>
+            <li><strong>Zero accuracy degradation</strong> (no loss in overall performance)</li>
+            <li><strong>Cohen's d: 0.66-1.95</strong> (strong effect size for confidence discrimination)</li>
+            <li>Evaluated on GPT OSS 120B/20B, Qwen3-30B across AIME'24, AIME'25, GPQA Diamond</li>
+        </ul>
+
+        <figure class="paper-figure">
+            <img src="https://arxiv.org/html/2510.08146v2/x7.png" alt="Pareto analysis showing accuracy-efficiency trade-offs">
+            <figcaption><strong>Figure 3.</strong> Pareto analysis showing the accuracy-efficiency trade-off frontier across different threshold configurations.</figcaption>
+        </figure>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>As reasoning models become mainstream, their computational cost becomes a bottleneck. This work shows we can <strong>intelligently allocate compute where it is needed</strong>, saving 25-50% of cost with no quality loss. This has direct implications for deploying reasoning models at scale in cost-sensitive production environments.</p>
+    </div>
+
     <div class="section">
         <h2>Links</h2>
         <div class="links-section">
-            <a href="https://nlp.hanyang.ac.kr/home/publications" target="_blank" class="paper-link">Lab Page</a>
+            <a href="https://aclanthology.org/2026.findings-eacl.263/" target="_blank" class="paper-link">ACL Anthology</a>
         </div>
     </div>
+
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-confidence">Confidence</span>
         <span class="tag tag-nlp">NLP Fundamentals</span>
     </div>
 </div>
+
 <div class="footer">
     <p><a href="../index.html">&#8592; Back to All Publications</a></p>
     <p style="margin-top:8px;">Hanyang University NLP Lab | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
