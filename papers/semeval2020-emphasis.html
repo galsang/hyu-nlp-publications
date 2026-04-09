@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IDS at SemEval-2020 Task 10: Does Pre-trained Lang - HYU NLP Lab</title>
+    <title>IDS at SemEval-2020 Task 10 - HYU NLP Lab</title>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -21,9 +21,66 @@
 </div>
 <div class="detail-content">
     <div class="section">
-        <h2>Summary</h2>
-        <p>This paper investigates whether pre-trained language models can identify which words should be emphasized in written text, as part of the SemEval-2020 shared task on emphasis selection.</p>
+        <h2>One-Line Summary</h2>
+        <p>A zero-shot emphasis selection method that exploits the self-attention distributions of pre-trained language models to identify words deserving emphasis in visual media text, without any task-specific training.</p>
     </div>
+
+    <div class="section">
+        <h2>Background &amp; Motivation</h2>
+        <p>In visual communication such as social media posts, posters, and advertisements, text emphasis is crucial for conveying the author's intent. An automatic system that recommends which words to emphasize could accelerate the creation of visual media content.</p>
+        <div class="highlight-box">
+            <p><strong>Core Insight:</strong> Prior research has shown that PLMs like BERT contain rich linguistic knowledge in their attention patterns. This paper investigates whether some attention heads in PLMs are naturally <strong>specialized for emphasis selection</strong>, making it possible to identify important words without any supervised training.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method: Attention-Based Emphasis Selection</h2>
+        <p>The method derives emphasis frequency (e_freq) for each word from PLM attention maps, using three strategies:</p>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Words2Target</div>
+                <div class="step-desc">Computes emphasis frequency as the average attention weight other words pay to the target word, measuring how influential the word is in building other words' representations</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">CLS2Target</div>
+                <div class="step-desc">Uses the attention weight from the [CLS] token to the target word, measuring how much the word contributes to the sentence representation</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">SEP2Target</div>
+                <div class="step-desc">Uses the attention weight from the [SEP] token to the target word as an alternative sentence-level signal</div>
+            </div>
+        </div>
+        <p>For each PLM, the best (layer, head, method) configuration is selected based on the Ranking Score metric on the validation set.</p>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <p>Evaluated on the SemEval-2020 Task 10 dataset consisting of short English sentences from flyers, posters, and advertisements, with emphasis annotations from nine annotators.</p>
+
+        <ul class="key-points">
+            <li><strong>Best Single Model:</strong> BERT-large-uncased achieves a Ranking Score of 0.6420 on the validation set, outperforming the TF-IDF baseline (0.5145)</li>
+            <li><strong>Ensemble Performance:</strong> Ensembling the top-5 PLM configurations achieves 0.6898 Ranking Score on validation and 0.6656 on the test set</li>
+            <li><strong>Zero-shot Advantage:</strong> The method operates in a fully zero-shot manner without leveraging any gold-standard annotations, implying universal applicability in low-resource settings</li>
+            <li><strong>Specialized Attention Heads:</strong> Analysis reveals a clear gap between top-performing attention heads and others, confirming that specific heads are specialized for emphasis selection</li>
+            <li><strong>DistilBERT Efficiency:</strong> DistilBERT models achieve high performance despite their small size, suggesting knowledge distillation preserves emphasis-related attention patterns</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>This work provides evidence that pre-trained language models <strong>implicitly learn word importance</strong> through their attention mechanisms. The practical zero-shot approach can assist in automated visual media creation, and the analysis of specialized attention heads contributes to our understanding of what linguistic knowledge PLMs encode during pre-training.</p>
+    </div>
+
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://aclanthology.org/2020.semeval-1.185/" target="_blank" class="paper-link">ACL Anthology</a>
+        </div>
+    </div>
+
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-repr">Representation Learning</span>
     </div>

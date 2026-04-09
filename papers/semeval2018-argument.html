@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SNU_IDS at SemEval-2018 Task 12: Sentence Encoder  - HYU NLP Lab</title>
+    <title>SNU_IDS at SemEval-2018 Task 12 - HYU NLP Lab</title>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -21,12 +21,80 @@
 </div>
 <div class="detail-content">
     <div class="section">
-        <h2>Summary</h2>
-        <p>This paper presents a sentence encoder using contextualized vectors for the argument reasoning comprehension task at SemEval-2018, tackling warrant identification in natural language arguments.</p>
+        <h2>One-Line Summary</h2>
+        <p>SECOVARC, a simple three-part neural architecture that uses contextualized word vectors from machine translation pre-training (CoVe) for argument reasoning comprehension, demonstrating the effectiveness of transfer learning for this challenging logical reasoning task.</p>
     </div>
+
+    <div class="section">
+        <h2>Background &amp; Motivation</h2>
+        <p>The Argument Reasoning Comprehension task requires choosing the correct implicit warrant from two candidates, given a claim and a reason. This is challenging because it requires <strong>human-level reasoning</strong> to judge logical plausibility, often relying on common knowledge not present in the input.</p>
+        <div class="highlight-box">
+            <p><strong>Key Challenge:</strong> The training data is limited (~2K instances), making it difficult to train complex neural models from scratch. The paper hypothesizes that transfer learning from large-scale machine translation datasets can compensate for the data scarcity while keeping the model architecture simple.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method: SECOVARC</h2>
+        <p>SECOVARC (Sentence Encoder with COnextualized Vectors for Argument Reasoning Comprehension) is a three-layer architecture:</p>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Encoding Layer</div>
+                <div class="step-desc">Uses CoVe (a two-layered Bi-LSTM pre-trained on large MT datasets) with GloVe embeddings to encode the claim, reason, and warrant into fixed-length sentence representations via max-pooling or last-state pooling</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Localization Layer</div>
+                <div class="step-desc">Three separate fully-connected layers project each sentence representation into its own semantic space, maintaining role-specific information for claim, reason, and warrant</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Output Layer</div>
+                <div class="step-desc">Combines five feature vectors -- claim, reason, warrant, element-wise difference, and element-wise product -- through logistic regression to produce a plausibility score between 0 and 1</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <p>Evaluated on the SemEval-2018 Task 12 dataset (~2K crowdsourced instances). Results are reported as mean and standard deviation over 20 runs.</p>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>Dev Acc.</th><th>Test Acc.</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Random baseline</td><td>0.473</td><td>0.491</td></tr>
+                <tr><td>Intra-warrant attention w/ context</td><td>0.637</td><td>0.560</td></tr>
+                <tr><td>SECOVARC (official submission)</td><td>0.731</td><td>0.565</td></tr>
+                <tr><td>SECOVARC-last (w/ heuristics)</td><td>0.706</td><td>0.554</td></tr>
+                <tr><td class="highlight-cell">SECOVARC-max (w/ heuristics)</td><td class="highlight-cell">0.684</td><td class="highlight-cell">0.592</td></tr>
+            </tbody>
+        </table>
+
+        <ul class="key-points">
+            <li><strong>Best Test Performance:</strong> SECOVARC-max with heuristics achieves 59.2% test accuracy, outperforming all baselines and non-transferred models</li>
+            <li><strong>Transfer Learning Works:</strong> SECOVARC consistently outperforms Bi-LSTM variants trained from scratch (BoW: 50.2%, Bi-LSTM-max: 54.3%), confirming the benefit of pre-trained contextualized vectors</li>
+            <li><strong>Smaller Deviation:</strong> SECOVARC models show smaller standard deviations than non-transferred models, indicating more stable and successful training through transfer learning</li>
+            <li><strong>Human Performance Gap:</strong> Human accuracy is 79.8% (or 90.9% with training in reasoning), showing significant room for model improvement</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>This work is an early demonstration that <strong>transfer learning from machine translation</strong> can substantially improve performance on reasoning tasks with limited training data. The simple yet effective SECOVARC architecture showed that pre-trained contextualized representations (predating BERT/ELMo) are a key ingredient for natural language understanding tasks requiring logical reasoning.</p>
+    </div>
+
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://aclanthology.org/S18-1182/" target="_blank" class="paper-link">ACL Anthology</a>
+        </div>
+    </div>
+
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-repr">Representation Learning</span>
-                    <span class="tag tag-reasoning">Reasoning</span>
+        <span class="tag tag-reasoning">Reasoning</span>
     </div>
 </div>
 <div class="footer">

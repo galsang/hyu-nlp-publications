@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A Framework for Narrative Structure Analysis Using - HYU NLP Lab</title>
+    <title>A Framework for Narrative Structure Analysis Using Automated Semantic Role Labeling in Korean Text - HYU NLP Lab</title>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -21,12 +21,51 @@
 </div>
 <div class="detail-content">
     <div class="section">
-        <h2>Summary</h2>
-        <p>This paper presents a framework for analyzing narrative structures in Korean text using automated semantic role labeling, bridging computational linguistics and sociological text analysis.</p>
+        <h2>One-Line Summary</h2>
+        <p>We propose a computational framework that leverages automated semantic role labeling (SRL) to systematically extract and analyze narrative structures from Korean text, bridging NLP and sociological text analysis at scale.</p>
     </div>
+
+    <div class="section">
+        <h2>Background &amp; Motivation</h2>
+        <p>Narrative analysis is a core method in sociology and the social sciences for understanding how individuals, organizations, and societies construct meaning through stories. However, traditional narrative analysis is labor-intensive, relying on manual close reading by trained researchers, which limits the scale of corpora that can be studied.</p>
+        <p style="margin-top: 12px;">Semantic role labeling (SRL) &mdash; the task of identifying "who did what to whom, when, where, and how" in a sentence &mdash; offers a natural computational analog to narrative analysis. By automatically extracting the agents, actions, and patients in text, SRL can reveal the underlying event structures that constitute narratives. However, applying SRL to Korean text presents unique challenges due to the language's agglutinative morphology, flexible word order, and frequent pro-drop (omission of arguments). This interdisciplinary work brings together sociologists and NLP researchers to address these challenges.</p>
+    </div>
+
+    <div class="section">
+        <h2>Method / Approach</h2>
+        <ul class="key-points">
+            <li><strong>Korean SRL Pipeline:</strong> Builds an automated semantic role labeling system tailored for Korean, handling the language's morphological complexity and flexible syntactic structures</li>
+            <li><strong>Narrative Structure Extraction:</strong> Defines a mapping from SRL outputs (predicate-argument structures) to narrative elements &mdash; actors, actions, targets, and circumstances &mdash; enabling systematic extraction of "who does what to whom" patterns from large text corpora</li>
+            <li><strong>Aggregate Narrative Analysis:</strong> Develops methods to aggregate individual sentence-level SRL outputs into document-level and corpus-level narrative structures, revealing dominant storylines, actor roles, and action patterns across texts</li>
+            <li><strong>Sociological Application:</strong> Applies the framework to real-world Korean text corpora to demonstrate how computational narrative analysis can complement and extend traditional qualitative approaches in sociology</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Key Findings</h2>
+        <ul class="key-points">
+            <li><strong>Feasibility of Automated Narrative Analysis:</strong> The SRL-based framework can effectively extract meaningful narrative structures from Korean text, producing results consistent with expert qualitative analysis</li>
+            <li><strong>Scale Advantage:</strong> The automated approach enables analysis of corpora far larger than what manual methods allow, revealing narrative patterns that would be invisible at smaller scales</li>
+            <li><strong>Korean-Specific Insights:</strong> The framework addresses challenges specific to Korean &mdash; such as argument omission and complex verb morphology &mdash; demonstrating that SRL-based narrative analysis can be adapted beyond English-centric NLP pipelines</li>
+            <li><strong>Complementarity with Qualitative Methods:</strong> Computational narrative extraction does not replace close reading but provides a systematic first pass that can guide and enrich subsequent qualitative inquiry</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Significance</h2>
+        <p>This work represents a genuinely interdisciplinary contribution at the intersection of computational linguistics and sociology. For sociologists, it opens the door to large-scale narrative analysis that was previously infeasible. For NLP researchers, it demonstrates a compelling real-world application of semantic role labeling beyond standard benchmarks. The framework is particularly significant for Korean-language research, where computational tools for social scientific text analysis have been scarce compared to English. Published in the Korean Journal of Sociology, it introduces computational NLP methods to a social science audience, fostering cross-disciplinary dialogue.</p>
+    </div>
+
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART003242355" target="_blank" class="paper-link">KCI Portal</a>
+        </div>
+    </div>
+
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-parsing">Parsing &amp; Syntax</span>
-                    <span class="tag tag-multilingual">Multilingual</span>
+        <span class="tag tag-multilingual">Multilingual</span>
     </div>
 </div>
 <div class="footer">

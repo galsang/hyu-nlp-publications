@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HYU at SemEval-2022 Task 2: Effective Idiomaticity - HYU NLP Lab</title>
+    <title>HYU at SemEval-2022 Task 2 - HYU NLP Lab</title>
     <link rel="stylesheet" href="../../style.css">
 </head>
 <body>
@@ -22,8 +22,71 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>본 논문은 다양한 수준의 맥락화를 고려한 효과적인 관용어 감지 방법을 제시합니다.</p>
+        <p>문장 간(inter-sentence) 및 문장 내(inner-sentence) 맥락을 모두 활용하는 네 가지 특징을 계산하여, 다중 단어 표현이 관용적으로 사용되었는지 아니면 문자적으로 사용되었는지를 판별하는 통합 프레임워크입니다.</p>
     </div>
+
+    <div class="section">
+        <h2>배경 및 동기</h2>
+        <p>"wet blanket"과 같은 다중 단어 표현(MWE)은 구성적("액체에 적신 천")으로 또는 관용적("분위기를 망치는 사람")으로 해석될 수 있습니다. MWE가 관용적으로 사용되었는지를 감지하는 것은 <strong>같은 표현이 맥락에 따라 다른 의미를 가질 수 있기 때문에</strong> 어려운 NLP 문제입니다.</p>
+        <div class="highlight-box">
+            <p><strong>핵심 과제:</strong> 기존 연구에서 주변 맥락 문장을 단순히 연결하는 것은 관용어 감지에 일반적으로 도움이 되지 않으며, 입력 시퀀스 길이를 3배로 늘려 오히려 성능을 저하시킬 수 있음을 보여주었습니다. 맥락을 활용하는 더 정교한 접근이 필요합니다.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>제안 방법: 다수준 맥락화 프레임워크</h2>
+        <p>프레임워크는 Transformer 인코더(XLM-R)에서 각각 다른 맥락화 측면을 포착하는 네 가지 특징을 계산한 후, 이를 연결하여 선형 분류기에 입력합니다:</p>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">주변 맥락 특징 (Surrounding Context)</div>
+                <div class="step-desc">문장 간 맥락 기반의 두 가지 특징: 대상 문장을 이전 문장 및 다음 문장과 각각 별도로 쌍을 이루며, 세그먼트 임베딩으로 MWE 토큰을 구분합니다. 인코더를 압도하지 않으면서 대상 문장을 강조합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">문장 내 맥락 특징 (Inner-Sentence Context)</div>
+                <div class="step-desc">은유 감지 이론(MIP, SPV)에서 영감받은 두 가지 특징: 맥락 전용 표현(MWE가 마스킹된 대상 문장)과 MWE 전용 표현(MWE만 단독)으로, 맥락화된 의미와 정적 의미 간의 차이를 포착합니다.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>실험 결과</h2>
+        <p>SemEval-2022 Task 2(두 명사 복합어 관용어 감지)에서 영어, 포르투갈어, 갈리시아어 3개 언어를 대상으로 제로샷 및 원샷 설정에서 평가하였습니다.</p>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>모델 / 설정</th><th>영어</th><th>포르투갈어</th><th>갈리시아어</th><th>전체</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>베이스라인 (BERT) - 제로샷</td><td>70.70</td><td>68.03</td><td>50.65</td><td>65.40</td></tr>
+                <tr><td>베이스라인 (XLM-R) - 제로샷</td><td>72.29</td><td>65.68</td><td>46.16</td><td>63.21</td></tr>
+                <tr><td class="highlight-cell">제안 방법 - 제로샷</td><td class="highlight-cell">76.42</td><td class="highlight-cell">72.82</td><td class="highlight-cell">62.92</td><td class="highlight-cell">72.27</td></tr>
+                <tr><td>베이스라인 (BERT) - 원샷</td><td>88.62</td><td>86.37</td><td>81.62</td><td>86.46</td></tr>
+                <tr><td class="highlight-cell">제안 방법 (사후평가) - 원샷</td><td class="highlight-cell">92.29</td><td class="highlight-cell">88.05</td><td class="highlight-cell">87.10</td><td class="highlight-cell">89.96</td></tr>
+            </tbody>
+        </table>
+
+        <ul class="key-points">
+            <li><strong>강력한 제로샷 성능:</strong> 학습에 포함되지 않은 갈리시아어에서 XLM-R 베이스라인 대비 16% 이상 향상, 강력한 교차 언어 일반화 입증</li>
+            <li><strong>최고 원샷 성능:</strong> 사후평가 개선 후 원샷 설정에서 전체 매크로 F1 89.96 달성</li>
+            <li><strong>맥락이 도움:</strong> 주변 맥락을 두 청크(이전+대상, 대상+다음)로 분리하는 것이 맥락 미사용 및 단순 연결 방식보다 일관되게 유리</li>
+            <li><strong>안정적 성능:</strong> 제안 접근법은 베이스라인보다 훨씬 작은 점수 편차와 더 안정적인 결과를 보임</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>의의</h2>
+        <p>관용적 언어를 이해하는 것은 NLP 시스템이 비유적 표현을 올바르게 처리하기 위해 필수적입니다. 이 연구는 주변 맥락과 은유 감지 이론 모두에서 가져온 <strong>정교하게 설계된 다수준 맥락화</strong>가 특히 학습 중 보지 못한 언어에서 관용어 감지를 크게 향상시킬 수 있음을 보여줍니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>링크</h2>
+        <div class="links-section">
+            <a href="https://aclanthology.org/2022.semeval-1.17/" target="_blank" class="paper-link">ACL Anthology</a>
+        </div>
+    </div>
+
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-repr">Representation Learning</span>
         <span class="tag tag-multilingual">Multilingual</span>

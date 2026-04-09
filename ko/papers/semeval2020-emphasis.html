@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IDS at SemEval-2020 Task 10: Does Pre-trained Lang - HYU NLP Lab</title>
+    <title>IDS at SemEval-2020 Task 10 - HYU NLP Lab</title>
     <link rel="stylesheet" href="../../style.css">
 </head>
 <body>
@@ -22,8 +22,65 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>본 논문은 SemEval-2020 강조 선택 공유 과제의 일환으로, 사전학습 언어 모델이 텍스트에서 강조해야 할 단어를 식별할 수 있는지 조사합니다.</p>
+        <p>사전학습 언어 모델의 셀프 어텐션 분포를 활용하여, 과제별 학습 없이도 시각 미디어 텍스트에서 강조해야 할 단어를 식별하는 제로샷 강조 선택 방법입니다.</p>
     </div>
+
+    <div class="section">
+        <h2>배경 및 동기</h2>
+        <p>소셜 미디어 게시물, 포스터, 광고 등 시각적 커뮤니케이션에서 텍스트 강조는 저자의 의도를 전달하는 데 매우 중요합니다. 어떤 단어를 강조할지 추천하는 자동화 시스템은 시각 미디어 콘텐츠 제작을 가속화할 수 있습니다.</p>
+        <div class="highlight-box">
+            <p><strong>핵심 통찰:</strong> 기존 연구에서 BERT와 같은 PLM이 어텐션 패턴에 풍부한 언어적 지식을 포함하고 있음을 보여주었습니다. 본 논문은 PLM의 일부 어텐션 헤드가 자연적으로 <strong>강조 선택에 특화</strong>되어 있는지를 조사하여, 지도 학습 없이도 중요한 단어를 식별할 수 있는 가능성을 탐구합니다.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>제안 방법: 어텐션 기반 강조 선택</h2>
+        <p>PLM 어텐션 맵에서 각 단어의 강조 빈도(e_freq)를 세 가지 전략으로 유도합니다:</p>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Words2Target</div>
+                <div class="step-desc">다른 단어들이 대상 단어에 기울이는 평균 어텐션 가중치를 계산하여, 해당 단어가 다른 단어의 표현 구축에 얼마나 영향력 있는지 측정</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">CLS2Target</div>
+                <div class="step-desc">[CLS] 토큰에서 대상 단어로의 어텐션 가중치를 사용하여, 해당 단어가 문장 표현에 얼마나 기여하는지 측정</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">SEP2Target</div>
+                <div class="step-desc">[SEP] 토큰에서 대상 단어로의 어텐션 가중치를 대안적 문장 수준 신호로 사용</div>
+            </div>
+        </div>
+        <p>각 PLM에 대해 검증 세트의 Ranking Score 지표를 기반으로 최적의 (레이어, 헤드, 방법) 구성을 선택합니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>실험 결과</h2>
+        <p>전단지, 포스터, 광고에서 추출된 짧은 영어 문장으로 구성되고 9명의 주석자가 강조를 표시한 SemEval-2020 Task 10 데이터셋에서 평가하였습니다.</p>
+
+        <ul class="key-points">
+            <li><strong>최고 단일 모델:</strong> BERT-large-uncased가 검증 세트에서 Ranking Score 0.6420을 달성하여 TF-IDF 베이스라인(0.5145)을 능가</li>
+            <li><strong>앙상블 성능:</strong> 상위 5개 PLM 구성의 앙상블이 검증 세트 0.6898, 테스트 세트 0.6656의 Ranking Score 달성</li>
+            <li><strong>제로샷 이점:</strong> 골드 표준 주석을 전혀 활용하지 않는 완전한 제로샷 방식으로 작동하여, 저자원 환경에서의 범용 적용 가능성을 시사</li>
+            <li><strong>특화된 어텐션 헤드:</strong> 분석을 통해 최고 성능 어텐션 헤드와 나머지 사이에 명확한 격차가 있음을 확인하여, 특정 헤드가 강조 선택에 특화되어 있음을 입증</li>
+            <li><strong>DistilBERT 효율성:</strong> DistilBERT 모델이 작은 크기에도 불구하고 높은 성능을 달성하여, 지식 증류가 강조 관련 어텐션 패턴을 보존함을 시사</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>의의</h2>
+        <p>본 연구는 사전학습 언어 모델이 어텐션 메커니즘을 통해 <strong>단어의 중요도를 암묵적으로 학습</strong>한다는 증거를 제시합니다. 이 실용적인 제로샷 접근법은 자동화된 시각 미디어 제작에 도움을 줄 수 있으며, 특화된 어텐션 헤드에 대한 분석은 PLM이 사전학습 중 어떤 언어적 지식을 인코딩하는지에 대한 이해에 기여합니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>링크</h2>
+        <div class="links-section">
+            <a href="https://aclanthology.org/2020.semeval-1.185/" target="_blank" class="paper-link">ACL Anthology</a>
+        </div>
+    </div>
+
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-repr">Representation Learning</span>
     </div>

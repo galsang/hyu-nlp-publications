@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HYU at SemEval-2022 Task 2: Effective Idiomaticity - HYU NLP Lab</title>
+    <title>HYU at SemEval-2022 Task 2 - HYU NLP Lab</title>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -21,9 +21,72 @@
 </div>
 <div class="detail-content">
     <div class="section">
-        <h2>Summary</h2>
-        <p>This paper presents an approach for effective idiomaticity detection considering different levels of contextualization.</p>
+        <h2>One-Line Summary</h2>
+        <p>A unified framework for idiomaticity detection that leverages four features computed at different levels of contextualization -- both inter-sentence and inner-sentence context -- to determine whether a multi-word expression is used idiomatically or literally.</p>
     </div>
+
+    <div class="section">
+        <h2>Background &amp; Motivation</h2>
+        <p>Multi-word expressions (MWEs) like "wet blanket" can be interpreted either compositionally ("a piece of cloth soaked in liquid") or idiomatically ("a person who spoils the mood"). Detecting whether an MWE is used idiomatically is a challenging NLP problem because the <strong>same expression can have different meanings depending on context</strong>.</p>
+        <div class="highlight-box">
+            <p><strong>Key Challenge:</strong> Prior work showed that simply concatenating surrounding context sentences is generally unhelpful for idiomaticity detection, and can even degrade performance by tripling input sequence length. A more sophisticated approach to exploiting context is needed.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method: Multi-Level Contextualization Framework</h2>
+        <p>The framework computes four features from a Transformer encoder (XLM-R), each capturing different aspects of contextualization, then concatenates them for a linear classifier:</p>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Surrounding Context Features</div>
+                <div class="step-desc">Two features based on inter-sentence context: the target sentence is paired separately with its previous and next sentences, using segment embeddings to distinguish MWE tokens. This avoids overwhelming the encoder while emphasizing the target sentence.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Inner-Sentence Context Features</div>
+                <div class="step-desc">Two features inspired by metaphor detection theories (MIP and SPV): a context-exclusive representation (target sentence with MWE masked) and an MWE-exclusive representation (MWE alone), capturing the difference between contextualized and static semantics.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <p>Evaluated on SemEval-2022 Task 2 (idiomaticity detection for two-noun compounds) across three languages: English, Portuguese, and Galician, in both zero-shot and one-shot settings.</p>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>Model / Setting</th><th>English</th><th>Portuguese</th><th>Galician</th><th>Overall</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Baseline (BERT) - Zero-shot</td><td>70.70</td><td>68.03</td><td>50.65</td><td>65.40</td></tr>
+                <tr><td>Baseline (XLM-R) - Zero-shot</td><td>72.29</td><td>65.68</td><td>46.16</td><td>63.21</td></tr>
+                <tr><td class="highlight-cell">Ours - Zero-shot</td><td class="highlight-cell">76.42</td><td class="highlight-cell">72.82</td><td class="highlight-cell">62.92</td><td class="highlight-cell">72.27</td></tr>
+                <tr><td>Baseline (BERT) - One-shot</td><td>88.62</td><td>86.37</td><td>81.62</td><td>86.46</td></tr>
+                <tr><td class="highlight-cell">Ours (post-eval) - One-shot</td><td class="highlight-cell">92.29</td><td class="highlight-cell">88.05</td><td class="highlight-cell">87.10</td><td class="highlight-cell">89.96</td></tr>
+            </tbody>
+        </table>
+
+        <ul class="key-points">
+            <li><strong>Strong Zero-shot Performance:</strong> Outperforms XLM-R baseline by over 16% on Galician (unseen language), demonstrating strong cross-lingual generalization</li>
+            <li><strong>State-of-the-art One-shot:</strong> Achieves 89.96 overall macro F1 in the one-shot setting after post-evaluation refinement</li>
+            <li><strong>Context Helps:</strong> Separating surrounding context into two chunks (previous + target, target + next) is consistently advantageous over no-context and naive concatenation approaches</li>
+            <li><strong>Stable Performance:</strong> The proposed approach shows much smaller score deviation and more stable results than baselines</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>Understanding idiomatic language is essential for NLP systems to properly process figurative expressions. This work demonstrates that <strong>carefully designed multi-level contextualization</strong> -- drawing from both surrounding context and metaphor detection theories -- can significantly improve idiomaticity detection, especially for languages not seen during training.</p>
+    </div>
+
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://aclanthology.org/2022.semeval-1.17/" target="_blank" class="paper-link">ACL Anthology</a>
+        </div>
+    </div>
+
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-repr">Representation Learning</span>
         <span class="tag tag-multilingual">Multilingual</span>

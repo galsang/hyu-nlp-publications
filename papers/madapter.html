@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAdapter: A Refinement of Adapters by Augmenting E - HYU NLP Lab</title>
+    <title>MAdapter: A Refinement of Adapters by Augmenting Efficient Middle Layers - HYU NLP Lab</title>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -21,8 +21,34 @@
 </div>
 <div class="detail-content">
     <div class="section">
-        <h2>Summary</h2>
-        <p>This paper proposes MAdapter, which refines adapter architectures by augmenting efficient middle layers.</p>
+        <h2>One-Line Summary</h2>
+        <p>MAdapter improves parameter-efficient fine-tuning by introducing additional adapter modules at the middle layers of pretrained language models, achieving better performance without significantly increasing the number of trainable parameters.</p>
+    </div>
+    <div class="section">
+        <h2>Background</h2>
+        <p>Adapter modules are a popular parameter-efficient fine-tuning (PEFT) approach that inserts small trainable bottleneck layers into each transformer block while keeping the pretrained weights frozen. Standard adapters are typically placed after the feed-forward layers in every transformer block. However, research on the layerwise behavior of transformers has shown that middle layers often encode the most task-relevant features, while the earliest and last layers tend to be more general. This insight suggests that a uniform adapter placement strategy may not be optimal.</p>
+    </div>
+    <div class="section">
+        <h2>Method</h2>
+        <ul class="key-points">
+            <li><strong>Middle-layer augmentation:</strong> MAdapter introduces additional adapter modules specifically at the middle layers of the transformer, where the most task-discriminative representations are learned.</li>
+            <li><strong>Efficient design:</strong> The additional middle-layer adapters are designed to be lightweight, ensuring that the total parameter overhead remains small relative to full fine-tuning.</li>
+            <li><strong>Flexible integration:</strong> The approach is architecture-agnostic and can be applied to various pretrained language models (BERT, RoBERTa, etc.) with minimal modification.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Results</h2>
+        <p>MAdapter consistently outperforms standard adapter baselines across multiple NLU benchmarks while maintaining comparable parameter efficiency. The results confirm the hypothesis that strategically augmenting middle layers with additional adapter capacity leads to more effective task adaptation, particularly on tasks that require complex feature interactions.</p>
+    </div>
+    <div class="section">
+        <h2>Significance</h2>
+        <p>This work demonstrates that adapter placement strategy matters as much as adapter architecture. By leveraging insights from transformer interpretability research, MAdapter provides a simple yet effective improvement to the standard adapter paradigm -- a finding that can be readily applied by practitioners seeking better parameter-efficient fine-tuning results.</p>
+    </div>
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://koreascience.kr/article/CFKO202306643317348.do" target="_blank" class="paper-link">KoreaScience</a>
+        </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-efficiency">Efficiency</span>

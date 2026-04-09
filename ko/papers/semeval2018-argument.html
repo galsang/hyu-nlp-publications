@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SNU_IDS at SemEval-2018 Task 12: Sentence Encoder  - HYU NLP Lab</title>
+    <title>SNU_IDS at SemEval-2018 Task 12 - HYU NLP Lab</title>
     <link rel="stylesheet" href="../../style.css">
 </head>
 <body>
@@ -22,11 +22,79 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>본 논문은 SemEval-2018 논증 추론 이해 과제를 위해 맥락화된 벡터를 사용하는 문장 인코더를 제시합니다.</p>
+        <p>기계번역 사전학습에서 얻은 맥락화된 단어 벡터(CoVe)를 활용하는 간단한 3부분 신경망 구조 SECOVARC로, 논증 추론 이해라는 도전적인 논리적 추론 과제에서 전이학습의 효과를 입증합니다.</p>
     </div>
+
+    <div class="section">
+        <h2>배경 및 동기</h2>
+        <p>논증 추론 이해 과제는 주장과 이유가 주어졌을 때, 두 후보 중 올바른 암시적 보증(warrant)을 선택하는 것을 요구합니다. 이는 <strong>인간 수준의 추론</strong>으로 논리적 타당성을 판단해야 하며, 입력에 존재하지 않는 상식 지식에 의존하는 경우가 많아 매우 도전적입니다.</p>
+        <div class="highlight-box">
+            <p><strong>핵심 과제:</strong> 학습 데이터가 제한적(~2K 인스턴스)이어서 복잡한 신경망 모델을 처음부터 학습하기 어렵습니다. 본 논문은 대규모 기계번역 데이터셋에서의 전이학습이 모델 구조를 단순하게 유지하면서도 데이터 부족을 보완할 수 있다고 가정합니다.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>제안 방법: SECOVARC</h2>
+        <p>SECOVARC(Sentence Encoder with COnextualized Vectors for Argument Reasoning Comprehension)는 3개 레이어 구조입니다:</p>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">인코딩 레이어</div>
+                <div class="step-desc">대규모 MT 데이터셋에서 사전학습된 2층 Bi-LSTM인 CoVe와 GloVe 임베딩을 사용하여 주장, 이유, 보증을 맥스풀링 또는 마지막 상태 풀링을 통해 고정 길이 문장 표현으로 인코딩</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">위치화 레이어</div>
+                <div class="step-desc">3개의 별도 완전연결 레이어가 각 문장 표현을 자체 의미 공간으로 투영하여, 주장, 이유, 보증 각각의 역할별 정보를 유지</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">출력 레이어</div>
+                <div class="step-desc">주장, 이유, 보증, 요소별 차이, 요소별 곱 등 5개 특징 벡터를 결합하여 로지스틱 회귀를 통해 0~1 사이의 타당성 점수 산출</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>실험 결과</h2>
+        <p>SemEval-2018 Task 12 데이터셋(~2K 크라우드소싱 인스턴스)에서 평가하였습니다. 결과는 20회 실행의 평균과 표준편차로 보고됩니다.</p>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>모델</th><th>개발 정확도</th><th>테스트 정확도</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>무작위 베이스라인</td><td>0.473</td><td>0.491</td></tr>
+                <tr><td>Intra-warrant attention w/ context</td><td>0.637</td><td>0.560</td></tr>
+                <tr><td>SECOVARC (공식 제출)</td><td>0.731</td><td>0.565</td></tr>
+                <tr><td>SECOVARC-last (휴리스틱 포함)</td><td>0.706</td><td>0.554</td></tr>
+                <tr><td class="highlight-cell">SECOVARC-max (휴리스틱 포함)</td><td class="highlight-cell">0.684</td><td class="highlight-cell">0.592</td></tr>
+            </tbody>
+        </table>
+
+        <ul class="key-points">
+            <li><strong>최고 테스트 성능:</strong> 휴리스틱이 포함된 SECOVARC-max가 59.2% 테스트 정확도를 달성하여 모든 베이스라인과 비전이 모델을 능가</li>
+            <li><strong>전이학습 효과:</strong> SECOVARC가 처음부터 학습된 Bi-LSTM 변형(BoW: 50.2%, Bi-LSTM-max: 54.3%)을 일관되게 능가하여 사전학습 맥락화 벡터의 이점 확인</li>
+            <li><strong>작은 편차:</strong> SECOVARC 모델이 비전이 모델보다 작은 표준편차를 보여, 전이학습을 통한 더 안정적이고 성공적인 학습 시사</li>
+            <li><strong>인간 성능 격차:</strong> 인간 정확도는 79.8%(추론 훈련 후 90.9%)로, 모델 개선의 여지가 상당함</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>의의</h2>
+        <p>본 연구는 <strong>기계번역에서의 전이학습</strong>이 제한된 학습 데이터를 가진 추론 과제에서 성능을 크게 향상시킬 수 있음을 보여주는 초기 연구입니다. 단순하지만 효과적인 SECOVARC 구조는 사전학습된 맥락화 표현(BERT/ELMo 이전)이 논리적 추론을 요구하는 자연어 이해 과제의 핵심 요소임을 입증하였습니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>링크</h2>
+        <div class="links-section">
+            <a href="https://aclanthology.org/S18-1182/" target="_blank" class="paper-link">ACL Anthology</a>
+        </div>
+    </div>
+
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-repr">Representation Learning</span>
-                    <span class="tag tag-reasoning">Reasoning</span>
+        <span class="tag tag-reasoning">Reasoning</span>
     </div>
 </div>
 <div class="footer">

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comparison and Analysis of Unsupervised Contrastiv - HYU NLP Lab</title>
+    <title>Comparison and Analysis of Unsupervised Contrastive Learning Approaches for Korean Sentence Representations - HYU NLP Lab</title>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -21,8 +21,35 @@
 </div>
 <div class="detail-content">
     <div class="section">
-        <h2>Summary</h2>
-        <p>This paper systematically compares and analyzes various unsupervised contrastive learning approaches for generating Korean sentence representations, evaluating their effectiveness across multiple benchmarks.</p>
+        <h2>One-Line Summary</h2>
+        <p>A systematic comparison of unsupervised contrastive learning methods (SimCSE, ConSERT, ArcCSE, DiffCSE, etc.) applied to Korean sentence embedding, revealing which approaches best capture the linguistic properties of Korean.</p>
+    </div>
+    <div class="section">
+        <h2>Background</h2>
+        <p>Unsupervised contrastive learning methods such as SimCSE have achieved remarkable success in producing high-quality English sentence embeddings without labeled data. However, Korean exhibits substantial morphological and syntactic differences from English -- agglutinative morphology, flexible word order, and rich postpositional markers -- raising the question of whether these methods transfer effectively. At the time of this study, no comprehensive comparison of unsupervised contrastive learning approaches had been conducted specifically for Korean.</p>
+    </div>
+    <div class="section">
+        <h2>Method</h2>
+        <ul class="key-points">
+            <li><strong>Systematic benchmarking:</strong> Multiple unsupervised contrastive learning frameworks (SimCSE, ConSERT, ArcCSE, DiffCSE, and others) are adapted and evaluated under a unified experimental setup for Korean.</li>
+            <li><strong>Korean-specific preprocessing:</strong> Different tokenization and morphological analysis strategies are explored to assess their impact on sentence representation quality.</li>
+            <li><strong>Evaluation on Korean STS benchmarks:</strong> Models are evaluated on Korean semantic textual similarity (STS) tasks to measure the quality of the learned sentence embeddings.</li>
+            <li><strong>Ablation studies:</strong> The effects of data augmentation strategies, backbone model choice, and training hyperparameters are analyzed in the Korean language context.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Results</h2>
+        <p>The study reveals that not all contrastive learning methods that perform well on English transfer equally to Korean. Simpler dropout-based augmentation (as in SimCSE) remains competitive, while more complex augmentation strategies sometimes suffer when applied to Korean due to morphological differences. The analysis identifies specific configurations and augmentation strategies that yield the best Korean sentence representations, providing practical guidelines for practitioners working with Korean NLP.</p>
+    </div>
+    <div class="section">
+        <h2>Significance</h2>
+        <p>This work provides the first comprehensive benchmark of unsupervised contrastive learning methods for Korean sentence embeddings. The findings offer actionable insights for selecting and configuring contrastive learning approaches for Korean, and highlight the importance of language-specific evaluation rather than assuming cross-lingual transferability of English-centric methods.</p>
+    </div>
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://koreascience.kr/article/CFKO202226455346534.do" target="_blank" class="paper-link">KoreaScience</a>
+        </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-repr">Representation Learning</span>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analysis of Language Models in Korean Program Synt - HYU NLP Lab</title>
+    <title>Analysis of Language Models in Korean Program Synthesis Based on the KR-HumanEval Benchmark - HYU NLP Lab</title>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -15,14 +15,44 @@
     <div class="container">
         <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; All Publications</a>
         <h1>Analysis of Language Models in Korean Program Synthesis Based on the KR-HumanEval Benchmark</h1>
-        <div class="meta"><span class="venue-badge">The 36th Annual Conference on Human and Cognitive Language Technology (HCLT 2024)</span></div>
+        <div class="meta"><span class="venue-badge">The 36th Annual Conference on Human and Cognitive Language Technology (HCLT 2024)</span> <span class="venue-badge" style="background:#e8b931;color:#333;">Best Paper Award</span></div>
         <div class="authors">Deokyeong Kang, Taeuk Kim</div>
     </div>
 </div>
 <div class="detail-content">
     <div class="section">
-        <h2>Summary</h2>
-        <p>This paper analyzes the Korean program synthesis capabilities of language models using the KR-HumanEval benchmark. Best Paper Award.</p>
+        <h2>One-Line Summary</h2>
+        <p>A systematic evaluation of language models' ability to generate Python code from Korean natural language descriptions using the KR-HumanEval benchmark.</p>
+    </div>
+    <div class="section">
+        <h2>Background</h2>
+        <p>Program synthesis &mdash; automatically generating code from natural language specifications &mdash; has seen dramatic progress with large language models. Benchmarks like HumanEval have become standard for evaluating code generation capability, but they are exclusively English-based. This creates a significant evaluation gap for non-English languages: can LLMs generate correct code when the task description is written in Korean? Understanding this cross-lingual code generation ability is crucial as programming becomes increasingly accessible to non-English speakers worldwide.</p>
+    </div>
+    <div class="section">
+        <h2>Method</h2>
+        <ul class="key-points">
+            <li><strong>KR-HumanEval benchmark:</strong> Develops a Korean translation of the widely used HumanEval benchmark, enabling direct evaluation of code generation from Korean natural language descriptions.</li>
+            <li><strong>Zero-shot and few-shot evaluation:</strong> Systematically evaluates multiple language models under both zero-shot and few-shot prompting settings to assess baseline and prompted performance.</li>
+            <li><strong>Prompt design analysis:</strong> Investigates the effect of different prompt components &mdash; including Korean comments, Korean variable names, and English descriptions in few-shot examples &mdash; on code generation quality.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Results</h2>
+        <ul class="key-points">
+            <li>Few-shot prompting consistently outperforms zero-shot approaches for Korean program synthesis across all evaluated models.</li>
+            <li>Including Python code examples with Korean comments and Korean variable names positively impacts model performance, suggesting that language-consistent context aids generation.</li>
+            <li>Interestingly, English descriptions within few-shot examples yield the strongest results, indicating that models still leverage their stronger English code generation capabilities even when the target task is in Korean.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Significance</h2>
+        <p>This work provides the first rigorous analysis of Korean program synthesis capabilities in modern LLMs. By establishing the KR-HumanEval benchmark and revealing the nuanced interplay between language choice in prompts and code generation quality, it lays the groundwork for developing more effective multilingual code generation systems. The paper received the Best Paper Award at HCLT 2024.</p>
+    </div>
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://koreascience.kr/article/CFKO202404272001172.do" target="_blank" class="paper-link">KoreaScience</a>
+        </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-benchmark">Benchmark</span>

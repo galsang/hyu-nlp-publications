@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhancing Sentence Representations with Common Err - HYU NLP Lab</title>
+    <title>Enhancing Sentence Representations with Common Error Analysis and Ensemble Techniques in Contrastive Learning - HYU NLP Lab</title>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -21,8 +21,29 @@
 </div>
 <div class="detail-content">
     <div class="section">
-        <h2>Summary</h2>
-        <p>This paper enhances sentence representations through common error analysis and ensemble techniques in contrastive learning.</p>
+        <h2>One-Line Summary</h2>
+        <p>Identifying common failure patterns across contrastive learning-based sentence embedding models and leveraging ensemble techniques to mitigate these systematic errors, resulting in improved sentence representations.</p>
+    </div>
+    <div class="section">
+        <h2>Background</h2>
+        <p>Contrastive learning methods such as SimCSE have advanced sentence embedding quality significantly, yet individual models still exhibit systematic errors on certain types of sentence pairs -- for example, pairs involving negation, numerical reasoning, or subtle semantic distinctions. Different contrastive learning variants tend to fail on different subsets of examples, suggesting that their errors are complementary rather than identical. This observation motivates a strategy that combines multiple models to compensate for each other's weaknesses.</p>
+    </div>
+    <div class="section">
+        <h2>Method</h2>
+        <ul class="key-points">
+            <li><strong>Common error analysis:</strong> Multiple contrastive learning models (e.g., SimCSE, DiffCSE, and others) are evaluated on semantic textual similarity benchmarks, and their error patterns are systematically categorized and compared.</li>
+            <li><strong>Error taxonomy:</strong> Common failure cases are grouped into categories such as negation handling, lexical overlap bias, and length sensitivity, revealing which error types are shared vs. model-specific.</li>
+            <li><strong>Ensemble strategies:</strong> Several ensemble techniques (e.g., simple averaging, weighted combination, selective ensemble) are applied to the sentence embeddings from multiple models to reduce systematic errors.</li>
+            <li><strong>Targeted improvement:</strong> Insights from error analysis guide the selection of which models to ensemble and how to weight them, focusing on complementary error profiles.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Results</h2>
+        <p>The ensemble approach yields consistent improvements over individual contrastive learning models on STS benchmarks. The error analysis reveals that while certain failure patterns (e.g., negation) are common across models, others are model-specific, confirming the value of combining diverse approaches. The analysis-guided ensemble outperforms naive ensemble strategies, demonstrating that understanding error patterns is key to effective model combination.</p>
+    </div>
+    <div class="section">
+        <h2>Significance</h2>
+        <p>This work contributes both a diagnostic framework for understanding where contrastive learning-based sentence embeddings fail and a practical solution via informed ensemble methods. The error taxonomy provides a roadmap for future research on improving individual contrastive learning methods, while the ensemble approach offers immediate performance gains with minimal additional computation at inference time.</p>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-repr">Representation Learning</span>

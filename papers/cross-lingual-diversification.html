@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Zero-Shot Cross-Lingual Transfer with the - HYU NLP Lab</title>
+    <title>Enhanced Zero-Shot Cross-Lingual Transfer with the Diversification of Source Languages - HYU NLP Lab</title>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -21,8 +21,28 @@
 </div>
 <div class="detail-content">
     <div class="section">
-        <h2>Summary</h2>
-        <p>This paper proposes enhancing zero-shot cross-lingual transfer performance by diversifying the source languages used during training, rather than relying solely on English.</p>
+        <h2>One-Line Summary</h2>
+        <p>Improving zero-shot cross-lingual transfer by training on multiple diverse source languages instead of relying solely on English, leading to more robust multilingual representations.</p>
+    </div>
+    <div class="section">
+        <h2>Background</h2>
+        <p>Zero-shot cross-lingual transfer typically involves fine-tuning a multilingual pretrained model (such as mBERT or XLM-R) on labeled data in a single source language -- almost always English -- and then evaluating on target languages without any target-language supervision. While effective, this English-centric paradigm can introduce biases toward English-specific linguistic structures and may not generalize optimally to typologically distant languages. This work questions the assumption that English alone is the best source language and explores whether diversifying the source language pool can improve transfer performance.</p>
+    </div>
+    <div class="section">
+        <h2>Method</h2>
+        <ul class="key-points">
+            <li><strong>Multi-source training:</strong> Instead of using only English as the source language, the model is fine-tuned on labeled data from multiple diverse languages simultaneously.</li>
+            <li><strong>Language selection strategy:</strong> Source languages are selected to maximize typological diversity (covering different language families, word orders, and morphological systems) to expose the model to a broader range of linguistic phenomena.</li>
+            <li><strong>Unified fine-tuning:</strong> A single multilingual model is trained on the combined multi-source data, avoiding the need for separate models per language pair.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Results</h2>
+        <p>Training with diversified source languages consistently improves zero-shot transfer performance on target languages compared to the English-only baseline, particularly for languages that are typologically distant from English. The gains are especially pronounced for tasks that require deeper syntactic or semantic understanding, demonstrating that exposure to diverse linguistic structures during training helps the model build more language-agnostic representations.</p>
+    </div>
+    <div class="section">
+        <h2>Significance</h2>
+        <p>This study provides evidence that the common practice of English-only source training is suboptimal for cross-lingual transfer. By demonstrating the benefits of source language diversification, it opens a practical and straightforward path to improving multilingual NLP systems -- simply by leveraging existing labeled data in multiple languages rather than discarding non-English resources.</p>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-multilingual">Multilingual</span>

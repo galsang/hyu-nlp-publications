@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A Framework for Narrative Structure Analysis Using - HYU NLP Lab</title>
+    <title>한국어 의미역 결정 모형을 통한 텍스트 내 서사 구조 분석 방법 - HYU NLP Lab</title>
     <link rel="stylesheet" href="../../style.css">
 </head>
 <body>
@@ -14,7 +14,7 @@
     </div>
     <div class="container">
         <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; 전체 논문 목록</a>
-        <h1>A Framework for Narrative Structure Analysis Using Automated Semantic Role Labeling in Korean Text</h1>
+        <h1>한국어 의미역 결정 모형을 통한 텍스트 내 서사 구조 분석 방법</h1>
         <div class="meta"><span class="venue-badge">한국사회학, 2025, Vol. 59, no. 3, pp. 101-146</span></div>
         <div class="authors">Eun Rang Kwon, Junmo Song, Donggeon Seo, Kangmin Lee, Taeuk Kim, Jeong-Han Kang</div>
     </div>
@@ -22,11 +22,50 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>본 논문은 자동 의미역 결정을 활용하여 한국어 텍스트의 서사 구조를 분석하는 프레임워크를 제시하며, 전산 언어학과 사회학적 텍스트 분석을 연결합니다.</p>
+        <p>자동 의미역 결정(Semantic Role Labeling)을 활용하여 한국어 텍스트에서 서사 구조를 체계적으로 추출하고 분석하는 프레임워크를 제안하며, 자연어처리와 사회학적 텍스트 분석을 대규모로 연결합니다.</p>
     </div>
+
+    <div class="section">
+        <h2>배경</h2>
+        <p>서사 분석은 개인, 조직, 사회가 이야기를 통해 어떻게 의미를 구성하는지를 이해하기 위한 사회학 및 사회과학의 핵심 방법론입니다. 그러나 전통적인 서사 분석은 숙련된 연구자의 수작업 정독에 의존하기 때문에 노동 집약적이며, 분석 가능한 말뭉치의 규모가 제한됩니다.</p>
+        <p style="margin-top: 12px;">의미역 결정(SRL)은 문장에서 "누가 누구에게 무엇을 언제, 어디서, 어떻게 했는가"를 식별하는 과제로, 서사 분석의 자연스러운 전산적 대응물입니다. 텍스트에서 행위자, 행위, 대상을 자동으로 추출함으로써 서사를 구성하는 사건 구조를 드러낼 수 있습니다. 그러나 한국어 텍스트에 SRL을 적용하는 것은 교착어적 형태론, 유연한 어순, 빈번한 논항 생략(pro-drop) 등 고유한 과제를 수반합니다. 본 학제 간 연구는 사회학자와 NLP 연구자가 협력하여 이러한 과제를 해결합니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>방법</h2>
+        <ul class="key-points">
+            <li><strong>한국어 SRL 파이프라인:</strong> 한국어의 형태론적 복잡성과 유연한 통사 구조를 처리하는 맞춤형 자동 의미역 결정 시스템 구축</li>
+            <li><strong>서사 구조 추출:</strong> SRL 출력(술어-논항 구조)에서 서사 요소(행위자, 행위, 대상, 상황)로의 매핑을 정의하여 대규모 텍스트 말뭉치에서 "누가 누구에게 무엇을 했는가" 패턴을 체계적으로 추출</li>
+            <li><strong>집합적 서사 분석:</strong> 개별 문장 수준의 SRL 출력을 문서 및 말뭉치 수준의 서사 구조로 집계하는 방법을 개발하여, 텍스트 전반의 지배적 서사, 행위자 역할, 행위 패턴을 드러냄</li>
+            <li><strong>사회학적 적용:</strong> 실제 한국어 텍스트 말뭉치에 프레임워크를 적용하여 전산적 서사 분석이 사회학의 전통적 질적 접근법을 어떻게 보완하고 확장할 수 있는지 입증</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>결과</h2>
+        <ul class="key-points">
+            <li><strong>자동 서사 분석의 실현 가능성:</strong> SRL 기반 프레임워크가 한국어 텍스트에서 의미 있는 서사 구조를 효과적으로 추출할 수 있으며, 전문가 질적 분석과 일관된 결과를 생산</li>
+            <li><strong>규모의 이점:</strong> 자동화된 접근법은 수작업 방법으로는 불가능한 대규모 말뭉치 분석을 가능하게 하며, 소규모에서는 보이지 않는 서사 패턴을 드러냄</li>
+            <li><strong>한국어 특화 인사이트:</strong> 논항 생략, 복잡한 용언 형태론 등 한국어 고유의 과제를 해결하여 SRL 기반 서사 분석이 영어 중심 NLP 파이프라인을 넘어 적용 가능함을 입증</li>
+            <li><strong>질적 방법과의 상보성:</strong> 전산적 서사 추출은 정독을 대체하는 것이 아니라, 후속 질적 탐구를 안내하고 풍부하게 하는 체계적인 1차 분석을 제공</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>의의</h2>
+        <p>본 연구는 전산 언어학과 사회학의 교차점에서 진정한 학제 간 기여를 대표합니다. 사회학자에게는 기존에 실현 불가능했던 대규모 서사 분석의 문을 열어주며, NLP 연구자에게는 표준 벤치마크를 넘어서는 의미역 결정의 실질적 응용을 보여줍니다. 특히 영어 대비 사회과학적 텍스트 분석을 위한 전산 도구가 부족했던 한국어 연구에 중요한 의의를 지닙니다. 한국사회학에 게재됨으로써 사회과학 독자에게 전산 NLP 방법론을 소개하고, 학제 간 대화를 촉진합니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>링크</h2>
+        <div class="links-section">
+            <a href="https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART003242355" target="_blank" class="paper-link">KCI Portal</a>
+        </div>
+    </div>
+
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-parsing">Parsing &amp; Syntax</span>
-                    <span class="tag tag-multilingual">Multilingual</span>
+        <span class="tag tag-multilingual">Multilingual</span>
     </div>
 </div>
 <div class="footer">

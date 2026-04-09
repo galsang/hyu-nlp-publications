@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Self-Generated In-Context Learning: Leveraging Aut - HYU NLP Lab</title>
+    <title>Self-Generated In-Context Learning - HYU NLP Lab</title>
     <link rel="stylesheet" href="../../style.css">
 </head>
 <body>
@@ -22,8 +22,59 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>본 논문은 자기회귀 언어 모델을 활용하여 자체적으로 시연을 생성하는 자기 생성 인컨텍스트 학습을 제안합니다.</p>
+        <p>대규모 언어 모델이 자체적으로 인컨텍스트 시연을 생성하여, 외부 학습 데이터 없이도 제로샷 학습을 크게 능가하는 텍스트 분류 성능을 달성하는 방법입니다.</p>
     </div>
+
+    <div class="section">
+        <h2>배경 및 동기</h2>
+        <p>인컨텍스트 학습(ICL)은 사전학습 언어 모델이 소수의 입력-레이블 시연 쌍을 조건으로 하여 파라미터 업데이트 없이 과제를 해결할 수 있게 합니다. 하지만 ICL에는 치명적인 한계가 있습니다: <strong>시연의 품질과 선택에 크게 의존</strong>하며, 이 시연은 보통 외부 데이터셋에서 선택됩니다.</p>
+        <div class="highlight-box">
+            <p><strong>핵심 질문:</strong> (1) 시연을 생성하여 학습 데이터셋에 대한 의존성을 제거할 수 있는가? (2) 그렇다면, 입력-시연 상관관계가 높은 시연을 어떻게 만들 수 있는가?</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>제안 방법: SG-ICL</h2>
+        <p>자기 생성 인컨텍스트 학습(SG-ICL)은 PLM의 생성 능력을 활용하여 두 단계로 자체 시연을 생성합니다:</p>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">자기 생성 단계 (Self-Generation)</div>
+                <div class="step-desc">각 테스트 입력과 각 클래스 레이블에 대해, PLM이 입력과 클래스 모두에 조건화된 수동 설계 생성 템플릿을 사용하여 인컨텍스트 샘플을 생성합니다. 이를 통해 테스트 인스턴스와 높은 상관관계를 가진 시연을 생성합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">추론 단계 (Inference)</div>
+                <div class="step-desc">생성된 샘플을 표준 인컨텍스트 학습의 시연으로 사용합니다. PLM은 이러한 자기 생성 시연과 테스트 인스턴스를 연결하여 다운스트림 과제를 수행합니다.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>실험 결과</h2>
+        <p>4개의 텍스트 분류 데이터셋(SST-2, SST-5, RTE, CB)에서 GPT-J(6B)를 사용하여 실험하였으며, 테스트 입력당 8개의 자기 생성 인컨텍스트 샘플을 사용합니다.</p>
+
+        <ul class="key-points">
+            <li><strong>일관된 향상:</strong> SG-ICL은 학습 데이터에 접근하지 않음에도 4개 과제 모두에서 제로샷 학습을 유의미하게 능가</li>
+            <li><strong>낮은 분산:</strong> 생성된 시연은 학습 데이터에서 무작위로 선택된 시연 대비 훨씬 안정적인 성능과 낮은 분산을 보임</li>
+            <li><strong>골드 샘플 ~0.6개 상당:</strong> 자기 생성 인컨텍스트 샘플 1개는 일반적으로 골드 학습 샘플 약 0.6개에 해당하는 가치</li>
+            <li><strong>퓨샷 능가:</strong> 자기 생성 샘플 8개 사용 시, 골드 학습 샘플 5개까지의 퓨샷 학습을 능가</li>
+            <li><strong>입력 조건화의 중요성:</strong> 클래스만이 아닌 입력과 클래스 모두에 조건화하여 생성하면 테스트 입력과의 의미적 유사성이 높은 시연이 생성되어 더 나은 성능으로 이어짐</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>의의</h2>
+        <p>SG-ICL은 언어 모델이 외부 데이터 없이도 <strong>자체적으로 시연을 부트스트랩</strong>할 수 있는 새로운 패러다임을 개척합니다. 이는 레이블된 데이터가 부족하거나 이용 불가능한 시나리오에서 특히 가치 있으며, 표준 ICL에서 악명 높은 분산이 큰 무작위 시연 선택에 대한 보다 안정적인 대안을 제공합니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>링크</h2>
+        <div class="links-section">
+            <a href="https://arxiv.org/abs/2206.08082" target="_blank" class="paper-link">arXiv 논문</a>
+        </div>
+    </div>
+
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-icl">In-Context Learning</span>
     </div>

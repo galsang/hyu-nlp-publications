@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comparison and Analysis of Unsupervised Contrastiv - HYU NLP Lab</title>
+    <title>한국어 문장 표현을 위한 비지도 대조 학습 방법론의 비교 및 분석 - HYU NLP Lab</title>
     <link rel="stylesheet" href="../../style.css">
 </head>
 <body>
@@ -14,7 +14,7 @@
     </div>
     <div class="container">
         <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; 전체 논문 목록</a>
-        <h1>Comparison and Analysis of Unsupervised Contrastive Learning Approaches for Korean Sentence Representations</h1>
+        <h1>한국어 문장 표현을 위한 비지도 대조 학습 방법론의 비교 및 분석</h1>
         <div class="meta"><span class="venue-badge">제34회 한글 및 한국어 정보처리 학술대회 (HCLT 2022)</span></div>
         <div class="authors">Young Hyun Yoo, Kyumin Lee, Minjin Jeon, Jii Cha, Kangsan Kim, Taeuk Kim</div>
     </div>
@@ -22,7 +22,34 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>본 논문은 한국어 문장 표현을 생성하기 위한 다양한 비지도 대조 학습 접근법을 체계적으로 비교하고 분석하여, 여러 벤치마크에서의 효과를 평가합니다.</p>
+        <p>SimCSE, ConSERT, ArcCSE, DiffCSE 등 비지도 대조 학습 방법론을 한국어 문장 임베딩에 적용하여 체계적으로 비교 분석하고, 한국어의 언어적 특성을 가장 잘 포착하는 접근법을 규명합니다.</p>
+    </div>
+    <div class="section">
+        <h2>배경</h2>
+        <p>SimCSE 등의 비지도 대조 학습 방법론은 라벨 데이터 없이 고품질의 영어 문장 임베딩을 생성하는 데 뛰어난 성과를 보여왔습니다. 그러나 한국어는 영어와 달리 교착어적 형태론, 자유로운 어순, 풍부한 조사 체계 등 근본적으로 다른 언어적 특성을 가지고 있어, 이러한 방법론이 효과적으로 전이되는지에 대한 의문이 존재했습니다. 본 연구 시점에서 한국어에 특화된 비지도 대조 학습 접근법의 포괄적인 비교 연구는 수행된 바 없었습니다.</p>
+    </div>
+    <div class="section">
+        <h2>방법</h2>
+        <ul class="key-points">
+            <li><strong>체계적 벤치마킹:</strong> SimCSE, ConSERT, ArcCSE, DiffCSE 등 다양한 비지도 대조 학습 프레임워크를 한국어에 적용하여 통일된 실험 환경에서 평가합니다.</li>
+            <li><strong>한국어 특화 전처리:</strong> 다양한 토큰화 및 형태소 분석 전략이 문장 표현 품질에 미치는 영향을 분석합니다.</li>
+            <li><strong>한국어 STS 벤치마크 평가:</strong> 한국어 의미적 텍스트 유사도(STS) 과제를 통해 학습된 문장 임베딩의 품질을 측정합니다.</li>
+            <li><strong>ablation 연구:</strong> 데이터 증강 전략, 백본 모델 선택, 학습 하이퍼파라미터의 효과를 한국어 맥락에서 분석합니다.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>결과</h2>
+        <p>영어에서 우수한 성능을 보이는 모든 대조 학습 방법이 한국어에서도 동일하게 작동하지는 않음을 확인하였습니다. SimCSE와 같은 단순한 드롭아웃 기반 증강이 여전히 경쟁력이 있었으며, 보다 복잡한 증강 전략은 형태론적 차이로 인해 한국어에서 성능 저하를 보이는 경우가 있었습니다. 최적의 한국어 문장 표현을 위한 구성 및 증강 전략을 규명하여, 한국어 NLP 실무자를 위한 실용적 가이드라인을 제시합니다.</p>
+    </div>
+    <div class="section">
+        <h2>의의</h2>
+        <p>본 연구는 한국어 문장 임베딩을 위한 비지도 대조 학습 방법론의 최초의 포괄적 벤치마크를 제공합니다. 한국어에 맞는 대조 학습 접근법 선택 및 설정에 대한 실행 가능한 통찰을 제공하며, 영어 중심 방법론의 교차 언어 전이 가능성을 전제하기보다 언어별 평가의 중요성을 강조합니다.</p>
+    </div>
+    <div class="section">
+        <h2>링크</h2>
+        <div class="links-section">
+            <a href="https://koreascience.kr/article/CFKO202226455346534.do" target="_blank" class="paper-link">KoreaScience</a>
+        </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-repr">Representation Learning</span>

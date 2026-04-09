@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A Survey on Machine Unlearning for Large Language  - HYU NLP Lab</title>
+    <title>A Survey on Machine Unlearning for Large Language Models - HYU NLP Lab</title>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -21,12 +21,46 @@
 </div>
 <div class="detail-content">
     <div class="section">
-        <h2>Summary</h2>
-        <p>This survey paper reviews the current landscape of machine unlearning techniques specifically designed for large language models, covering methods, challenges, and future directions.</p>
+        <h2>One-Line Summary</h2>
+        <p>A comprehensive survey reviewing the landscape of machine unlearning techniques for large language models, categorizing existing methods by approach, analyzing their effectiveness and limitations, and identifying open challenges for future research.</p>
     </div>
+
+    <div class="section">
+        <h2>Background &amp; Motivation</h2>
+        <p>Large language models (LLMs) memorize vast amounts of information during training, including personal data, copyrighted content, and potentially harmful knowledge. Growing regulatory requirements such as the EU's GDPR "right to be forgotten" and concerns about AI safety have made the ability to selectively remove specific knowledge from trained models &mdash; known as <strong>machine unlearning</strong> &mdash; a pressing research problem.</p>
+        <p style="margin-top: 12px;">Unlike traditional machine learning models, LLMs present unique challenges for unlearning: their enormous scale makes full retraining impractical, knowledge is distributed across billions of parameters in complex ways, and removing one piece of knowledge without degrading overall model capabilities remains fundamentally difficult. This survey provides a systematic overview of the rapidly evolving field to help researchers navigate these challenges.</p>
+    </div>
+
+    <div class="section">
+        <h2>Method / Approach</h2>
+        <p>The survey organizes the machine unlearning literature for LLMs along several dimensions:</p>
+        <ul class="key-points">
+            <li><strong>Taxonomy of Unlearning Methods:</strong> Categorizes approaches into parameter-level methods (locating and modifying specific weights), gradient-based methods (using gradient ascent or influence functions), and input-level methods (prompt-based or in-context approaches)</li>
+            <li><strong>Unlearning Targets:</strong> Distinguishes between factual knowledge removal, privacy-sensitive data deletion, harmful content suppression, and copyright-infringing material elimination</li>
+            <li><strong>Evaluation Frameworks:</strong> Reviews existing benchmarks and metrics for assessing unlearning effectiveness, including measures of knowledge retention, model utility preservation, and resistance to adversarial extraction</li>
+            <li><strong>Locality vs. Distributed Knowledge:</strong> Examines the critical question of whether knowledge in LLMs is stored locally in specific parameters or distributed across the network &mdash; a distinction with major implications for unlearning strategy design</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Key Findings</h2>
+        <ul class="key-points">
+            <li><strong>No Silver Bullet:</strong> No single unlearning method consistently achieves complete knowledge removal while preserving general model capabilities across all settings</li>
+            <li><strong>Locality Assumption Under Scrutiny:</strong> Methods that assume knowledge is localized in specific parameters often fail to achieve robust unlearning, as knowledge in LLMs tends to be distributed across layers and components</li>
+            <li><strong>Evaluation Gaps:</strong> Current evaluation protocols are insufficient &mdash; models may appear to have "forgotten" knowledge under standard probing but can still reveal it under adversarial prompting or reformulated queries</li>
+            <li><strong>Scale-Dependent Challenges:</strong> Unlearning difficulty increases with model scale, and methods effective for smaller models do not always transfer to larger ones</li>
+            <li><strong>Trade-off Between Forgetting and Retaining:</strong> A persistent tension exists between thoroughly removing target knowledge and maintaining the model's broader language understanding and generation abilities</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Significance</h2>
+        <p>As LLMs are deployed at scale in commercial and public-sector applications, the ability to remove specific knowledge becomes critical for regulatory compliance, user privacy, and AI safety. This survey provides the Korean research community with a structured entry point into the machine unlearning field, highlighting both the promise and the fundamental open problems. It complements our lab's empirical work on the same topic (see <a href="unlearning.html">"Does Localization Inform Unlearning?"</a>, EMNLP 2025) by situating that work within the broader landscape of unlearning research.</p>
+    </div>
+
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-unlearning">Unlearning</span>
-                    <span class="tag tag-safety">Safety</span>
+        <span class="tag tag-safety">Safety</span>
     </div>
 </div>
 <div class="footer">

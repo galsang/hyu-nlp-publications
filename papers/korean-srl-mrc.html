@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Korean Semantic Role Labeling with Machine Reading - HYU NLP Lab</title>
+    <title>Korean Semantic Role Labeling with Machine Reading Comprehension - HYU NLP Lab</title>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -21,8 +21,29 @@
 </div>
 <div class="detail-content">
     <div class="section">
-        <h2>Summary</h2>
-        <p>This paper applies machine reading comprehension techniques to Korean semantic role labeling.</p>
+        <h2>One-Line Summary</h2>
+        <p>Reformulating Korean semantic role labeling (SRL) as a machine reading comprehension (MRC) task, where natural language questions replace traditional label schemas, enabling more effective role identification in Korean sentences.</p>
+    </div>
+    <div class="section">
+        <h2>Background</h2>
+        <p>Semantic role labeling (SRL) identifies "who did what to whom" in a sentence by assigning predicate-argument structures. Traditional SRL systems use sequence labeling or span extraction with role-specific tags (e.g., ARG0, ARG1). However, Korean SRL poses unique challenges: the language's flexible word order, frequent pro-drop (subject/object omission), and complex postpositional case marking system make it difficult for standard sequence labeling approaches to reliably identify arguments. Recent work in English has shown that reformulating structured prediction tasks as reading comprehension -- where natural language questions encode the semantics of each role -- can improve both performance and generalization.</p>
+    </div>
+    <div class="section">
+        <h2>Method</h2>
+        <ul class="key-points">
+            <li><strong>MRC formulation:</strong> Each semantic role is converted into a natural language question (e.g., "Who performed the action?" for the agent role), and the model extracts the answer span from the sentence as the argument filler.</li>
+            <li><strong>Korean-specific question templates:</strong> Question templates are carefully designed to reflect Korean grammatical structures and case markers, ensuring the questions are natural and informative in the Korean context.</li>
+            <li><strong>Pretrained Korean LM backbone:</strong> The system leverages Korean-specific pretrained language models as the MRC backbone, taking advantage of their Korean language understanding capabilities.</li>
+            <li><strong>Handling omitted arguments:</strong> Special strategies are employed to handle Korean's frequent pro-drop phenomenon, where arguments may be implicitly understood but not explicitly present in the sentence.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Results</h2>
+        <p>The MRC-based approach outperforms traditional sequence labeling baselines for Korean SRL, particularly in cases involving complex argument structures and omitted arguments. The natural language questions provide the model with richer semantic cues about each role than abstract labels alone, leading to better argument identification. The approach also demonstrates improved generalization to unseen predicates.</p>
+    </div>
+    <div class="section">
+        <h2>Significance</h2>
+        <p>This work brings the MRC-based reformulation paradigm to Korean SRL for the first time, demonstrating that it is particularly well-suited for Korean due to the language's structural properties. The approach reduces the need for complex feature engineering traditionally required for Korean SRL and provides a more intuitive framework that could be extended to other Korean structured prediction tasks.</p>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-parsing">Parsing &amp; Syntax</span>

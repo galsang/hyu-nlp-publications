@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Learning Strategies to Improve Table Understanding - HYU NLP Lab</title>
+    <title>Learning Strategies to Improve Table Understanding and Explanation in Korean - HYU NLP Lab</title>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -15,14 +15,44 @@
     <div class="container">
         <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; All Publications</a>
         <h1>Learning Strategies to Improve Table Understanding and Explanation in Korean</h1>
-        <div class="meta"><span class="venue-badge">The 36th Annual Conference on Human and Cognitive Language Technology (HCLT 2024)</span></div>
+        <div class="meta"><span class="venue-badge">The 36th Annual Conference on Human and Cognitive Language Technology (HCLT 2024)</span> <span class="venue-badge" style="background:#e8b931;color:#333;">Best Paper Award</span></div>
         <div class="authors">Changhyeon Kim, Seunghee Kim, Taeuk Kim</div>
     </div>
 </div>
 <div class="detail-content">
     <div class="section">
-        <h2>Summary</h2>
-        <p>This paper investigates preprocessing and learning strategies to improve table understanding and explanation capabilities in Korean. Best Paper Award.</p>
+        <h2>One-Line Summary</h2>
+        <p>A systematic exploration of preprocessing formats and learning strategies to enhance language models' ability to understand and generate natural descriptions of table cells in Korean.</p>
+    </div>
+    <div class="section">
+        <h2>Background</h2>
+        <p>Tables are a ubiquitous format for structured data, yet generating natural language descriptions of specific table cells remains challenging for language models &mdash; particularly in Korean. Given a table and a target cell, the task is to produce a fluent Korean description explaining what the cell value represents in context. This capability is essential for table-based question answering, accessibility tools, and automated report generation. However, the choice of how to serialize tables into text (the preprocessing format) and what auxiliary training tasks to use can dramatically affect performance.</p>
+    </div>
+    <div class="section">
+        <h2>Method</h2>
+        <ul class="key-points">
+            <li><strong>Table format comparison:</strong> Evaluates four serialization formats &mdash; Markdown, HTML, Pandas DataFrame, and JSON &mdash; to determine which representation most effectively conveys table structure to language models.</li>
+            <li><strong>Auxiliary subtasks with synthetic data:</strong> Designs four targeted subtasks &mdash; cell position recognition, row information recognition, column information recognition, and table structure rearrangement &mdash; each supported by custom synthetic datasets to build table comprehension skills incrementally.</li>
+            <li><strong>Token-efficient training:</strong> Identifies preprocessing formats that minimize token count while preserving structural information, reducing computational costs during both training and inference.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Results</h2>
+        <ul class="key-points">
+            <li>Pandas DataFrame format achieves the best overall performance, improving baseline results by 19.6% while using fewer tokens than HTML or Markdown representations.</li>
+            <li>The auxiliary subtasks with synthetic data provide consistent gains, with cell position recognition and column information recognition contributing most to the final table description quality.</li>
+            <li>Token-efficient formats not only reduce computational cost but also improve model performance, suggesting that concise structural representations help models focus on relevant information.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Significance</h2>
+        <p>This work provides practical, actionable guidelines for building Korean table understanding systems. By demonstrating that the right combination of preprocessing format and targeted auxiliary training can yield substantial improvements, it establishes a strong foundation for table-to-text generation in Korean. The paper received the Best Paper Award at HCLT 2024, recognizing its contributions to an underexplored but practically important area of Korean NLP.</p>
+    </div>
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://koreascience.kr/article/CFKO202404272003907.do" target="_blank" class="paper-link">KoreaScience</a>
+        </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-multilingual">Multilingual</span>

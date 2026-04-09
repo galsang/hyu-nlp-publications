@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhancing Conversational Context Inference via Rea - HYU NLP Lab</title>
+    <title>대화 맥락 추론 향상을 위한 리즈닝 피드백 기반 학습 - HYU NLP Lab</title>
     <link rel="stylesheet" href="../../style.css">
 </head>
 <body>
@@ -22,7 +22,37 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>본 논문은 대화 맥락 추론을 향상시키기 위한 리즈닝 피드백 기반 학습 방법을 제안합니다.</p>
+        <p>외부 모델의 리즈닝 피드백을 활용하여 언어 모델의 대화 맥락 추론 능력을 점진적으로 향상시키는 새로운 학습 방법론(RFL)을 제안한 연구.</p>
+    </div>
+    <div class="section">
+        <h2>배경</h2>
+        <p>대화 맥락 이해 &mdash; 대화로부터 암묵적 정보, 화자 의도, 상황적 역학을 추론하는 것 &mdash; 는 대화 시스템의 근본적 과제입니다. 거대 언어 모델이 대화 이해를 향상시켰으나, 대화 이력에 대한 다단계 추론이 필요한 복잡한 추론 사례에서는 여전히 어려움을 겪습니다. 표준 미세조정 방식은 표면적 패턴 매칭이 실패하는 어려운 예제에서 성능이 정체되는 경향이 있어, 상당수의 도전적 대화 추론이 미해결 상태로 남게 됩니다.</p>
+    </div>
+    <div class="section">
+        <h2>방법</h2>
+        <ul class="key-points">
+            <li><strong>리즈닝 피드백 기반 학습(RFL):</strong> 외부의 보다 강력한 모델이 대상 모델의 오답에 대해 상세한 리즈닝 피드백을 생성하는 학습 프레임워크를 제안합니다. 특정 추론이 왜 틀렸는지, 올바른 추론 경로가 무엇인지에 대한 설명을 제공합니다.</li>
+            <li><strong>점진적 데이터 정제:</strong> 리즈닝 피드백을 활용하여 모델이 이전에 실패한 사례에 집중함으로써 학습 데이터의 품질을 반복적으로 개선하고, 가장 도전적인 예제에 학습 노력을 집중시킵니다.</li>
+            <li><strong>피드백 유도 미세조정:</strong> 구조화된 리즈닝 피드백을 학습 과정에 통합하여, 모델이 정답뿐만 아니라 그 뒤에 있는 추론 패턴까지 학습할 수 있도록 합니다.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>결과</h2>
+        <ul class="key-points">
+            <li>RFL 방법론이 대화 맥락 추론 과제에서 95.04%의 정확도를 달성하여, 기준 모델 대비 7.93%p 향상되었습니다.</li>
+            <li>표준 객관식 질문(MCQ) 미세조정 대비 1.32%p 높은 성능을 보여, 기존 학습 방식 대비 리즈닝 피드백의 부가 가치를 입증하였습니다.</li>
+            <li>보다 강력한 외부 모델의 상세한 피드백이 기존 방법으로 해결하지 못하는 가장 어려운 추론 사례를 극복하는 데 핵심적 역할을 합니다.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>의의</h2>
+        <p>본 연구는 구조화된 리즈닝 피드백을 통해 대화 이해를 향상시키는 실용적 방법론을 도입하며, 외부 모델의 안내가 어려운 대화 추론 예제에서의 성능 정체를 돌파할 수 있음을 보여줍니다. 점진적 정제 접근법은 대화를 넘어 추론 품질이 중요한 모든 과제에 적용 가능한 범용적 프레임워크를 제공합니다.</p>
+    </div>
+    <div class="section">
+        <h2>링크</h2>
+        <div class="links-section">
+            <a href="https://koreascience.kr/article/CFKO202533639629790.do" target="_blank" class="paper-link">KoreaScience</a>
+        </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-dialogue">Dialogue</span>

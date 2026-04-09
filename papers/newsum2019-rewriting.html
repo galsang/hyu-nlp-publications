@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Summary Level Training of Sentence Rewriting for A - HYU NLP Lab</title>
+    <title>Summary Level Training of Sentence Rewriting - HYU NLP Lab</title>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -21,9 +21,77 @@
 </div>
 <div class="detail-content">
     <div class="section">
-        <h2>Summary</h2>
-        <p>This paper proposes training a sentence rewriting model at the summary level to improve abstractive summarization quality, bridging the gap between sentence-level and document-level optimization.</p>
+        <h2>One-Line Summary</h2>
+        <p>An improved Sentence Rewriting framework for abstractive summarization that introduces summary-level ROUGE optimization through reinforcement learning and a BERT-based extractor, achieving state-of-the-art results on CNN/Daily Mail and New York Times datasets.</p>
     </div>
+
+    <div class="section">
+        <h2>Background &amp; Motivation</h2>
+        <p>Sentence Rewriting models combine extractive and abstractive summarization: an extractor selects salient sentences, then an abstractor paraphrases them into a summary. However, existing models suffer from a critical mismatch:</p>
+        <div class="highlight-box">
+            <p><strong>Training-Evaluation Mismatch:</strong> Previous work trains the extractor with sentence-level ROUGE rewards, but the final model is evaluated with summary-level ROUGE scores. Sentences with the highest individual ROUGE scores do not necessarily lead to an optimal summary -- they may overlap or be redundant.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method</h2>
+        <p>The model consists of two neural network modules -- an extractor and an abstractor -- with two key improvements:</p>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">BERT-based Extractor</div>
+                <div class="step-desc">BERT is adapted as the encoder, with [CLS] tokens inserted before each sentence and interval segment embeddings to handle multi-sentence documents. An LSTM pointer network serves as the decoder for sequential sentence selection.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Summary-Level RL Training</div>
+                <div class="step-desc">Using the Advantage Actor-Critic method, the extractor is trained to directly optimize summary-level ROUGE-L scores. Reward shaping provides intermediate signals at each extraction step to address training signal sparsity.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Redundancy Control</div>
+                <div class="step-desc">Trigram blocking for the extractor and reranking for the abstractor further reduce redundancy in generated summaries.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <p>Evaluated on CNN/Daily Mail, New York Times (NYT50), and DUC-2002 datasets.</p>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>Model (CNN/Daily Mail)</th><th>ROUGE-1</th><th>ROUGE-2</th><th>ROUGE-L</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Sentence Rewrite (Chen & Bansal, 2018)</td><td>40.88</td><td>17.80</td><td>38.54</td></tr>
+                <tr><td>BERTSUM (Liu, 2019)</td><td>43.25</td><td>20.24</td><td>39.63</td></tr>
+                <tr><td>BERT-ext + abs (ours)</td><td>40.14</td><td>17.87</td><td>37.83</td></tr>
+                <tr><td class="highlight-cell">BERT-ext + abs + RL + rerank (ours)</td><td class="highlight-cell">41.90</td><td class="highlight-cell">19.08</td><td class="highlight-cell">39.64</td></tr>
+            </tbody>
+        </table>
+
+        <ul class="key-points">
+            <li><strong>New SOTA for Abstractive:</strong> BERT-ext + abs + RL + rerank achieves the best abstractive summarization results on CNN/Daily Mail with R-AVG 33.54</li>
+            <li><strong>Strong Extractor:</strong> The BERT-based extractor alone (BERT-ext) outperforms all previous extractors in the Sentence Rewriting framework (R-1: 42.29, R-2: 19.38, R-L: 38.63)</li>
+            <li><strong>NYT50:</strong> The model achieves R-1: 46.63, R-2: 26.76, R-L: 43.38 on the New York Times dataset</li>
+            <li><strong>DUC-2002 Generalization:</strong> Outperforms baselines with large margins (R-1: 43.39, R-2: 19.38, R-L: 40.14), demonstrating strong out-of-domain generalization</li>
+            <li><strong>Human Evaluation:</strong> Achieves the highest total score (127) in relevance (66) and readability (61) compared to baselines</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>This work addresses a fundamental problem in extractive-abstractive summarization: the gap between sentence-level training and summary-level evaluation. By combining <strong>BERT's representation power</strong> with <strong>summary-level reinforcement learning</strong>, the approach achieves state-of-the-art results and demonstrates that globally optimizing the entire summary quality is more effective than locally optimizing individual sentences.</p>
+    </div>
+
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://aclanthology.org/D19-5402/" target="_blank" class="paper-link">ACL Anthology</a>
+        </div>
+    </div>
+
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-repr">Representation Learning</span>
     </div>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A Survey on Machine Unlearning for Large Language  - HYU NLP Lab</title>
+    <title>대규모 언어 모델의 지식 삭제 연구 동향 - HYU NLP Lab</title>
     <link rel="stylesheet" href="../../style.css">
 </head>
 <body>
@@ -14,7 +14,7 @@
     </div>
     <div class="container">
         <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; 전체 논문 목록</a>
-        <h1>A Survey on Machine Unlearning for Large Language Models</h1>
+        <h1>대규모 언어 모델의 지식 삭제 연구 동향</h1>
         <div class="meta"><span class="venue-badge">정보과학회지, Vol. 43, Issue 11, pp. 72-78</span></div>
         <div class="authors">Uiji Hwang, Taeuk Kim</div>
     </div>
@@ -22,11 +22,45 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>본 서베이 논문은 대규모 언어 모델을 위해 설계된 기계 삭제 기법의 현황을 검토하며, 방법론, 과제 및 향후 방향을 다룹니다.</p>
+        <p>대규모 언어 모델을 위한 기계 삭제(machine unlearning) 기법의 전반적인 연구 동향을 체계적으로 정리하고, 기존 방법론의 효과와 한계를 분석하며, 향후 연구 방향을 제시하는 서베이 논문입니다.</p>
     </div>
+
+    <div class="section">
+        <h2>배경</h2>
+        <p>대규모 언어 모델(LLM)은 학습 과정에서 개인정보, 저작권 보호 콘텐츠, 잠재적으로 유해한 지식을 포함한 방대한 정보를 기억합니다. EU의 GDPR "잊힐 권리" 등 규제 요구사항의 강화와 AI 안전성에 대한 관심 증가로 인해, 학습된 모델에서 특정 지식을 선택적으로 제거하는 <strong>기계 삭제(machine unlearning)</strong>가 중요한 연구 과제로 부상하고 있습니다.</p>
+        <p style="margin-top: 12px;">기존 머신러닝 모델과 달리 LLM은 삭제에 고유한 어려움을 제시합니다: 거대한 규모로 인해 전체 재학습이 비현실적이며, 지식이 수십억 개의 파라미터에 복잡하게 분산되어 있고, 특정 지식을 제거하면서 전반적인 모델 성능을 유지하는 것이 근본적으로 어렵습니다. 본 서베이는 빠르게 발전하는 이 분야를 체계적으로 개관하여 연구자들이 이러한 과제를 탐색하는 데 도움을 제공합니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>방법</h2>
+        <p>LLM을 위한 기계 삭제 문헌을 여러 차원에서 체계적으로 정리합니다:</p>
+        <ul class="key-points">
+            <li><strong>삭제 방법의 분류 체계:</strong> 파라미터 수준 방법(특정 가중치를 찾아 수정), 그래디언트 기반 방법(그래디언트 상승 또는 영향 함수 활용), 입력 수준 방법(프롬프트 기반 또는 인컨텍스트 접근)으로 분류</li>
+            <li><strong>삭제 대상의 구분:</strong> 사실적 지식 제거, 개인정보 삭제, 유해 콘텐츠 억제, 저작권 침해 자료 제거 등 삭제 목적별 구분</li>
+            <li><strong>평가 프레임워크:</strong> 지식 보유율, 모델 유용성 보존, 적대적 추출에 대한 내성 등 삭제 효과를 측정하는 기존 벤치마크와 메트릭을 검토</li>
+            <li><strong>국소성 vs. 분산 지식:</strong> LLM의 지식이 특정 파라미터에 국소적으로 저장되는지 네트워크 전체에 분산되는지에 대한 핵심 질문을 검토 &mdash; 이는 삭제 전략 설계에 중대한 함의를 가짐</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>결과</h2>
+        <ul class="key-points">
+            <li><strong>만능 해법의 부재:</strong> 모든 환경에서 일반 모델 성능을 유지하면서 완전한 지식 제거를 일관되게 달성하는 단일 삭제 방법은 아직 없음</li>
+            <li><strong>국소성 가정의 재검토:</strong> 지식이 특정 파라미터에 국소화되어 있다고 가정하는 방법은 종종 강건한 삭제에 실패 &mdash; LLM의 지식은 레이어와 구성요소에 걸쳐 분산되는 경향</li>
+            <li><strong>평가의 공백:</strong> 현재의 평가 프로토콜은 불충분 &mdash; 표준 프로빙에서는 "잊은 것"처럼 보이나 적대적 프롬프팅이나 재구성된 질의에서는 여전히 지식이 드러남</li>
+            <li><strong>규모에 따른 과제:</strong> 모델 규모가 커질수록 삭제 난이도가 증가하며, 소규모 모델에서 효과적인 방법이 대규모 모델로 항상 이전되지는 않음</li>
+            <li><strong>삭제와 보존의 트레이드오프:</strong> 대상 지식을 철저히 제거하는 것과 모델의 전반적인 언어 이해 및 생성 능력을 유지하는 것 사이에 지속적인 긴장 관계가 존재</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>의의</h2>
+        <p>LLM이 상업 및 공공 부문 애플리케이션에 대규모로 배포됨에 따라, 특정 지식을 제거하는 능력은 규제 준수, 사용자 프라이버시, AI 안전성을 위해 필수적입니다. 본 서베이는 국내 연구 커뮤니티에 기계 삭제 분야에 대한 체계적인 진입점을 제공하며, 가능성과 근본적인 미해결 과제를 조명합니다. 동일 연구실의 실증적 연구(<a href="unlearning.html">"Does Localization Inform Unlearning?"</a>, EMNLP 2025)를 보다 넓은 삭제 연구의 맥락 속에 위치시키는 역할도 수행합니다.</p>
+    </div>
+
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-unlearning">Unlearning</span>
-                    <span class="tag tag-safety">Safety</span>
+        <span class="tag tag-safety">Safety</span>
     </div>
 </div>
 <div class="footer">

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Learning Strategies to Improve Table Understanding - HYU NLP Lab</title>
+    <title>한국어 표 설명 능력 향상을 위한 전처리 및 학습 방법론 탐구 - HYU NLP Lab</title>
     <link rel="stylesheet" href="../../style.css">
 </head>
 <body>
@@ -15,14 +15,44 @@
     <div class="container">
         <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; 전체 논문 목록</a>
         <h1>한국어 표 설명 능력 향상을 위한 전처리 및 학습 방법론 탐구</h1>
-        <div class="meta"><span class="venue-badge">The 36th Annual Conference on Human and Cognitive Language Technology (HCLT 2024)</span></div>
+        <div class="meta"><span class="venue-badge">The 36th Annual Conference on Human and Cognitive Language Technology (HCLT 2024)</span> <span class="venue-badge" style="background:#e8b931;color:#333;">최우수논문상</span></div>
         <div class="authors">Changhyeon Kim, Seunghee Kim, Taeuk Kim</div>
     </div>
 </div>
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>본 논문은 한국어 표 이해 및 설명 능력을 향상시키기 위한 전처리 및 학습 전략을 탐구합니다. 최우수논문상 수상.</p>
+        <p>언어 모델의 한국어 표 셀 설명 생성 능력을 향상시키기 위한 전처리 형식과 학습 전략을 체계적으로 탐구한 연구.</p>
+    </div>
+    <div class="section">
+        <h2>배경</h2>
+        <p>표는 구조화된 데이터의 보편적 형식이지만, 특정 표 셀에 대한 자연어 설명 생성은 언어 모델에게 여전히 어려운 과제입니다 &mdash; 특히 한국어에서는 더욱 그렇습니다. 표와 대상 셀이 주어졌을 때, 해당 셀 값이 맥락에서 무엇을 의미하는지 유창한 한국어 설명을 생성하는 것이 목표입니다. 이 능력은 표 기반 질의응답, 접근성 도구, 자동 보고서 생성 등에 필수적입니다. 그러나 표를 텍스트로 직렬화하는 전처리 형식과 보조 학습 과제의 선택이 성능에 결정적 영향을 미칩니다.</p>
+    </div>
+    <div class="section">
+        <h2>방법</h2>
+        <ul class="key-points">
+            <li><strong>표 형식 비교:</strong> Markdown, HTML, Pandas DataFrame, JSON 등 4가지 직렬화 형식을 평가하여, 어떤 표현이 언어 모델에게 표 구조를 가장 효과적으로 전달하는지 파악합니다.</li>
+            <li><strong>합성 데이터 기반 보조 과제:</strong> 셀 위치 인식, 행 정보 인식, 열 정보 인식, 표 구조 재배치 등 4가지 목표 지향적 보조 과제를 설계하고, 각각에 맞는 합성 데이터셋을 구축하여 표 이해 능력을 점진적으로 향상시킵니다.</li>
+            <li><strong>토큰 효율적 학습:</strong> 구조적 정보를 보존하면서 토큰 수를 최소화하는 전처리 형식을 파악하여, 학습과 추론 단계 모두에서 계산 비용을 절감합니다.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>결과</h2>
+        <ul class="key-points">
+            <li>Pandas DataFrame 형식이 가장 우수한 성능을 달성하여, HTML이나 Markdown 대비 더 적은 토큰으로 기준 성능 대비 19.6%의 향상을 보였습니다.</li>
+            <li>합성 데이터 기반 보조 과제가 일관된 성능 향상을 제공하며, 특히 셀 위치 인식과 열 정보 인식이 최종 표 설명 품질에 가장 크게 기여하였습니다.</li>
+            <li>토큰 효율적 형식이 계산 비용을 줄일 뿐만 아니라 모델 성능도 향상시켜, 간결한 구조적 표현이 모델의 관련 정보 집중에 도움이 됨을 시사합니다.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>의의</h2>
+        <p>본 연구는 한국어 표 이해 시스템 구축을 위한 실용적이고 구체적인 가이드라인을 제공합니다. 적절한 전처리 형식과 목표 지향적 보조 학습의 조합이 상당한 성능 향상을 이끌어낼 수 있음을 보여주며, 한국어 표-텍스트 생성을 위한 튼튼한 기반을 마련합니다. HCLT 2024 최우수논문상을 수상하여, 아직 충분히 탐구되지 않았지만 실용적으로 중요한 한국어 NLP 영역에 대한 기여를 인정받았습니다.</p>
+    </div>
+    <div class="section">
+        <h2>링크</h2>
+        <div class="links-section">
+            <a href="https://koreascience.kr/article/CFKO202404272003907.do" target="_blank" class="paper-link">KoreaScience</a>
+        </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-multilingual">Multilingual</span>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A Multi-Intent Dataset Enhanced with Implicit Conc - HYU NLP Lab</title>
+    <title>A Multi-Intent Dataset Enhanced with Implicit Concatenation - HYU NLP Lab</title>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -21,8 +21,29 @@
 </div>
 <div class="detail-content">
     <div class="section">
-        <h2>Summary</h2>
-        <p>This paper presents a multi-intent dataset enhanced with implicit concatenation, ellipsis, and coreference.</p>
+        <h2>One-Line Summary</h2>
+        <p>A new multi-intent detection dataset that incorporates realistic linguistic phenomena -- ellipsis and coreference -- to create more naturalistic multi-intent utterances beyond simple concatenation of single-intent sentences.</p>
+    </div>
+    <div class="section">
+        <h2>Background</h2>
+        <p>Multi-intent detection is the task of identifying multiple user intents within a single utterance, a common scenario in real-world dialogue systems (e.g., "Book a flight to Seoul and find me a hotel nearby"). Existing multi-intent datasets are typically constructed by mechanically concatenating single-intent utterances, producing artificial examples that lack the natural linguistic phenomena found in real human speech. In practice, when people express multiple intents in one utterance, they use ellipsis (omitting repeated elements) and coreference (referring back to previously mentioned entities with pronouns), making the utterances more compact and natural but harder to parse.</p>
+    </div>
+    <div class="section">
+        <h2>Method</h2>
+        <ul class="key-points">
+            <li><strong>Implicit concatenation:</strong> Rather than simply joining two single-intent utterances, the dataset construction process applies ellipsis and coreference resolution to create more natural multi-intent utterances where repeated information is omitted or pronominalized.</li>
+            <li><strong>Annotation pipeline:</strong> A systematic annotation pipeline ensures that the resulting utterances are both linguistically natural and correctly labeled with multiple intents and slot values.</li>
+            <li><strong>Diverse intent combinations:</strong> The dataset covers a wide range of intent pair combinations across different domains to ensure comprehensive evaluation.</li>
+            <li><strong>Baseline evaluation:</strong> State-of-the-art multi-intent detection models are evaluated on both the standard concatenation-based dataset and the new implicit concatenation version to measure the impact of realistic linguistic phenomena.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Results</h2>
+        <p>Existing multi-intent detection models show significant performance drops on the implicit concatenation dataset compared to the standard concatenation version, revealing that current systems struggle with ellipsis and coreference in multi-intent contexts. This performance gap highlights a critical blind spot in current multi-intent detection research that relies on artificially constructed evaluation data.</p>
+    </div>
+    <div class="section">
+        <h2>Significance</h2>
+        <p>This dataset provides a more realistic benchmark for evaluating multi-intent detection systems, pushing the field toward handling the linguistic complexity of real user utterances. By exposing the limitations of current models on natural multi-intent expressions, it motivates the development of more robust intent detection systems that can handle ellipsis and coreference -- essential capabilities for practical dialogue systems.</p>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-dialogue">Dialogue</span>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reversal Curse in Idiomatic Tasks of Large Languag - HYU NLP Lab</title>
+    <title>Reversal Curse in Idiomatic Tasks of Large Language Models - HYU NLP Lab</title>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -21,8 +21,32 @@
 </div>
 <div class="detail-content">
     <div class="section">
-        <h2>Summary</h2>
-        <p>This paper explores the reversal curse phenomenon in how large language models process idiomatic expressions.</p>
+        <h2>One-Line Summary</h2>
+        <p>An investigation revealing that large language models suffer from the reversal curse when processing idioms &mdash; they can complete an idiom from its beginning but fail to retrieve the beginning from its ending.</p>
+    </div>
+    <div class="section">
+        <h2>Background</h2>
+        <p>The reversal curse is a recently identified phenomenon in large language models: if a model learns that "A is B," it cannot reliably infer that "B is A." While this has been demonstrated for factual knowledge (e.g., "Tom Cruise's mother is Mary Lee South" vs. "Mary Lee South's son is Tom Cruise"), its manifestation in linguistic knowledge &mdash; specifically idiom processing &mdash; has not been explored. Idioms are particularly interesting because they are fixed expressions where the relationship between component parts and overall meaning is non-compositional, making them a unique testbed for understanding how LLMs store and retrieve memorized linguistic patterns.</p>
+    </div>
+    <div class="section">
+        <h2>Method</h2>
+        <ul class="key-points">
+            <li><strong>Bidirectional idiom tasks:</strong> Designs evaluation tasks that test both forward completion (given the beginning of an idiom, predict its ending) and reverse retrieval (given the ending of an idiom, predict its beginning).</li>
+            <li><strong>Cross-lingual evaluation:</strong> Tests the reversal curse phenomenon across idioms in multiple languages, examining whether the effect is universal or language-dependent.</li>
+            <li><strong>Systematic analysis:</strong> Evaluates multiple LLM architectures to determine the prevalence and severity of the reversal curse in idiomatic knowledge, analyzing factors such as idiom frequency and structural characteristics.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Results</h2>
+        <ul class="key-points">
+            <li>LLMs exhibit a clear reversal curse in idiomatic tasks: forward idiom completion achieves substantially higher accuracy than reverse retrieval across all evaluated models.</li>
+            <li>The asymmetry is consistent across languages, confirming that the reversal curse in idiom processing is not language-specific but a fundamental limitation of autoregressive training.</li>
+            <li>More frequent idioms show a slightly reduced reversal curse effect, suggesting that higher exposure during training partially mitigates but does not eliminate the directional bias.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Significance</h2>
+        <p>This work extends the understanding of the reversal curse from factual to linguistic knowledge, revealing that autoregressive LLMs have a fundamental directional bias even for well-memorized fixed expressions. The findings have implications for how we think about knowledge representation in LLMs and suggest that current architectures may store idioms as directional sequences rather than bidirectional associations, pointing to an inherent limitation in autoregressive language modeling.</p>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-reasoning">Reasoning</span>

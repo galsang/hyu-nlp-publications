@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhancing Conversational Context Inference via Rea - HYU NLP Lab</title>
+    <title>Enhancing Conversational Context Inference via Reasoning Feedback-Based Learning - HYU NLP Lab</title>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -21,8 +21,38 @@
 </div>
 <div class="detail-content">
     <div class="section">
-        <h2>Summary</h2>
-        <p>This paper proposes a reasoning feedback-based learning approach to enhance conversational context inference.</p>
+        <h2>One-Line Summary</h2>
+        <p>A novel reasoning feedback-based learning (RFL) approach that leverages external model feedback to progressively improve a language model's ability to infer conversational context.</p>
+    </div>
+    <div class="section">
+        <h2>Background</h2>
+        <p>Understanding conversational context &mdash; inferring implicit information, speaker intentions, and situational dynamics from dialogue &mdash; is a fundamental challenge in dialogue systems. While large language models have improved dialogue understanding, they still struggle with complex inference cases that require multi-step reasoning over conversation history. Standard fine-tuning approaches often plateau on difficult examples where surface-level pattern matching fails, leaving a significant portion of challenging conversational inferences unresolved.</p>
+    </div>
+    <div class="section">
+        <h2>Method</h2>
+        <ul class="key-points">
+            <li><strong>Reasoning Feedback-Based Learning (RFL):</strong> Proposes a learning framework where an external, more capable model generates detailed reasoning feedback on the target model's incorrect predictions, providing explanations of why certain inferences are wrong and what the correct reasoning path should be.</li>
+            <li><strong>Progressive data refinement:</strong> Uses the reasoning feedback to iteratively improve training data quality, focusing on cases where the model previously failed, thereby concentrating learning effort on the most challenging examples.</li>
+            <li><strong>Feedback-guided fine-tuning:</strong> Incorporates the structured reasoning feedback into the training process, enabling the model to learn not just correct answers but also the reasoning patterns behind them.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Results</h2>
+        <ul class="key-points">
+            <li>The RFL approach achieves 95.04% accuracy on the conversational context inference task, surpassing the baseline by 7.93 percentage points.</li>
+            <li>RFL outperforms standard multiple-choice question (MCQ) fine-tuning by 1.32 percentage points, demonstrating the added value of reasoning feedback over conventional training.</li>
+            <li>Detailed feedback from more powerful external models plays a crucial role in overcoming the most challenging inference cases that standard methods fail to resolve.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Significance</h2>
+        <p>This work introduces a practical methodology for improving dialogue understanding through structured reasoning feedback, showing that external model guidance can break through performance plateaus on hard conversational inference examples. The progressive refinement approach offers a general framework applicable beyond dialogue to any task where reasoning quality matters.</p>
+    </div>
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://koreascience.kr/article/CFKO202533639629790.do" target="_blank" class="paper-link">KoreaScience</a>
+        </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-dialogue">Dialogue</span>

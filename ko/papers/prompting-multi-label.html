@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Prompting for Multi-Label Classification - HYU NLP Lab</title>
+    <title>다중 레이블 분류를 위한 프롬프팅 고도화 - HYU NLP Lab</title>
     <link rel="stylesheet" href="../../style.css">
 </head>
 <body>
@@ -22,7 +22,31 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>본 논문은 다중 레이블 분류를 위한 고도화된 프롬프팅 기법을 제안합니다.</p>
+        <p>인컨텍스트 학습의 프롬프트 설계 전략을 개선하여 거대 언어 모델의 다중 레이블 분류 능력을 향상시키는 고도화된 프롬프팅 프레임워크를 제안한 연구.</p>
+    </div>
+    <div class="section">
+        <h2>배경</h2>
+        <p>다중 레이블 분류는 하나의 입력에 여러 레이블을 동시에 부여해야 하는 과제로, 토픽 태깅, 감정 감지, 의도 인식 등 실제 NLP 응용에서 흔히 요구됩니다. 거대 언어 모델(LLM)은 인컨텍스트 학습(ICL)을 통해 단일 레이블 과제에서 우수한 성능을 보여왔으나, 다중 레이블 시나리오에서의 효과는 제한적입니다. 기존 프롬프팅 전략은 레이블 공간이 크고 레이블 조합이 다양한 경우 올바른 레이블 집합을 예측하도록 모델을 유도하는 데 어려움을 겪습니다.</p>
+    </div>
+    <div class="section">
+        <h2>방법</h2>
+        <ul class="key-points">
+            <li><strong>프롬프트 재구성:</strong> 다중 레이블 과제의 특성을 효과적으로 전달하도록 프롬프트 형식을 재설계하여, 모델이 단일 레이블 예측에 치우치지 않고 입력당 여러 레이블을 고려하도록 유도합니다.</li>
+            <li><strong>시연 예제 선택:</strong> 다중 레이블 할당을 효과적으로 보여주는 인컨텍스트 예제 선택 전략을 제안하여, 시연 집합 내 레이블 조합의 다양성을 확보합니다.</li>
+            <li><strong>레이블 언어화:</strong> 프롬프트에서 레이블 이름과 설명을 제시하는 방식이 모델의 다중 레이블 예측 능력에 미치는 영향을 분석합니다.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>결과</h2>
+        <ul class="key-points">
+            <li>제안된 고도화 프롬프팅 전략이 여러 다중 레이블 분류 벤치마크에서 기본 프롬프팅 대비 일관된 성능 향상을 보였습니다.</li>
+            <li>다양한 레이블 조합을 포함하는 시연 예제의 신중한 선택이 무작위 선택 대비 예측 품질을 크게 개선하였습니다.</li>
+            <li>별도의 미세조정이나 파라미터 업데이트 없이 다양한 LLM 아키텍처에서 효과적으로 작동합니다.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>의의</h2>
+        <p>본 연구는 체계적인 프롬프트 엔지니어링만으로 다중 레이블 과제에서 LLM과 지도학습 모델 간의 성능 격차를 상당히 줄일 수 있음을 보여줍니다. 다중 레이블 환경에서의 프롬프팅 고도화를 위한 체계적 프레임워크를 제공함으로써, 인컨텍스트 학습의 실용적 적용 범위를 프로덕션 NLP 시스템에서 마주하는 보다 넓은 범위의 분류 문제로 확장합니다.</p>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-icl">In-Context Learning</span>

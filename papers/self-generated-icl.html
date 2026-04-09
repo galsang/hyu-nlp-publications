@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Self-Generated In-Context Learning: Leveraging Aut - HYU NLP Lab</title>
+    <title>Self-Generated In-Context Learning - HYU NLP Lab</title>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -21,9 +21,60 @@
 </div>
 <div class="detail-content">
     <div class="section">
-        <h2>Summary</h2>
-        <p>This paper proposes self-generated in-context learning, leveraging auto-regressive language models to generate their own demonstrations.</p>
+        <h2>One-Line Summary</h2>
+        <p>A method that enables large language models to generate their own in-context demonstrations, eliminating dependence on external training data while significantly outperforming zero-shot learning across text classification tasks.</p>
     </div>
+
+    <div class="section">
+        <h2>Background &amp; Motivation</h2>
+        <p>In-context learning (ICL) allows pre-trained language models to solve tasks by conditioning on a few input-label demonstration pairs without any parameter updates. However, ICL has a critical limitation: it <strong>heavily depends on the quality and choice of demonstrations</strong>, which are typically selected from external datasets.</p>
+        <div class="highlight-box">
+            <p><strong>Key Questions:</strong> (1) Can we eliminate the dependency on training datasets by generating demonstrations? (2) If so, how can we create demonstrations with high input-demonstration correlation?</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method: SG-ICL</h2>
+        <p>Self-Generated In-Context Learning (SG-ICL) leverages the generative abilities of PLMs to create their own demonstrations through two steps:</p>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Self-Generation Step</div>
+                <div class="step-desc">For each test input and each class label, the PLM generates in-context samples using a manually designed generation template conditioned on both the input and the class. This produces demonstrations highly correlated with the test instance.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Inference Step</div>
+                <div class="step-desc">The generated samples are used as demonstrations for standard in-context learning. The PLM performs the downstream task using these self-generated demonstrations concatenated with the test instance.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <p>Experiments are conducted on four text classification datasets (SST-2, SST-5, RTE, CB) using GPT-J (6B), with 8 self-generated in-context samples per test input.</p>
+
+        <ul class="key-points">
+            <li><strong>Consistent Improvement:</strong> SG-ICL significantly outperforms zero-shot learning across all four tasks, despite having no access to training data</li>
+            <li><strong>Low Variance:</strong> Generated demonstrations show much more stable performance with low variance compared to randomly selected demonstrations from training data</li>
+            <li><strong>Worth ~0.6 Gold Samples:</strong> Each self-generated in-context sample is generally worth approximately 0.6 gold training samples</li>
+            <li><strong>Outperforms Few-shot:</strong> Using 8 self-generated samples outperforms few-shot learning with up to 5 gold training samples</li>
+            <li><strong>Input Conditioning Matters:</strong> Conditioning generation on both the input and class label (rather than class alone) produces demonstrations with higher semantic similarity to the test input, leading to better performance</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>SG-ICL opens a new paradigm where language models can <strong>bootstrap their own demonstrations</strong> without any external data. This is particularly valuable in scenarios where labeled data is scarce or unavailable, and it provides a more stable alternative to the notoriously variance-prone random demonstration selection in standard ICL.</p>
+    </div>
+
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://arxiv.org/abs/2206.08082" target="_blank" class="paper-link">arXiv Paper</a>
+        </div>
+    </div>
+
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-icl">In-Context Learning</span>
     </div>

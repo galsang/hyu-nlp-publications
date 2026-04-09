@@ -21,8 +21,32 @@
 </div>
 <div class="detail-content">
     <div class="section">
-        <h2>Summary</h2>
-        <p>This paper proposes enhanced prompting techniques for multi-label classification tasks.</p>
+        <h2>One-Line Summary</h2>
+        <p>An enhanced prompting framework that improves large language models' ability to handle multi-label classification by refining prompt design strategies for in-context learning.</p>
+    </div>
+    <div class="section">
+        <h2>Background</h2>
+        <p>Multi-label classification &mdash; where a single input can be assigned multiple labels simultaneously &mdash; is a common requirement in real-world NLP tasks such as topic tagging, emotion detection, and intent recognition. While large language models (LLMs) have shown strong performance on single-label tasks via in-context learning (ICL), their effectiveness on multi-label scenarios remains limited. Standard prompting strategies often struggle to guide models toward predicting the correct set of labels, especially when the label space is large and label combinations are diverse.</p>
+    </div>
+    <div class="section">
+        <h2>Method</h2>
+        <ul class="key-points">
+            <li><strong>Prompt restructuring:</strong> Redesigns the prompt format to better convey the multi-label nature of the task, explicitly guiding the model to consider multiple labels per input rather than defaulting to single-label prediction.</li>
+            <li><strong>Demonstration selection:</strong> Proposes strategies for selecting in-context examples that effectively illustrate multi-label assignments, ensuring diversity in label combinations within the demonstration set.</li>
+            <li><strong>Label verbalization:</strong> Investigates how different ways of presenting label names and descriptions in the prompt affect the model's ability to predict multiple relevant labels.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Results</h2>
+        <ul class="key-points">
+            <li>The proposed enhanced prompting strategies consistently outperform na&iuml;ve prompting baselines across multiple multi-label classification benchmarks.</li>
+            <li>Carefully selected demonstrations with diverse label combinations significantly improve prediction quality compared to random demonstration selection.</li>
+            <li>The approach is effective across different LLM architectures without requiring any fine-tuning or parameter updates.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Significance</h2>
+        <p>This work demonstrates that thoughtful prompt engineering can substantially close the performance gap between LLMs and supervised models on multi-label tasks. By providing a systematic framework for enhanced prompting in the multi-label setting, it extends the practical applicability of in-context learning to a broader class of classification problems encountered in production NLP systems.</p>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-icl">In-Context Learning</span>
