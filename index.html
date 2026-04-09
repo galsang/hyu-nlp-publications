@@ -44,6 +44,7 @@
         <button class="filter-btn" data-filter="icl">In-Context Learning</button>
         <button class="filter-btn" data-filter="efficiency">Efficiency</button>
         <button class="filter-btn" data-filter="ir">Information Retrieval</button>
+        <button class="filter-btn" data-filter="kg">Knowledge Graph</button>
         <button class="filter-btn" data-filter="detection">Detection</button>
         <button class="filter-btn" data-filter="multilingual">Multilingual</button>
         <button class="filter-btn" data-filter="abstention">Abstention</button>
@@ -121,6 +122,7 @@
                 <div class="paper-tags">
                     <span class="tag tag-confidence">Confidence</span>
                     <span class="tag tag-reasoning">Reasoning</span>
+                    <span class="tag tag-abstention">Abstention</span>
                 </div>
             </a>
         </div>
@@ -189,6 +191,7 @@
                 <div class="paper-tags">
                     <span class="tag tag-efficiency">Efficiency</span>
                     <span class="tag tag-confidence">Confidence</span>
+                    <span class="tag tag-abstention">Abstention</span>
                 </div>
             </a>
         </div>
@@ -244,7 +247,6 @@
                     <span class="tag tag-rag">RAG</span>
                     <span class="tag tag-knowledge">Knowledge</span>
                     <span class="tag tag-benchmark">Benchmark</span>
-                    <span class="tag tag-kg">Knowledge Graph</span>
                 </div>
             </a>
         </div>
@@ -261,6 +263,8 @@
                 <div class="paper-oneliner">Analyzing idiom understanding in LLMs across 6 languages: memorization vs. reasoning</div>
                 <div class="paper-tags">
                     <span class="tag tag-benchmark">Benchmark</span>
+                    <span class="tag tag-knowledge">Knowledge</span>
+                    <span class="tag tag-multilingual">Multilingual</span>
                 </div>
             </a>
         </div>
@@ -277,6 +281,7 @@
                 <div class="paper-oneliner">Challenging the assumption that localized parameter updates enable effective knowledge unlearning</div>
                 <div class="paper-tags">
                     <span class="tag tag-unlearning">Unlearning</span>
+                    <span class="tag tag-safety">Safety</span>
                 </div>
             </a>
         </div>
@@ -396,6 +401,7 @@
                 <div class="paper-oneliner">Step-by-step retrieval approach for enhancing scientific reasoning in LLMs</div>
                 <div class="paper-tags">
                     <span class="tag tag-reasoning">Reasoning</span>
+                    <span class="tag tag-rag">RAG</span>
                 </div>
             </a>
         </div>
@@ -416,7 +422,7 @@
                 </div>
                 <div class="paper-oneliner">Adaptive contrastive decoding strategy based on retrieved context quality in RAG</div>
                 <div class="paper-tags">
-                    <span class="tag tag-rag">RAG / Knowledge</span>
+                    <span class="tag tag-rag">RAG</span>
                 </div>
             </a>
         </div>
@@ -433,6 +439,7 @@
                 <div class="paper-oneliner">Revisiting how pursuing modularity affects code generation performance</div>
                 <div class="paper-tags">
                     <span class="tag tag-reasoning">Reasoning</span>
+                    <span class="tag tag-benchmark">Benchmark</span>
                 </div>
             </a>
         </div>
@@ -498,6 +505,7 @@
                 <div class="paper-oneliner">Detecting complex multi-intent patterns within single utterances</div>
                 <div class="paper-tags">
                     <span class="tag tag-dialogue">Dialogue</span>
+                    <span class="tag tag-benchmark">Benchmark</span>
                 </div>
             </a>
         </div>
@@ -517,7 +525,7 @@
                     <span class="paper-venue findings">EMNLP 2023 Findings</span>
                 </div>
                 <div class="paper-oneliner">Predicting cross-lingual transfer performance through sub-network similarity</div>
-                <div class="paper-tags"><span class="tag tag-repr">Representation Learning</span></div>
+                <div class="paper-tags"><span class="tag tag-repr">Representation Learning</span><span class="tag tag-multilingual">Multilingual</span></div>
             </a>
         </div>
 
@@ -531,7 +539,7 @@
                     <span class="paper-venue findings">EMNLP 2023 Findings</span>
                 </div>
                 <div class="paper-oneliner">Robust handling of distributional shifts in NLP via universal domain adaptation</div>
-                <div class="paper-tags"><span class="tag tag-repr">Representation Learning</span></div>
+                <div class="paper-tags"><span class="tag tag-repr">Representation Learning</span><span class="tag tag-detection">Detection</span></div>
             </a>
         </div>
 
@@ -613,7 +621,7 @@
                     <span class="paper-venue findings">EMNLP 2021 Findings</span>
                 </div>
                 <div class="paper-oneliner">Chart-based multilingual constituency parse extraction from pre-trained language models</div>
-                <div class="paper-tags"><span class="tag tag-parsing">Parsing & Syntax</span></div>
+                <div class="paper-tags"><span class="tag tag-parsing">Parsing &amp; Syntax</span><span class="tag tag-multilingual">Multilingual</span></div>
             </a>
         </div>
 
@@ -747,7 +755,7 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
             if (filter === 'all') {
                 card.style.display = '';
             } else {
-                const tags = card.dataset.tags || '';
+                const tags = (card.dataset.tags || '').split(' ');
                 card.style.display = tags.includes(filter) ? '' : 'none';
             }
         });

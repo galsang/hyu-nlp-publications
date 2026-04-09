@@ -44,6 +44,8 @@
         <button class="filter-btn" data-filter="icl">In-Context Learning</button>
         <button class="filter-btn" data-filter="efficiency">Efficiency</button>
         <button class="filter-btn" data-filter="ir">Information Retrieval</button>
+        <button class="filter-btn" data-filter="kg">Knowledge Graph</button>
+        <button class="filter-btn" data-filter="kg">Knowledge Graph</button>
         <button class="filter-btn" data-filter="detection">Detection</button>
         <button class="filter-btn" data-filter="multilingual">Multilingual</button>
         <button class="filter-btn" data-filter="abstention">Abstention</button>
@@ -121,6 +123,7 @@
                 <div class="paper-tags">
                     <span class="tag tag-confidence">Confidence</span>
                     <span class="tag tag-reasoning">Reasoning</span>
+                    <span class="tag tag-abstention">Abstention</span>
                 </div>
             </a>
         </div>
@@ -189,6 +192,7 @@
                 <div class="paper-tags">
                     <span class="tag tag-efficiency">Efficiency</span>
                     <span class="tag tag-confidence">Confidence</span>
+                    <span class="tag tag-abstention">Abstention</span>
                 </div>
             </a>
         </div>
@@ -244,7 +248,6 @@
                     <span class="tag tag-rag">RAG</span>
                     <span class="tag tag-knowledge">Knowledge</span>
                     <span class="tag tag-benchmark">Benchmark</span>
-                    <span class="tag tag-kg">Knowledge Graph</span>
                 </div>
             </a>
         </div>
@@ -261,6 +264,8 @@
                 <div class="paper-oneliner">LLM의 관용구 이해 방식을 6개 언어에 걸쳐 암기 vs 추론 관점에서 분석</div>
                 <div class="paper-tags">
                     <span class="tag tag-benchmark">Benchmark</span>
+                    <span class="tag tag-knowledge">Knowledge</span>
+                    <span class="tag tag-multilingual">Multilingual</span>
                 </div>
             </a>
         </div>
@@ -277,6 +282,7 @@
                 <div class="paper-oneliner">특정 파라미터 수정으로 지식을 제거할 수 있다는 기존 가정에 도전</div>
                 <div class="paper-tags">
                     <span class="tag tag-unlearning">Unlearning</span>
+                    <span class="tag tag-safety">Safety</span>
                 </div>
             </a>
         </div>
@@ -396,6 +402,7 @@
                 <div class="paper-oneliner">과학적 추론 능력 향상을 위한 단계별 검색 방법 제안</div>
                 <div class="paper-tags">
                     <span class="tag tag-reasoning">Reasoning</span>
+                    <span class="tag tag-rag">RAG</span>
                 </div>
             </a>
         </div>
@@ -416,7 +423,7 @@
                 </div>
                 <div class="paper-oneliner">RAG에서 검색 문서 품질에 따라 디코딩 전략을 적응적으로 조절</div>
                 <div class="paper-tags">
-                    <span class="tag tag-rag">RAG / Knowledge</span>
+                    <span class="tag tag-rag">RAG</span>
                 </div>
             </a>
         </div>
@@ -433,6 +440,7 @@
                 <div class="paper-oneliner">모듈화 추구가 코드 생성 성능에 미치는 영향을 재검토</div>
                 <div class="paper-tags">
                     <span class="tag tag-reasoning">Reasoning</span>
+                    <span class="tag tag-benchmark">Benchmark</span>
                 </div>
             </a>
         </div>
@@ -498,6 +506,7 @@
                 <div class="paper-oneliner">하나의 발화에서 여러 의도를 복합적으로 감지하는 방법</div>
                 <div class="paper-tags">
                     <span class="tag tag-dialogue">Dialogue</span>
+                    <span class="tag tag-benchmark">Benchmark</span>
                 </div>
             </a>
         </div>
@@ -517,7 +526,7 @@
                     <span class="paper-venue findings">EMNLP 2023 Findings</span>
                 </div>
                 <div class="paper-oneliner">교차 언어 전이 학습의 성능을 예측하는 방법</div>
-                <div class="paper-tags"><span class="tag tag-repr">Representation Learning</span></div>
+                <div class="paper-tags"><span class="tag tag-repr">Representation Learning</span><span class="tag tag-multilingual">Multilingual</span></div>
             </a>
         </div>
 
@@ -531,7 +540,7 @@
                     <span class="paper-venue findings">EMNLP 2023 Findings</span>
                 </div>
                 <div class="paper-oneliner">범용적인 도메인 적응 기법 제안</div>
-                <div class="paper-tags"><span class="tag tag-repr">Representation Learning</span></div>
+                <div class="paper-tags"><span class="tag tag-repr">Representation Learning</span><span class="tag tag-detection">Detection</span></div>
             </a>
         </div>
 
@@ -613,7 +622,7 @@
                     <span class="paper-venue findings">EMNLP 2021 Findings</span>
                 </div>
                 <div class="paper-oneliner">사전학습 모델에서 다국어 구문 구조를 차트 기반으로 추출</div>
-                <div class="paper-tags"><span class="tag tag-parsing">Parsing & Syntax</span></div>
+                <div class="paper-tags"><span class="tag tag-parsing">Parsing & Syntax</span><span class="tag tag-multilingual">Multilingual</span></div>
             </a>
         </div>
 
@@ -747,8 +756,8 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
             if (filter === 'all') {
                 card.style.display = '';
             } else {
-                const tags = card.dataset.tags || '';
-                card.style.display = tags.includes(filter) ? '' : 'none';
+                const tags = (card.dataset.tags || '').split(' ');
+                card.style.display = (card.dataset.tags || '').split(' ').includes(filter) ? '' : 'none';
             }
         });
         document.querySelectorAll('.year-section').forEach(section => {

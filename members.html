@@ -6,24 +6,18 @@
     <title>Members - HYU NLP Lab</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .member-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .member-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-bottom: 40px; }
         .member-card {
             background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
-            padding: 24px; transition: box-shadow 0.2s;
+            padding: 24px; transition: box-shadow 0.2s; text-decoration: none; display: block; color: inherit;
         }
-        .member-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
-        .member-name { font-size: 1.2rem; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
-        .member-name-ko { font-size: 0.9rem; color: var(--text-light); margin-bottom: 8px; }
-        .member-role { font-size: 0.85rem; font-weight: 600; color: var(--accent); margin-bottom: 4px; }
-        .member-info { font-size: 0.82rem; color: var(--text-light); margin-bottom: 12px; line-height: 1.5; }
-        .member-papers-title { font-size: 0.8rem; font-weight: 600; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
-        .member-paper-list { list-style: none; padding: 0; }
-        .member-paper-list li { padding: 4px 0; font-size: 0.85rem; line-height: 1.4; }
-        .member-paper-list li a { color: var(--accent); }
-        .member-paper-list .venue-sm {
-            display: inline-block; font-size: 0.7rem; font-weight: 600; padding: 1px 6px;
-            border-radius: 3px; background: var(--primary); color: white; margin-left: 4px; vertical-align: middle;
-        }
+        .member-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); transform: translateY(-2px); transition: all 0.2s; }
+        .member-name { font-size: 1.15rem; font-weight: 700; color: var(--primary); margin-bottom: 2px; }
+        .member-name-ko { font-size: 0.85rem; color: var(--text-light); margin-bottom: 8px; }
+        .member-role { font-size: 0.82rem; font-weight: 600; color: var(--accent); margin-bottom: 6px; }
+        .member-research { font-size: 0.8rem; color: var(--text-light); margin-bottom: 8px; }
+        .member-pub-count { font-size: 0.78rem; color: var(--text-light); }
+        .member-pub-count strong { color: var(--primary); }
         .role-section { margin-bottom: 48px; }
         .role-heading {
             font-size: 1.4rem; font-weight: 700; color: var(--primary);
@@ -32,12 +26,16 @@
         .professor-card {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
             color: white; border-radius: 12px; padding: 32px; margin-bottom: 40px;
+            text-decoration: none; display: block; transition: box-shadow 0.2s;
         }
+        .professor-card:hover { box-shadow: 0 6px 30px rgba(0,0,0,0.15); }
         .professor-card .member-name { color: white; font-size: 1.5rem; }
         .professor-card .member-name-ko { color: rgba(255,255,255,0.8); }
         .professor-card .member-role { color: var(--accent-light); }
-        .professor-card .member-info { color: rgba(255,255,255,0.8); }
-        .professor-card a { color: var(--accent-light); }
+        .professor-card .member-research { color: rgba(255,255,255,0.75); }
+        .professor-card .member-pub-count { color: rgba(255,255,255,0.7); }
+        .professor-card .member-pub-count strong { color: white; }
+        .view-arrow { float: right; font-size: 1.2rem; opacity: 0.5; }
     </style>
 </head>
 <body>
@@ -47,89 +45,66 @@
         <a href="ko/members.html">KO</a>
     </div>
     <h1>Lab Members</h1>
-    <p>Hanyang University NLP Lab — Current members and their publications</p>
+    <p>Hanyang University NLP Lab &mdash; Current members and their publications</p>
     <p style="margin-top:12px;"><a href="index.html" style="color:var(--accent-light);">&#8592; All Publications</a></p>
 </div>
 
 <div class="container">
 
     <!-- Professor -->
-    <div class="professor-card">
+    <a href="members/taeuk-kim.html" class="professor-card">
+        <span class="view-arrow">&rarr;</span>
         <div class="member-name">Taeuk Kim</div>
         <div class="member-name-ko">김태욱</div>
         <div class="member-role">Assistant Professor</div>
-        <div class="member-info">
-            Department of Computer Science, Hanyang University<br>
-            Joint appointments: AI, AI Semiconductor, Data Science, AI Application, Applied AI<br>
-            Office: Room 719, IT/BT Building &middot; kimtaeuk [at] hanyang.ac.kr
-        </div>
-        <div style="margin-top:8px;"><a href="index.html">View all 41 publications &rarr;</a></div>
-    </div>
+        <div class="member-research">NLP, Pre-trained Language Models, Syntax, Semantics</div>
+        <div class="member-pub-count"><strong>41</strong> publications</div>
+    </a>
 
     <!-- Ph.D. / MS-Ph.D. Integrated -->
     <div class="role-section">
         <div class="role-heading">Ph.D. &amp; MS/Ph.D. Integrated Students</div>
         <div class="member-grid">
 
-            <div class="member-card">
-                <div class="member-name">Yejin Yoon</div>
+            <a href="members/yejin-yoon.html" class="member-card">
+                <div class="member-name">Yejin Yoon <span class="view-arrow">&rarr;</span></div>
                 <div class="member-name-ko">윤예진</div>
-                <div class="member-role">Ph.D. (Sep 2024–) · MS (Sep 2022–Aug 2024)</div>
-                <div class="member-info">Research: Memory, Dialogue</div>
-                <div class="member-papers-title">Publications</div>
-                <ul class="member-paper-list">
-                    <li><a href="papers/tact.html">Beyond Task-Oriented and Chitchat Dialogues</a> <span class="venue-sm">EMNLP 2025</span></li>
-                    <li><a href="papers/blendx.html">BlendX: Complex Multi-Intent Detection with Blended Patterns</a> <span class="venue-sm">LREC 2024</span></li>
-                </ul>
-            </div>
+                <div class="member-role">Ph.D. (Sep 2024&ndash;)</div>
+                <div class="member-research">Memory, Dialogue</div>
+                <div class="member-pub-count"><strong>2</strong> publications</div>
+            </a>
 
-            <div class="member-card">
-                <div class="member-name">Jungyeon Lee</div>
+            <a href="members/jungyeon-lee.html" class="member-card">
+                <div class="member-name">Jungyeon Lee <span class="view-arrow">&rarr;</span></div>
                 <div class="member-name-ko">이정연</div>
-                <div class="member-role">MS/Ph.D. Integrated (Mar 2023–)</div>
-                <div class="member-info">Research: Knowledge Conflict</div>
-                <div class="member-papers-title">Publications</div>
-                <ul class="member-paper-list">
-                    <li><a href="papers/magic.html">MAGIC: Multi-Hop and Graph-Based Benchmark for Inter-Context Conflicts</a> <span class="venue-sm">EMNLP 2025 Findings</span></li>
-                    <li><a href="papers/blendx.html">BlendX: Complex Multi-Intent Detection with Blended Patterns</a> <span class="venue-sm">LREC 2024</span></li>
-                </ul>
-            </div>
+                <div class="member-role">MS/Ph.D. Integrated (Mar 2023&ndash;)</div>
+                <div class="member-research">Knowledge Conflict</div>
+                <div class="member-pub-count"><strong>2</strong> publications</div>
+            </a>
 
-            <div class="member-card">
-                <div class="member-name">Jisu Kim</div>
+            <a href="members/jisu-kim.html" class="member-card">
+                <div class="member-name">Jisu Kim <span class="view-arrow">&rarr;</span></div>
                 <div class="member-name-ko">김지수</div>
-                <div class="member-role">Ph.D. (Mar 2026–) · MS (Mar 2024–Feb 2026)</div>
-                <div class="member-info">Research: Multilingual</div>
-                <div class="member-papers-title">Publications</div>
-                <ul class="member-paper-list">
-                    <li><a href="papers/midas.html">MIDAS: Memorization or Reasoning? Exploring the Idiom Understanding of LLMs</a> <span class="venue-sm">EMNLP 2025</span></li>
-                </ul>
-            </div>
+                <div class="member-role">Ph.D. (Mar 2026&ndash;)</div>
+                <div class="member-research">Multilingual</div>
+                <div class="member-pub-count"><strong>1</strong> publication</div>
+            </a>
 
-            <div class="member-card">
-                <div class="member-name">Youngwoo Shin</div>
+            <a href="members/youngwoo-shin.html" class="member-card">
+                <div class="member-name">Youngwoo Shin <span class="view-arrow">&rarr;</span></div>
                 <div class="member-name-ko">신영우</div>
-                <div class="member-role">MS/Ph.D. Integrated (Mar 2024–)</div>
-                <div class="member-info">Research: Multilingual, AIED</div>
-                <div class="member-papers-title">Publications</div>
-                <ul class="member-paper-list">
-                    <li><a href="papers/science-discourse.html">LLM-Based Science Classroom Discourse Analysis</a> <span class="venue-sm">LAK 2026</span></li>
-                    <li><a href="papers/midas.html">MIDAS: Memorization or Reasoning? Exploring the Idiom Understanding of LLMs</a> <span class="venue-sm">EMNLP 2025</span></li>
-                </ul>
-            </div>
+                <div class="member-role">MS/Ph.D. Integrated (Mar 2024&ndash;)</div>
+                <div class="member-research">Multilingual, AIED</div>
+                <div class="member-pub-count"><strong>2</strong> publications</div>
+            </a>
 
-            <div class="member-card">
-                <div class="member-name">Uiji Hwang</div>
+            <a href="members/uiji-hwang.html" class="member-card">
+                <div class="member-name">Uiji Hwang <span class="view-arrow">&rarr;</span></div>
                 <div class="member-name-ko">황의지</div>
-                <div class="member-role">MS/Ph.D. Integrated (Mar 2025–)</div>
-                <div class="member-info">Research: Agents</div>
-                <div class="member-papers-title">Publications</div>
-                <ul class="member-paper-list">
-                    <li><a href="papers/science-discourse.html">LLM-Based Science Classroom Discourse Analysis</a> <span class="venue-sm">LAK 2026</span></li>
-                    <li><a href="papers/midas.html">MIDAS: Memorization or Reasoning? Exploring the Idiom Understanding of LLMs</a> <span class="venue-sm">EMNLP 2025</span></li>
-                    <li><a href="papers/unlearning.html">Does Localization Inform Unlearning?</a> <span class="venue-sm">EMNLP 2025</span></li>
-                </ul>
-            </div>
+                <div class="member-role">MS/Ph.D. Integrated (Mar 2025&ndash;)</div>
+                <div class="member-research">Agents</div>
+                <div class="member-pub-count"><strong>3</strong> publications</div>
+            </a>
 
         </div>
     </div>
@@ -139,84 +114,61 @@
         <div class="role-heading">MS Students</div>
         <div class="member-grid">
 
-            <div class="member-card">
-                <div class="member-name">Ki Jung Seo</div>
-                <div class="member-info">Research: Confidence Estimation</div>
-                <div class="member-papers-title">Publications</div>
-                <ul class="member-paper-list">
-                    <li><a href="papers/advice.html">ADVICE: Answer-Dependent Verbalized Confidence Estimation</a> <span class="venue-sm">EACL 2026</span></li>
-                    <li><a href="papers/modularity.html">Revisiting the Impact of Pursuing Modularity for Code Generation</a> <span class="venue-sm">EMNLP 2024 Findings</span></li>
-                </ul>
-            </div>
+            <a href="members/ki-jung-seo.html" class="member-card">
+                <div class="member-name">Ki Jung Seo <span class="view-arrow">&rarr;</span></div>
+                <div class="member-name-ko">서기정</div>
+                <div class="member-research">Confidence Estimation</div>
+                <div class="member-pub-count"><strong>2</strong> publications</div>
+            </a>
 
-            <div class="member-card">
-                <div class="member-name">Seunghee Kim</div>
+            <a href="members/seunghee-kim.html" class="member-card">
+                <div class="member-name">Seunghee Kim <span class="view-arrow">&rarr;</span></div>
                 <div class="member-name-ko">김승희</div>
-                <div class="member-info">Research: Multimodality</div>
-                <div class="member-papers-title">Publications</div>
-                <ul class="member-paper-list">
-                    <li><a href="papers/omniacbench.html">OmniACBench: Context-Grounded Acoustic Control</a> <span class="venue-sm">ACL 2026</span></li>
-                    <li><a href="papers/omhbench.html">OMHBench: Omni-Modal Multi-Hop Reasoning</a> <span class="venue-sm">ACL 2026</span></li>
-                    <li><a href="papers/fcmr.html">FCMR: Financial Cross-Modal Multi-Hop Reasoning</a> <span class="venue-sm">ACL 2025</span></li>
-                </ul>
-            </div>
+                <div class="member-research">Multimodality</div>
+                <div class="member-pub-count"><strong>3</strong> publications</div>
+            </a>
 
-            <div class="member-card">
-                <div class="member-name">Hwiyeong Lee</div>
-                <div class="member-info">Research: Interpretability</div>
-                <div class="member-papers-title">Publications</div>
-                <ul class="member-paper-list">
-                    <li><a href="papers/unlearning.html">Does Localization Inform Unlearning?</a> <span class="venue-sm">EMNLP 2025</span></li>
-                </ul>
-            </div>
+            <a href="members/hwiyeong-lee.html" class="member-card">
+                <div class="member-name">Hwiyeong Lee <span class="view-arrow">&rarr;</span></div>
+                <div class="member-name-ko">이휘영</div>
+                <div class="member-research">Interpretability</div>
+                <div class="member-pub-count"><strong>1</strong> publication</div>
+            </a>
 
-            <div class="member-card">
-                <div class="member-name">Minseo Kim</div>
-                <div class="member-info">Research: Dialogue, Evaluation</div>
-                <div class="member-papers-title">Publications</div>
-                <ul class="member-paper-list">
-                    <li><a href="papers/tact.html">Beyond Task-Oriented and Chitchat Dialogues</a> <span class="venue-sm">EMNLP 2025</span></li>
-                    <li><a href="papers/enginius.html">ENGinius: A Bilingual LLM for Plant Construction</a> <span class="venue-sm">ACL 2025 Industry</span></li>
-                </ul>
-            </div>
+            <a href="members/minseo-kim.html" class="member-card">
+                <div class="member-name">Minseo Kim <span class="view-arrow">&rarr;</span></div>
+                <div class="member-name-ko">김민서</div>
+                <div class="member-research">Dialogue, Evaluation</div>
+                <div class="member-pub-count"><strong>2</strong> publications</div>
+            </a>
 
-            <div class="member-card">
-                <div class="member-name">Yuri Son</div>
-                <div class="member-info">Research: Refusal</div>
-                <div class="member-papers-title">Publications</div>
-                <ul class="member-paper-list">
-                    <li><a href="papers/tact.html">Beyond Task-Oriented and Chitchat Dialogues</a> <span class="venue-sm">EMNLP 2025</span></li>
-                </ul>
-            </div>
+            <a href="members/yuri-son.html" class="member-card">
+                <div class="member-name">Yuri Son <span class="view-arrow">&rarr;</span></div>
+                <div class="member-name-ko">손유리</div>
+                <div class="member-research">Refusal</div>
+                <div class="member-pub-count"><strong>1</strong> publication</div>
+            </a>
 
-            <div class="member-card">
-                <div class="member-name">Hyelim Lim</div>
-                <div class="member-info">Research: Retrieval</div>
-                <div class="member-papers-title">Publications</div>
-                <ul class="member-paper-list">
-                    <li><a href="papers/unlearning.html">Does Localization Inform Unlearning?</a> <span class="venue-sm">EMNLP 2025</span></li>
-                </ul>
-            </div>
+            <a href="members/hyelim-lim.html" class="member-card">
+                <div class="member-name">Hyelim Lim <span class="view-arrow">&rarr;</span></div>
+                <div class="member-name-ko">임혜림</div>
+                <div class="member-research">Retrieval</div>
+                <div class="member-pub-count"><strong>1</strong> publication</div>
+            </a>
 
-            <div class="member-card">
-                <div class="member-name">Ingyu Bang</div>
-                <div class="member-info">Research: Agents</div>
-                <div class="member-papers-title">Publications</div>
-                <ul class="member-paper-list">
-                    <li><a href="papers/omhbench.html">OMHBench: Omni-Modal Multi-Hop Reasoning</a> <span class="venue-sm">ACL 2026</span></li>
-                </ul>
-            </div>
+            <a href="members/ingyu-bang.html" class="member-card">
+                <div class="member-name">Ingyu Bang <span class="view-arrow">&rarr;</span></div>
+                <div class="member-name-ko">방인규</div>
+                <div class="member-research">Agents</div>
+                <div class="member-pub-count"><strong>2</strong> publications</div>
+            </a>
 
-            <div class="member-card">
-                <div class="member-name">Namyeong So</div>
+            <a href="members/namyeong-so.html" class="member-card">
+                <div class="member-name">Namyeong So <span class="view-arrow">&rarr;</span></div>
                 <div class="member-name-ko">소남영</div>
-                <div class="member-info">Research: Agents</div>
-                <div class="member-papers-title">Publications</div>
-                <ul class="member-paper-list">
-                    <li><a href="papers/superficial-success.html">Superficial Success vs. Internal Breakdown</a> <span class="venue-sm">ACL 2026 Findings</span></li>
-                    <li><a href="papers/tact.html">Beyond Task-Oriented and Chitchat Dialogues</a> <span class="venue-sm">EMNLP 2025</span></li>
-                </ul>
-            </div>
+                <div class="member-research">Agents</div>
+                <div class="member-pub-count"><strong>2</strong> publications</div>
+            </a>
 
         </div>
     </div>
