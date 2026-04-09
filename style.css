@@ -111,6 +111,8 @@ a:hover { text-decoration: underline; }
 .tag-domain { background: #99f6e4; color: #115e59; }
 .tag-icl { background: #fbcfe8; color: #831843; }
 .tag-efficiency { background: #ddd6fe; color: #5b21b6; }
+.tag-multilingual { background: #cffafe; color: #155e75; }
+.tag-abstention { background: #fecdd3; color: #9f1239; }
 
 .paper-oneliner { font-size: 0.9rem; color: var(--text-light); margin-top: 10px; }
 
