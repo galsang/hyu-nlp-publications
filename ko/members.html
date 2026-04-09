@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>연구실 구성원 - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .member-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .member-card {
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
+            padding: 24px; transition: box-shadow 0.2s;
+        }
+        .member-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .member-name { font-size: 1.2rem; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+        .member-name-ko { font-size: 0.9rem; color: var(--text-light); margin-bottom: 8px; }
+        .member-role { font-size: 0.85rem; font-weight: 600; color: var(--accent); margin-bottom: 4px; }
+        .member-info { font-size: 0.82rem; color: var(--text-light); margin-bottom: 12px; line-height: 1.5; }
+        .member-papers-title { font-size: 0.8rem; font-weight: 600; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .member-paper-list { list-style: none; padding: 0; }
+        .member-paper-list li { padding: 4px 0; font-size: 0.85rem; line-height: 1.4; }
+        .member-paper-list li a { color: var(--accent); }
+        .member-paper-list .venue-sm {
+            display: inline-block; font-size: 0.7rem; font-weight: 600; padding: 1px 6px;
+            border-radius: 3px; background: var(--primary); color: white; margin-left: 4px; vertical-align: middle;
+        }
+        .role-section { margin-bottom: 48px; }
+        .role-heading {
+            font-size: 1.4rem; font-weight: 700; color: var(--primary);
+            margin-bottom: 20px; padding-bottom: 8px; border-bottom: 3px solid var(--accent); display: inline-block;
+        }
+        .professor-card {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white; border-radius: 12px; padding: 32px; margin-bottom: 40px;
+        }
+        .professor-card .member-name { color: white; font-size: 1.5rem; }
+        .professor-card .member-name-ko { color: rgba(255,255,255,0.8); }
+        .professor-card .member-role { color: var(--accent-light); }
+        .professor-card .member-info { color: rgba(255,255,255,0.8); }
+        .professor-card a { color: var(--accent-light); }
+    </style>
+</head>
+<body>
+<div class="hero">
+    <div class="lang-toggle">
+        <a href="../members.html">EN</a>
+        <a href="members.html" class="active">KO</a>
+    </div>
+    <h1>연구실 구성원</h1>
+    <p>한양대학교 자연어처리 연구실 — 현재 구성원 및 논문 목록</p>
+    <p style="margin-top:12px;"><a href="index.html" style="color:var(--accent-light);">&#8592; 전체 논문 목록</a></p>
+</div>
+
+<div class="container">
+
+    <!-- Professor -->
+    <div class="professor-card">
+        <div class="member-name">김태욱 (Taeuk Kim)</div>
+        <div class="member-role">조교수</div>
+        <div class="member-info">
+            한양대학교 컴퓨터소프트웨어학부<br>
+            겸임: AI학과, AI반도체학과, 데이터사이언스학과, AI융합학과, 응용AI학과<br>
+            연구실: IT/BT관 719호 &middot; kimtaeuk [at] hanyang.ac.kr
+        </div>
+        <div style="margin-top:8px;"><a href="index.html">전체 41편 논문 보기 &rarr;</a></div>
+    </div>
+
+    <!-- Ph.D. / MS-Ph.D. Integrated -->
+    <div class="role-section">
+        <div class="role-heading">박사 &amp; 석박통합 과정</div>
+        <div class="member-grid">
+
+            <div class="member-card">
+                <div class="member-name">윤예진 (Yejin Yoon)</div>
+                <div class="member-role">박사과정 (2024.09–) · 석사 (2022.09–2024.08)</div>
+                <div class="member-info">연구 분야: Memory, Dialogue</div>
+                <div class="member-papers-title">논문</div>
+                <ul class="member-paper-list">
+                    <li><a href="papers/tact.html">Beyond Task-Oriented and Chitchat Dialogues</a> <span class="venue-sm">EMNLP 2025</span></li>
+                    <li><a href="papers/blendx.html">BlendX: Complex Multi-Intent Detection with Blended Patterns</a> <span class="venue-sm">LREC 2024</span></li>
+                </ul>
+            </div>
+
+            <div class="member-card">
+                <div class="member-name">이정연 (Jungyeon Lee)</div>
+                <div class="member-role">석박통합과정 (2023.03–)</div>
+                <div class="member-info">연구 분야: Knowledge Conflict</div>
+                <div class="member-papers-title">논문</div>
+                <ul class="member-paper-list">
+                    <li><a href="papers/magic.html">MAGIC: Multi-Hop and Graph-Based Benchmark for Inter-Context Conflicts</a> <span class="venue-sm">EMNLP 2025 Findings</span></li>
+                    <li><a href="papers/blendx.html">BlendX: Complex Multi-Intent Detection with Blended Patterns</a> <span class="venue-sm">LREC 2024</span></li>
+                </ul>
+            </div>
+
+            <div class="member-card">
+                <div class="member-name">김지수 (Jisu Kim)</div>
+                <div class="member-role">박사과정 (2026.03–) · 석사 (2024.03–2026.02)</div>
+                <div class="member-info">연구 분야: Multilingual</div>
+                <div class="member-papers-title">논문</div>
+                <ul class="member-paper-list">
+                    <li><a href="papers/midas.html">MIDAS: Memorization or Reasoning? Exploring the Idiom Understanding of LLMs</a> <span class="venue-sm">EMNLP 2025</span></li>
+                </ul>
+            </div>
+
+            <div class="member-card">
+                <div class="member-name">신영우 (Youngwoo Shin)</div>
+                <div class="member-role">석박통합과정 (2024.03–)</div>
+                <div class="member-info">연구 분야: Multilingual, AIED</div>
+                <div class="member-papers-title">논문</div>
+                <ul class="member-paper-list">
+                    <li><a href="papers/science-discourse.html">LLM-Based Science Classroom Discourse Analysis</a> <span class="venue-sm">LAK 2026</span></li>
+                    <li><a href="papers/midas.html">MIDAS: Memorization or Reasoning? Exploring the Idiom Understanding of LLMs</a> <span class="venue-sm">EMNLP 2025</span></li>
+                </ul>
+            </div>
+
+            <div class="member-card">
+                <div class="member-name">황의지 (Uiji Hwang)</div>
+                <div class="member-role">석박통합과정 (2025.03–)</div>
+                <div class="member-info">연구 분야: Agents</div>
+                <div class="member-papers-title">논문</div>
+                <ul class="member-paper-list">
+                    <li><a href="papers/science-discourse.html">LLM-Based Science Classroom Discourse Analysis</a> <span class="venue-sm">LAK 2026</span></li>
+                    <li><a href="papers/midas.html">MIDAS: Memorization or Reasoning? Exploring the Idiom Understanding of LLMs</a> <span class="venue-sm">EMNLP 2025</span></li>
+                    <li><a href="papers/unlearning.html">Does Localization Inform Unlearning?</a> <span class="venue-sm">EMNLP 2025</span></li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MS Students -->
+    <div class="role-section">
+        <div class="role-heading">석사과정</div>
+        <div class="member-grid">
+
+            <div class="member-card">
+                <div class="member-name">서기정 (Ki Jung Seo)</div>
+                <div class="member-info">연구 분야: Confidence Estimation</div>
+                <div class="member-papers-title">논문</div>
+                <ul class="member-paper-list">
+                    <li><a href="papers/advice.html">ADVICE: Answer-Dependent Verbalized Confidence Estimation</a> <span class="venue-sm">EACL 2026</span></li>
+                    <li><a href="papers/modularity.html">Revisiting the Impact of Pursuing Modularity for Code Generation</a> <span class="venue-sm">EMNLP 2024 Findings</span></li>
+                </ul>
+            </div>
+
+            <div class="member-card">
+                <div class="member-name">김승희 (Seunghee Kim)</div>
+                <div class="member-info">연구 분야: Multimodality</div>
+                <div class="member-papers-title">논문</div>
+                <ul class="member-paper-list">
+                    <li><a href="papers/omniacbench.html">OmniACBench: Context-Grounded Acoustic Control</a> <span class="venue-sm">ACL 2026</span></li>
+                    <li><a href="papers/omhbench.html">OMHBench: Omni-Modal Multi-Hop Reasoning</a> <span class="venue-sm">ACL 2026</span></li>
+                    <li><a href="papers/fcmr.html">FCMR: Financial Cross-Modal Multi-Hop Reasoning</a> <span class="venue-sm">ACL 2025</span></li>
+                </ul>
+            </div>
+
+            <div class="member-card">
+                <div class="member-name">이휘영 (Hwiyeong Lee)</div>
+                <div class="member-info">연구 분야: Interpretability</div>
+                <div class="member-papers-title">논문</div>
+                <ul class="member-paper-list">
+                    <li><a href="papers/unlearning.html">Does Localization Inform Unlearning?</a> <span class="venue-sm">EMNLP 2025</span></li>
+                </ul>
+            </div>
+
+            <div class="member-card">
+                <div class="member-name">김민서 (Minseo Kim)</div>
+                <div class="member-info">연구 분야: Dialogue, Evaluation</div>
+                <div class="member-papers-title">논문</div>
+                <ul class="member-paper-list">
+                    <li><a href="papers/tact.html">Beyond Task-Oriented and Chitchat Dialogues</a> <span class="venue-sm">EMNLP 2025</span></li>
+                    <li><a href="papers/enginius.html">ENGinius: A Bilingual LLM for Plant Construction</a> <span class="venue-sm">ACL 2025 Industry</span></li>
+                </ul>
+            </div>
+
+            <div class="member-card">
+                <div class="member-name">손유리 (Yuri Son)</div>
+                <div class="member-info">연구 분야: Refusal</div>
+                <div class="member-papers-title">논문</div>
+                <ul class="member-paper-list">
+                    <li><a href="papers/tact.html">Beyond Task-Oriented and Chitchat Dialogues</a> <span class="venue-sm">EMNLP 2025</span></li>
+                </ul>
+            </div>
+
+            <div class="member-card">
+                <div class="member-name">임혜림 (Hyelim Lim)</div>
+                <div class="member-info">연구 분야: Retrieval</div>
+                <div class="member-papers-title">논문</div>
+                <ul class="member-paper-list">
+                    <li><a href="papers/unlearning.html">Does Localization Inform Unlearning?</a> <span class="venue-sm">EMNLP 2025</span></li>
+                </ul>
+            </div>
+
+            <div class="member-card">
+                <div class="member-name">방인규 (Ingyu Bang)</div>
+                <div class="member-info">연구 분야: Agents</div>
+                <div class="member-papers-title">논문</div>
+                <ul class="member-paper-list">
+                    <li><a href="papers/omhbench.html">OMHBench: Omni-Modal Multi-Hop Reasoning</a> <span class="venue-sm">ACL 2026</span></li>
+                </ul>
+            </div>
+
+            <div class="member-card">
+                <div class="member-name">소남영 (Namyeong So)</div>
+                <div class="member-info">연구 분야: Agents</div>
+                <div class="member-papers-title">논문</div>
+                <ul class="member-paper-list">
+                    <li><a href="papers/superficial-success.html">Superficial Success vs. Internal Breakdown</a> <span class="venue-sm">ACL 2026 Findings</span></li>
+                    <li><a href="papers/tact.html">Beyond Task-Oriented and Chitchat Dialogues</a> <span class="venue-sm">EMNLP 2025</span></li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<div class="footer">
+    <p><a href="index.html">&#8592; 전체 논문 목록으로 돌아가기</a></p>
+    <p style="margin-top:8px;">한양대학교 자연어처리 연구실 | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

@@ -53,10 +53,6 @@
 
     <div class="section">
         <h2>핵심 발견</h2>
-        <figure class="paper-figure">
-            <img src="../../images/unlearning/page-04.png" alt="Random과 Oracle 지역화 비교 실험 결과">
-            <figcaption><strong>Table 2.</strong> 두 LLM에서의 Random과 Oracle 설정 간 AUES 및 MU95 비교. 무작위로 선택한 영역이 신중하게 지역화한 영역과 비슷한 성능을 보여, 지역성 가정에 의문을 제기합니다.</figcaption>
-        </figure>
         <ul class="key-points">
             <li><strong>"파라미터 국소성 ≠ 효과적 제거":</strong> 지식을 저장하는 것으로 추정되는 파라미터를 수정해도 효과적인 지식 제거가 보장되지 않음</li>
             <li><strong>비국소적 수정의 효과:</strong> "무관한" 파라미터를 수정해도 동등하거나 오히려 더 나은 언러닝 결과를 달성할 수 있어 — 국소성 가정 자체에 의문을 제기</li>
@@ -64,7 +60,7 @@
             <li><strong>방법론적 시사점:</strong> 효과적인 언러닝을 위해서는 파라미터 국소성을 넘어서는 새로운 접근법이 필요</li>
         </ul>
         <figure class="paper-figure">
-            <img src="../../images/unlearning/page-05.png" alt="Oracle과 Random 시나리오의 레이어별 비교">
+            <img src="https://arxiv.org/html/2505.16252v1/extracted/6465654/image.png" alt="Oracle과 Random 시나리오의 레이어별 비교">
             <figcaption><strong>Figure 1.</strong> Oracle과 Random 시나리오 비교: 각 레이어에서의 MLP 출력 L2 최소화 결과. 국소화된 파라미터를 조정하더라도 MLP 출력이 무작위 파라미터 선택과 비슷한 수준으로 재현될 수 있음을 보여줍니다.</figcaption>
         </figure>
     </div>
@@ -77,6 +73,7 @@
     <div class="section">
         <h2>링크</h2>
         <div class="links-section">
+            <a href="https://aclanthology.org/2025.emnlp-main.1109/" target="_blank" class="paper-link">ACL Anthology</a>
             <a href="https://arxiv.org/abs/2505.16252" target="_blank" class="paper-link">arXiv Paper</a>
         </div>
     </div>
