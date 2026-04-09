@@ -25,6 +25,11 @@
         <p>단일 쿼리의 표면적 검색 대신, 문제를 분해하고 각 추론 단계마다 논리적으로 관련된 문서를 검색하여 LLM의 다단계 과학적 추론을 향상시키는 검색 증강 프레임워크입니다.</p>
     </div>
 
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2506.08625v1/extracted/6528685/figure/query_example.png" alt="Step-back, HyDE, RAISE의 쿼리 생성 방법 비교 예시">
+        <figcaption><strong>Figure 2.</strong> 동일한 하위 질문에 대한 쿼리 생성 방법(Step-back, HyDE, RAISE) 비교 예시. RAISE가 표면적 도메인 유사성을 넘어 추론 의도를 포착하는 논리 강화 쿼리를 생성하는 방식을 보여줍니다.</figcaption>
+    </figure>
+
     <div class="section">
         <h2>배경 및 동기</h2>
         <p>과학적 추론 과제는 LLM이 전문 용어 및 최신 지식과 함께 <strong>긴 추론 사슬</strong>을 처리해야 합니다. 기존 RAG 접근법은 단일 쿼리로 문서를 검색하여, 대학원 수준의 과학 문제에 필요한 다단계 논리를 지원하지 못하는 모호하거나 피상적인 내용을 반환하는 경우가 많습니다.</p>

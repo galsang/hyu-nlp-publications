@@ -25,6 +25,11 @@
         <p>A retrieval-augmented framework that enhances multi-step scientific reasoning in LLMs by decomposing problems and retrieving logically relevant documents at each reasoning step, rather than relying on single-query surface-level retrieval.</p>
     </div>
 
+    <figure class="paper-figure">
+        <img src="https://arxiv.org/html/2506.08625v1/extracted/6528685/figure/query_example.png" alt="Examples comparing query generation methods (Step-back, HyDE, and RAISE) for the same subquestion">
+        <figcaption><strong>Figure 2.</strong> Examples comparing query generation methods (Step-back, HyDE, and RAISE) for the same subquestion, illustrating how RAISE produces logic-enriched queries that capture reasoning intent beyond surface-level domain similarity.</figcaption>
+    </figure>
+
     <div class="section">
         <h2>Background &amp; Motivation</h2>
         <p>Scientific reasoning tasks require LLMs to handle <strong>long-chain reasoning processes</strong> alongside domain-specific terminology and up-to-date knowledge. Conventional RAG approaches retrieve documents using a single query, which often returns vague or superficially related content that fails to support the multi-step logic needed for graduate-level science questions.</p>
