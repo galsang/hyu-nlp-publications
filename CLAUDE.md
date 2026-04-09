@@ -31,21 +31,42 @@
 
 ## Adding a New Paper
 
-### 1. Create detail pages (EN + KO)
+### Overview
 
-Create `papers/{slug}.html` and `ko/papers/{slug}.html`. Use an existing paper as a template (e.g., `papers/magic.html` for a full example).
+When adding a new paper, create **fully detailed** pages from the start. Each page should contain rich, publication-quality content — not placeholder text to be enriched later. Use subagents (one per paper) to fetch content from the paper's source and generate complete pages in parallel.
 
-Required sections:
-- **EN**: One-Line Summary, Background & Motivation, Method, Results, Why It Matters, Links, Tags
-- **KO**: 한줄 요약, 배경, 방법, 결과, 의의, 링크, Tags
+### 1. Create detail pages (EN + KO) via subagent
 
-Key elements:
+For each new paper, launch a subagent with the following instructions:
+
+1. **Fetch the paper content** from the best available source (priority order):
+   - arXiv HTML (`https://arxiv.org/html/{arxiv_id}/`) — best, full text
+   - ACL Anthology (`https://aclanthology.org/...`) — abstract + PDF
+   - AAAI / ACM / OpenReview / SAGE — abstract + metadata
+   - KoreaScience / KCI Portal — Korean domestic papers
+2. **Generate both `papers/{slug}.html` and `ko/papers/{slug}.html`** with full content
+
+**Required sections with content depth:**
+
+| Section (EN) | Section (KO) | Content Depth |
+|---|---|---|
+| One-Line Summary | 한줄 요약 | 1-2 sentences with key contribution + headline numbers |
+| Background & Motivation | 배경 및 동기 | 2-3 paragraphs + `highlight-box` with key challenge/insight |
+| Proposed Method | 제안 방법 | 3-5 `method-step` blocks with specific technical details |
+| Experimental Results | 실험 결과 | `results-table` with specific numbers + `key-points` list (4-6 items) |
+| Why It Matters | 의의 | 2-3 paragraphs or structured bullet points |
+| Links | 링크 | arXiv, ACL Anthology, GitHub, etc. |
+| Tags | Tags | Same in both languages |
+
+**Hero structure:**
 ```html
-<!-- Hero with venue badge and authors -->
 <div class="detail-hero">
-    <div class="lang-toggle">...</div>
+    <div class="lang-toggle">
+        <a href="../papers/{slug}.html" class="active">EN</a>
+        <a href="../ko/papers/{slug}.html">KO</a>
+    </div>
     <div class="container">
-        <a href="../index.html" class="back-link">...</a>
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; All Publications</a>
         <h1>{Full Paper Title}</h1>
         <div class="meta"><span class="venue-badge">{Venue}</span></div>
         <div class="authors">{Author List}</div>
@@ -55,7 +76,56 @@ Key elements:
 
 For KO pages of domestic/Korean papers, use the Korean title in `<h1>`.
 
-### 2. Add card to index pages
+**CSS classes for content sections:**
+```html
+<!-- Highlight box for key insights -->
+<div class="highlight-box">
+    <p><strong>Key Challenge:</strong> ...</p>
+</div>
+
+<!-- Method steps (numbered) -->
+<div class="method-steps">
+    <div class="method-step">
+        <div class="step-num">1</div>
+        <div class="step-title">Step Title</div>
+        <div class="step-desc">Detailed description with technical specifics...</div>
+    </div>
+</div>
+
+<!-- Results table with highlighted best rows -->
+<table class="results-table">
+    <thead><tr><th>Model</th><th>Metric</th></tr></thead>
+    <tbody>
+        <tr><td>Baseline</td><td>72.3</td></tr>
+        <tr><td class="highlight-cell">Ours</td><td class="highlight-cell">85.1</td></tr>
+    </tbody>
+</table>
+
+<!-- Key findings list -->
+<ul class="key-points">
+    <li><strong>Finding:</strong> Description with specific numbers</li>
+</ul>
+
+<!-- Figure (after One-Line Summary section) -->
+<figure class="paper-figure">
+    <img src="../images/{slug}/figure1.png" alt="...">
+    <figcaption><strong>Figure 1.</strong> Caption.</figcaption>
+</figure>
+```
+
+**Reference examples** (well-structured pages to use as templates):
+- `papers/magic.html` — arXiv figure, multiple tables, method-steps, highlight-boxes
+- `papers/tact.html` — Dataset statistics, multiple result tables, method + evaluation
+- `papers/constituency-parse.html` — Extensive tables, ablation studies, cross-lingual results
+
+### 2. Add figures
+
+- **From arXiv HTML**: Link directly to `https://arxiv.org/html/{arxiv_id}/` figure URLs
+- **From PDF**: Download PDF, render at 300 DPI with `pdf2image`, crop key figure with PIL
+- Save to `images/{slug}/figure1.png`
+- EN paths: `../images/{slug}/figure1.png`, KO paths: `../../images/{slug}/figure1.png`
+
+### 3. Add card to index pages
 
 Add a `paper-card` div in the appropriate year-section of both `index.html` and `ko/index.html`:
 
@@ -79,18 +149,12 @@ Add a `paper-card` div in the appropriate year-section of both `index.html` and 
 
 For KO index: use Korean title for domestic papers, Korean oneliner for all papers.
 
-### 3. Update member pages
+### 4. Update member pages
 
 For each author who is a current lab member:
 - Add paper `<li>` to their `members/{slug}.html` and `ko/members/{slug}.html`
 - Use Korean title on KO member pages for domestic papers
 - Update publication count on `members.html` and `ko/members.html`
-
-### 4. Add figures (optional but recommended)
-
-- **From arXiv HTML**: Use `https://arxiv.org/html/{arxiv_id}/` figure URLs directly
-- **From PDF**: Download PDF, render at 300 DPI with `pdf2image`, crop key figure with PIL
-- Save to `images/{slug}/figure1.png`
 
 ### 5. Verify consistency
 
@@ -100,6 +164,35 @@ Run cross-checks:
 - Tags in `data-tags` attribute match `<span class="tag">` spans
 - Member page paper titles match detail page titles
 - KO and EN pages are in sync
+
+### Subagent Prompt Template
+
+When adding multiple papers at once, use this prompt per subagent (batch 5 at a time in parallel):
+
+```
+You are creating a paper detail page on a bilingual (EN/KO) static HTML website for HYU NLP Lab.
+
+## Task
+Create full, detailed pages for the paper "{slug}" by:
+1. Fetching the paper content from: {source_url}
+2. Creating EN page at /Users/taeuk/Codes/homepage/papers/{slug}.html
+3. Creating KO page at /Users/taeuk/Codes/homepage/ko/papers/{slug}.html
+
+## Paper Info
+- Title: {title}
+- Authors: {authors}
+- Venue: {venue}
+- Tags: {tags}
+
+## Rules
+- Use the template from papers/magic.html for structure
+- Include ALL sections with detailed content (not one-liners)
+- Use CSS classes: highlight-box, method-steps, results-table, key-points
+- KO version should be a natural Korean translation
+- Include specific numbers and technical details from the paper
+
+Write both files directly.
+```
 
 ---
 
