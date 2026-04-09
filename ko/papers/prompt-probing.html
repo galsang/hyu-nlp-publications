@@ -22,19 +22,44 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>프롬프트 증강 선형 프로빙으로 퓨샷 인컨텍스트 학습의 한계를 넘어서는 방법</p>
-        <figure class="paper-figure">
-            <img src="../../images/prompt-probing/figure1.png" alt="논문 개요">
-            <figcaption><strong>Figure 1.</strong> 프롬프트 증강 선형 프로빙 프레임워크. 프롬프트 엔지니어링과 효율적인 프로빙을 결합하여 퓨샷 인컨텍스트 학습의 한계를 넘어섭니다.</figcaption>
-        </figure>
+        <p>프롬프트 증강 선형 프로빙으로 퓨샷 인컨텍스트 학습의 한계를 넘어서는 방법을 제안합니다.</p>
     </div>
+
+    <figure class="paper-figure">
+        <img src="../../images/prompt-probing/figure1.png" alt="논문 개요">
+        <figcaption><strong>Figure 1.</strong> 프롬프트 증강 선형 프로빙 프레임워크. 프롬프트 엔지니어링과 효율적인 프로빙을 결합하여 퓨샷 인컨텍스트 학습의 한계를 넘어섭니다.</figcaption>
+    </figure>
+
     <div class="section">
-        <h2>핵심 내용</h2>
+        <h2>배경 및 동기</h2>
+        <p>대규모 언어 모델(LLM)은 소수의 시연 예제만으로 태스크를 수행하는 <strong>인컨텍스트 학습(ICL)</strong>이 가능하지만, 고정된 컨텍스트 윈도우 크기로 인해 시연 수가 늘어나면 성능이 정체되거나 오히려 하락하는 근본적 한계가 있습니다. 반면 <strong>선형 프로빙(linear probing)</strong>은 동결된 LLM 표현 위에 단순 선형 분류기를 학습하여 더 많은 레이블 데이터를 활용할 수 있지만, 모델의 언어 이해 능력을 충분히 끌어내지 못해 ICL보다 낮은 성능을 보이는 경우가 많습니다. 본 논문은 두 접근법의 장점을 결합할 수 있는지를 탐구합니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>방법론</h2>
+        <p>제안하는 <strong>프롬프트 증강 선형 프로빙(PALP)</strong>은 프롬프팅과 프로빙을 통합 프레임워크로 연결합니다:</p>
         <ul class="key-points">
-            <li>프롬프트를 선형 프로빙 과정에 결합하여 사전학습 모델의 표현력을 더 효과적으로 활용</li>
-            <li>간단한 선형 분류기도 프롬프트 증강을 통해 높은 성능을 달성할 수 있음을 입증</li>
+            <li><strong>프롬프트 증강 표현:</strong> 원본 입력에 태스크 특화 프롬프트(템플릿, 버벌라이저 등)를 결합한 후 동결된 LLM에 통과시켜, 태스크 인식이 가능한 풍부한 은닉 상태를 추출합니다</li>
+            <li><strong>증강 피처 기반 선형 프로빙:</strong> 프롬프트 증강 표현 위에 경량 선형 분류기를 학습하며, 모든 가용 레이블 데이터를 활용하여 ICL의 컨텍스트 길이 제약을 극복합니다</li>
+            <li><strong>다중 프롬프트 앙상블:</strong> 서로 다른 프롬프트 템플릿으로 다양한 표현을 생성하고, 예측을 앙상블하여 성능과 안정성을 더욱 향상시킵니다</li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>실험 결과</h2>
+        <ul class="key-points">
+            <li><strong>ICL 초월:</strong> PALP는 다양한 NLU 벤치마크에서 표준 퓨샷 ICL을 일관되게 능가하며, 특히 컨텍스트 윈도우 크기를 초과하는 레이블 예제가 있을 때 격차가 뚜렷합니다</li>
+            <li><strong>데이터에 따른 확장성:</strong> 성능이 정체되는 ICL과 달리, PALP는 레이블 예제가 늘어남에 따라 지속적으로 성능이 향상되어 진정한 확장성을 보여줍니다</li>
+            <li><strong>효율적이고 경량:</strong> 동결된 LLM 피처 위에 선형 레이어만 학습하므로, 전체 파인튜닝 대비 최소한의 연산만 필요합니다</li>
+            <li><strong>프롬프트 앙상블 효과:</strong> 다중 프롬프트 템플릿 결합으로 정확도가 추가 향상되고 태스크 간 분산이 감소합니다</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>의의</h2>
+        <p>PALP는 프롬프팅의 강점과 전통적 프로빙의 확장성이 상호 배타적이지 않음을 보여줍니다. 프롬프트 기반 조건화로 동결된 LLM 표현을 증강함으로써, 모델 파라미터 파인튜닝이나 컨텍스트 윈도우 크기의 제약 없이 <strong>모든 가용 레이블 데이터를 효율적으로 활용</strong>할 수 있습니다. 이는 퓨샷 ICL이 한계를 보이는 데이터가 풍부한 환경에서 LLM을 배포하기 위한 실용적이고 확장 가능한 경로를 제시합니다.</p>
+    </div>
+
     <div class="section">
         <h2>링크</h2>
         <div class="links-section">
@@ -42,6 +67,7 @@
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-icl">In-Context Learning</span>
     </div>
 </div>
 <div class="footer">

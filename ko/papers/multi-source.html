@@ -33,19 +33,57 @@
         <figcaption><strong>Figure 3.</strong> MSLT가 SSLT보다 유리한 점을 보여주는 개념도. 다중 소스 언어로 훈련하면 언어에 독립적인 표현이 생성되어, 다양한 언어에 적용 가능한 보다 강건한 결정 경계를 형성함.</figcaption>
     </figure>
     <div class="section">
-        <h2>핵심 내용</h2>
+        <h2>배경</h2>
+        <p>교차 언어 전이(XLT)는 자원이 풍부한 소스 언어를 활용하여 저자원 타겟 언어의 NLP 성능을 향상시킵니다. 기존 연구는 대부분 영어를 단일 소스로 사용하는 단일 소스 언어 훈련(SSLT)에 초점을 맞추었지만, <strong>여러 소스 언어를 함께 사용할 때 이들이 어떻게 상호작용하는지</strong>에 대한 체계적인 이해가 부족합니다. 다국어 언어 모델이 언어 특화 정보와 언어 비의존적 정보를 분리할 수 있다는 점에서, 다양한 소스 언어로 훈련하면 언어 독립적 특징이 강화될 수 있지만, 어떤 언어를 조합하고, 몇 개를 사용하며, 왜 특정 조합이 더 효과적인지는 미해결 과제였습니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>방법</h2>
+        <p>본 연구는 공정한 비교를 위해 전체 데이터 양을 조건 간 동일하게 통제하면서(예: SSLT에서 영어 1,000개 = MSLT에서 영어 500개 + 스페인어 500개) 다중 소스 언어 훈련(MSLT)을 체계적으로 분석합니다.</p>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">MSLT vs. SSLT 비교</div>
+                <div class="step-desc">XLM-R 및 BLOOM-7B 모델을 다양한 태스크(WikiANN NER, XNLI, PAWS-X)에서 소스 언어 수(1-5개)를 변화시키며 훈련하고, t-SNE를 통해 임베딩의 언어 정렬을 시각화</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">언어 선택 기준 검증</div>
+                <div class="step-desc">사전 훈련 데이터 크기, 어휘 커버리지, Lang2Vec 벡터 기반 언어적 다양성(통사론, 음운론, 음소 목록, 어족, 지리) 등 다양한 선택 기준을 체계적으로 테스트</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">문자 체계 및 다양성 분석</div>
+                <div class="step-desc">소스 언어 간 문자 체계의 다양성과 유형론적 거리가 전이 성능과 어떻게 상관관계가 있는지 분석</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>실험 결과</h2>
         <ul class="key-points">
-            <li>다중 소스 언어 데이터를 결합하여 모델을 훈련할 때의 효과와 최적 전략을 체계적으로 분석</li>
-            <li>데이터 소스 간 상호작용이 모델 성능에 미치는 영향을 실증적으로 조사</li>
+            <li><strong>최적 소스 언어 수:</strong> 1개에서 3개로 늘릴 때 모든 태스크에서 성능이 크게 향상되며, 이후 정체 -- 3개가 실용적 최적점</li>
+            <li><strong>조합이 중요:</strong> 최적 조합과 최악 조합 간 최대 10점의 성능 차이 발생; 나쁜 조합은 SSLT보다도 성능이 낮을 수 있음</li>
+            <li><strong>문자 체계 다양성의 효과:</strong> 3가지 다른 문자 체계 사용 시 WikiANN에서 73.07% (같은 문자 체계 72.26%); XNLI에서는 84.02% vs. 80.36%로 더 큰 차이</li>
+            <li><strong>언어적 다양성이 통계적 기준을 능가:</strong> Lang2Vec 기반 선택이 일관되게 상위 1-4위를 기록하는 반면, 사전 훈련 데이터 크기 기준은 12-31위</li>
+            <li><strong>우수 소스 언어:</strong> 중국어, 아랍어, 독일어가 상위 5개 조합에 가장 빈번하게 등장 (각각 17, 15, 15회)</li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>왜 중요한가?</h2>
+        <p>이 연구는 교차 언어 전이를 위한 다중 소스 언어 훈련에 대한 최초의 포괄적 분석으로, 실무자에게 <strong>실용적이고 구체적인 가이드라인</strong>을 제공합니다: 데이터 크기가 아닌 Lang2Vec 기반 기준으로, 서로 다른 문자 체계를 가진 3개의 언어적으로 다양한 소스 언어를 선택하는 것이 효과적입니다. 이 결과는 아키텍처(XLM-R, BLOOM-7B), 태스크(NER, 추론, 패러프레이즈 탐지), 훈련 패러다임(미세조정, 지시 튜닝) 전반에 걸쳐 일반화되어, MSLT를 더 예측 가능하고 효과적인 저자원 언어 적응 전략으로 만듭니다.</p>
+    </div>
+
     <div class="section">
         <h2>링크</h2>
         <div class="links-section">
             <a href="https://aclanthology.org/2024.acl-long.42/" target="_blank" class="paper-link">ACL Anthology</a>
+            <a href="https://arxiv.org/abs/2402.13562" target="_blank" class="paper-link">arXiv</a>
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-repr">Representation Learning</span>
     </div>
 </div>
 <div class="footer">

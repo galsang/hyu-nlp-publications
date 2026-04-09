@@ -33,19 +33,57 @@
         <figcaption><strong>Figure 3.</strong> A conceptual illustration of the advantages of MSLT over SSLT. Training with multiple source languages leads to more language-independent representations, enabling a more robust decision boundary applicable across different languages.</figcaption>
     </figure>
     <div class="section">
-        <h2>Key Points</h2>
+        <h2>Background</h2>
+        <p>Cross-lingual transfer (XLT) leverages resource-rich source languages to improve NLP performance on low-resource target languages. While most prior work focuses on single-source language training (SSLT), typically using English, the research community lacks a comprehensive understanding of how <strong>multiple source languages interact</strong> when used together. Multilingual language models are known to separate language-specific and language-agnostic information, suggesting that training with diverse source languages might enhance language-independent features -- but which languages to combine, how many, and why certain combinations work better remain open questions.</p>
+    </div>
+
+    <div class="section">
+        <h2>Method</h2>
+        <p>The authors systematically investigate Multi-Source Language Training (MSLT) by controlling total data volume across conditions (e.g., 1,000 English samples in SSLT vs. 500 English + 500 Spanish in MSLT) to ensure fair comparison.</p>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">MSLT vs. SSLT Comparison</div>
+                <div class="step-desc">Train XLM-R and BLOOM-7B on diverse tasks (WikiANN NER, XNLI, PAWS-X) with varying numbers of source languages (1-5) and visualize embeddings via t-SNE to assess language alignment</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Language Selection Criteria</div>
+                <div class="step-desc">Systematically test multiple selection criteria: pretraining data size, vocabulary coverage, and linguistic diversity using Lang2Vec vectors (syntax, phonology, inventory, family, geometry)</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Writing System & Diversity Analysis</div>
+                <div class="step-desc">Analyze how writing system diversity and typological distance among source languages correlate with transfer performance</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Results</h2>
         <ul class="key-points">
-            <li>Systematically analyzes the effects and optimal strategies when training models by combining language data from multiple sources</li>
-            <li>Empirically investigates how interactions between data sources affect model performance</li>
+            <li><strong>Optimal source count:</strong> Performance improves significantly from 1 to 3 source languages across all tasks, then plateaus -- 3 languages is the practical sweet spot</li>
+            <li><strong>Combination matters:</strong> Up to 10-point performance gaps between optimal and poor language combinations; poor combinations can even underperform SSLT</li>
+            <li><strong>Writing system diversity helps:</strong> Using 3 different writing systems yields 73.07% on WikiANN vs. 72.26% for same-script sources; XNLI shows a larger gap of 84.02% vs. 80.36%</li>
+            <li><strong>Linguistic diversity outperforms statistical criteria:</strong> Lang2Vec-based selection consistently ranks in the top 1-4, while pretraining data size ranks 12-31</li>
+            <li><strong>Top source languages:</strong> Chinese, Arabic, and German appear most frequently in top-5 combinations (17, 15, and 15 occurrences respectively)</li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>This work provides the first comprehensive analysis of multi-source language training for cross-lingual transfer, offering <strong>practical, actionable guidance</strong> for practitioners: choose 3 linguistically diverse source languages with different writing systems, selected via Lang2Vec-based criteria rather than data size heuristics. The findings generalize across architectures (XLM-R, BLOOM-7B), tasks (NER, inference, paraphrase detection), and training paradigms (fine-tuning, instruction-tuning), making MSLT a more predictable and effective strategy for low-resource language adaptation.</p>
+    </div>
+
     <div class="section">
         <h2>Links</h2>
         <div class="links-section">
             <a href="https://aclanthology.org/2024.acl-long.42/" target="_blank" class="paper-link">ACL Anthology</a>
+            <a href="https://arxiv.org/abs/2402.13562" target="_blank" class="paper-link">arXiv</a>
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-repr">Representation Learning</span>
     </div>
 </div>
 <div class="footer">

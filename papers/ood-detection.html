@@ -22,19 +22,45 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A method for more effectively detecting out-of-distribution data</p>
-        <figure class="paper-figure">
-            <img src="../images/ood-detection/figure1.png" alt="Paper overview">
-            <figcaption><strong>Figure 1.</strong> Framework for enhancing out-of-distribution detection in NLU via implicit layer ensemble, leveraging intermediate representations across transformer layers.</figcaption>
-        </figure>
+        <p>Enhancing out-of-distribution detection in NLU by implicitly ensembling intermediate transformer layer representations.</p>
     </div>
+
+    <figure class="paper-figure">
+        <img src="../images/ood-detection/figure1.png" alt="Paper overview">
+        <figcaption><strong>Figure 1.</strong> Framework for enhancing out-of-distribution detection in NLU via implicit layer ensemble, leveraging intermediate representations across transformer layers.</figcaption>
+    </figure>
+
     <div class="section">
-        <h2>Key Points</h2>
+        <h2>Background & Motivation</h2>
+        <p>When deploying NLU models in the real world, inputs inevitably arrive that fall outside the training data distribution -- so-called <strong>out-of-distribution (OOD) inputs</strong>. Models that silently produce confident but incorrect predictions on such inputs pose serious reliability and safety risks. Existing OOD detection methods for NLU typically rely on the final-layer representations or output logits of a transformer model. However, different transformer layers capture different levels of linguistic abstraction, and <strong>valuable OOD-discriminative signals may exist in intermediate layers</strong> that are discarded when only the final layer is used.</p>
+    </div>
+
+    <div class="section">
+        <h2>Method</h2>
+        <p>The paper proposes an <strong>implicit layer ensemble</strong> strategy for OOD detection:</p>
         <ul class="key-points">
-            <li>Proposes an enhanced OOD detection technique for accurately identifying inputs outside the training data distribution</li>
-            <li>Improves model confidence estimation to strengthen safety in real-world deployment environments</li>
+            <li><strong>Multi-layer representation extraction:</strong> Instead of relying solely on the final transformer layer, the method extracts hidden representations from multiple intermediate layers of the pre-trained model</li>
+            <li><strong>Implicit ensemble via aggregation:</strong> These multi-layer representations are aggregated through a lightweight mechanism to form a unified OOD score, effectively ensembling the decisions of different layers without training separate models</li>
+            <li><strong>Compatibility with existing detectors:</strong> The approach is designed as a plug-in enhancement compatible with various existing OOD scoring functions (e.g., Mahalanobis distance, energy scores), improving them by providing richer representation signals</li>
+            <li><strong>No additional training overhead:</strong> The method leverages representations already computed during standard forward passes, requiring minimal additional computation</li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>Results</h2>
+        <ul class="key-points">
+            <li><strong>Consistent improvements:</strong> The implicit layer ensemble consistently improves OOD detection performance across multiple NLU benchmarks compared to final-layer-only baselines</li>
+            <li><strong>Broad compatibility:</strong> Performance gains are observed when combined with various OOD scoring methods, demonstrating the generality of the approach</li>
+            <li><strong>Complementary layer information:</strong> Analysis shows that different layers capture different aspects of OOD-ness, validating the hypothesis that intermediate representations carry valuable discriminative signals</li>
+            <li><strong>Maintained in-distribution performance:</strong> The enhanced OOD detection does not degrade the model's accuracy on in-distribution examples</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>Reliable OOD detection is a prerequisite for trustworthy NLU system deployment. This work reveals that <strong>substantial OOD-discriminative information is hidden in intermediate transformer layers</strong> and that a simple ensemble over layers can unlock it. The plug-in nature of the method means it can be readily combined with future OOD detection advances. By improving the ability to identify when a model's prediction should not be trusted, this work contributes to building safer and more reliable NLP applications in production settings.</p>
+    </div>
+
     <div class="section">
         <h2>Links</h2>
         <div class="links-section">

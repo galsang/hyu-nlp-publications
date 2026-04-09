@@ -22,19 +22,45 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>입력-레이블 시연에서 정답 레이블이 왜 중요한지에 대한 심층 분석</p>
-        <figure class="paper-figure">
-            <img src="../../images/ground-truth/figure1.png" alt="논문 개요">
-            <figcaption><strong>Figure 1.</strong> 정답 레이블이 인컨텍스트 학습에 미치는 영향을 보여줍니다. 올바른 입력-레이블 매핑이 ICL 시연에서 어떤 역할을 하는지 심층 분석합니다.</figcaption>
-        </figure>
+        <p>인컨텍스트 학습 시연에서 정답 레이블이 이전에 알려진 것보다 훨씬 중요한 역할을 한다는 심층 분석을 제시합니다.</p>
     </div>
+
+    <figure class="paper-figure">
+        <img src="../../images/ground-truth/figure1.png" alt="논문 개요">
+        <figcaption><strong>Figure 1.</strong> 정답 레이블이 인컨텍스트 학습에 미치는 영향을 보여줍니다. 올바른 입력-레이블 매핑이 ICL 시연에서 어떤 역할을 하는지 심층 분석합니다.</figcaption>
+    </figure>
+
     <div class="section">
-        <h2>핵심 내용</h2>
+        <h2>배경 및 동기</h2>
+        <p>인컨텍스트 학습(ICL)은 대규모 언어 모델이 파라미터 업데이트 없이 소수의 입력-레이블 시연만으로 태스크를 수행하는 능력입니다. 이전 연구(Min et al., 2022)에서는 <strong>시연의 레이블 정확성이 거의 중요하지 않다</strong>는 놀라운 결과를 보고했으며, 무작위 레이블로도 거의 동등한 성능을 보인다고 주장했습니다. 이 직관에 반하는 결론은 ICL의 작동 원리에 대한 이해에 의문을 제기했습니다. 본 논문은 이를 재검토하여, 정답 레이블이 <strong>실제로 중요하며</strong> 이전 결론이 제한된 실험 설정의 산물임을 밝힙니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>방법론</h2>
+        <p>ICL 시연에서 입력-레이블 매핑의 역할을 포괄적으로 재검토합니다:</p>
         <ul class="key-points">
-            <li>In-context learning에서 시연 예제의 정답 레이블이 모델 성능에 미치는 영향을 심층 분석</li>
-            <li>올바른 입력-레이블 매핑이 제공될 때 모델이 더 효과적으로 학습하는 조건과 메커니즘 규명</li>
+            <li><strong>확장된 평가 범위:</strong> 이전 연구의 좁은 설정을 넘어, 다양한 모델 패밀리, 규모, 태스크 유형에 걸쳐 실험하여 레이블 정확성이 유의미한 조건을 밝힙니다</li>
+            <li><strong>노이즈 레이블 분석:</strong> 시연에서 정답 대 무작위 레이블의 비율을 체계적으로 변화시켜 ICL의 레이블 품질 민감도를 측정합니다</li>
+            <li><strong>기여 요인 분리:</strong> 입력 분포, 레이블 공간, 입력-레이블 매핑 정확성, 포맷팅의 효과를 분리하여 각 구성 요소의 ICL 성능 기여도를 개별적으로 분석합니다</li>
+            <li><strong>모델 규모 조사:</strong> 모델 크기가 정답 레이블 민감도에 미치는 영향을 분석하여, 큰 모델이 올바른 시연을 더 잘 활용함을 보여줍니다</li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>실험 결과</h2>
+        <ul class="key-points">
+            <li><strong>정답 레이블은 중요합니다:</strong> 이전 주장과 달리, 올바른 입력-레이블 매핑은 특히 더 넓은 조건에서 평가할 때 상당한 성능 향상을 가져옵니다</li>
+            <li><strong>모델 규모와 레이블 민감도:</strong> 큰 모델은 시연 레이블의 정확성에 유의미하게 더 민감하며, 정답 매핑으로부터 점점 더 큰 이득을 얻습니다</li>
+            <li><strong>태스크 복잡도의 역할:</strong> 더 복잡하거나 세분화된 분류 태스크에서 정답과 무작위 레이블 간의 성능 격차가 더욱 뚜렷해집니다</li>
+            <li><strong>레이블 노이즈의 점진적 영향:</strong> 잘못된 레이블의 비율이 증가함에 따라 성능이 비례적으로 하락하여, 각 올바른 시연이 의미 있는 학습 신호를 제공함을 확인합니다</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>의의</h2>
+        <p>본 연구는 ICL 문헌에서 영향력 있었던 오해를 바로잡고, <strong>올바른 시연이 모델에 의미 있는 입력-레이블 매핑을 가르친다</strong>는 직관을 복원합니다. 이는 실용적 함의가 있습니다: ICL을 위한 시연 세트를 구성할 때 레이블 정확성을 우선시해야 합니다. 더 넓게는, 인컨텍스트 학습의 메커니즘에 대한 이해를 심화하고, 성급한 결론을 내리기 전에 엄밀하고 광범위한 실험적 검증의 중요성을 강조합니다.</p>
+    </div>
+
     <div class="section">
         <h2>링크</h2>
         <div class="links-section">
@@ -42,6 +68,7 @@
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-icl">In-Context Learning</span>
     </div>
 </div>
 <div class="footer">

@@ -29,11 +29,29 @@
         </figure>
     </div>
     <div class="section">
-        <h2>Key Points</h2>
+        <h2>Background</h2>
+        <p>Prior work on extracting constituency parse trees from pre-trained language models has focused almost exclusively on English (primarily the Penn Treebank). However, multilingual PLMs such as mBERT and XLM-RoBERTa are trained on data from dozens of languages, raising the question of whether the syntactic structures they encode are language-specific or universal. Extending parse extraction to a multilingual setting is essential for understanding what structural knowledge these models learn and for enabling low-resource syntactic analysis in languages that lack large treebanks.</p>
+    </div>
+    <div class="section">
+        <h2>Method</h2>
         <ul class="key-points">
-            <li>Proposes a chart-based technique for extracting multilingual constituency structures from the internal representations of pre-trained models</li>
-            <li>Experimentally validates the generalizability of constituency parsing across multiple languages</li>
+            <li><strong>Chart-based extraction:</strong> The method computes syntactic distance scores between adjacent words using the internal representations of a multilingual PLM. These distances are then used to fill a CYK-style chart, from which the highest-scoring binary constituency tree is decoded via dynamic programming.</li>
+            <li><strong>Multilingual PLM probing:</strong> The approach is applied to multilingual models (mBERT, XLM-R) and evaluated on treebanks from multiple typologically diverse languages, including English, Chinese, German, French, Japanese, and others.</li>
+            <li><strong>Cross-lingual transfer analysis:</strong> The paper investigates whether syntactic structures extracted from one language transfer to others, testing whether a single layer or distance metric works well across languages or whether language-specific tuning is required.</li>
         </ul>
+    </div>
+    <div class="section">
+        <h2>Results</h2>
+        <ul class="key-points">
+            <li><strong>Multilingual parse extraction works:</strong> Chart-based extraction from multilingual PLMs produces meaningful constituency trees across all tested languages, confirming that these models encode syntactic hierarchy beyond English.</li>
+            <li><strong>Language-dependent optimal layers:</strong> The best-performing layer varies by language, suggesting that different layers specialize in different structural phenomena depending on the typological properties of the language.</li>
+            <li><strong>Cross-lingual transferability:</strong> Settings optimized for one language often transfer reasonably to related languages, though performance drops for typologically distant pairs, indicating that structural encoding is partially universal but not fully language-agnostic.</li>
+            <li><strong>Comparison with monolingual models:</strong> Multilingual models perform comparably to monolingual English models on English data while additionally supporting other languages, demonstrating that multilinguality does not significantly sacrifice English parsing quality.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>This work establishes that constituency parse extraction from PLMs is not an English-only phenomenon but generalizes across languages. It provides the first systematic multilingual evaluation of these methods, revealing both the promise (cross-lingual syntactic structure is present) and the limitations (optimal configurations are language-dependent). For low-resource languages without treebanks, this approach offers a viable path to approximate syntactic analysis using only a multilingual PLM, and the findings inform the design of future multilingual syntactic probing studies.</p>
     </div>
     <div class="section">
         <h2>Links</h2>
@@ -42,6 +60,7 @@
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-parsing">Parsing &amp; Syntax</span>
     </div>
 </div>
 <div class="footer">

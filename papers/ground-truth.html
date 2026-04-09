@@ -22,19 +22,45 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>An analysis showing that correct labels play a crucial role in in-context learning</p>
-        <figure class="paper-figure">
-            <img src="../images/ground-truth/figure1.png" alt="Paper overview">
-            <figcaption><strong>Figure 1.</strong> Demonstration of how ground-truth labels impact in-context learning. The paper provides a deeper analysis of the role of correct input-label mappings in ICL demonstrations.</figcaption>
-        </figure>
+        <p>A deeper analysis showing that ground-truth labels in demonstrations play a more significant role in in-context learning than previously believed.</p>
     </div>
+
+    <figure class="paper-figure">
+        <img src="../images/ground-truth/figure1.png" alt="Paper overview">
+        <figcaption><strong>Figure 1.</strong> Demonstration of how ground-truth labels impact in-context learning. The paper provides a deeper analysis of the role of correct input-label mappings in ICL demonstrations.</figcaption>
+    </figure>
+
     <div class="section">
-        <h2>Key Points</h2>
+        <h2>Background & Motivation</h2>
+        <p>In-context learning (ICL) enables large language models to perform tasks by conditioning on a few input-label demonstrations without any parameter updates. A surprising prior finding (Min et al., 2022) suggested that <strong>the correctness of labels in demonstrations barely matters</strong> -- models performed nearly as well with random labels. This counterintuitive result challenged our understanding of how ICL works. This paper takes a deeper look, arguing that ground-truth labels <strong>do</strong> matter and that previous conclusions were artifacts of limited experimental settings.</p>
+    </div>
+
+    <div class="section">
+        <h2>Method</h2>
+        <p>The paper conducts a comprehensive re-examination of the role of input-label mappings in ICL demonstrations:</p>
         <ul class="key-points">
-            <li>Provides an in-depth analysis of how ground-truth labels in demonstration examples affect model performance during in-context learning</li>
-            <li>Identifies the conditions and mechanisms under which models learn more effectively when provided with correct input-label mappings</li>
+            <li><strong>Broader evaluation scope:</strong> Extends experiments beyond the narrow settings of prior work, testing across diverse model families, scales, and task types to reveal conditions where label correctness matters significantly</li>
+            <li><strong>Noisy label analysis:</strong> Systematically varies the proportion of correct vs. random labels in demonstrations to measure the sensitivity of ICL to label quality</li>
+            <li><strong>Disentangling contributing factors:</strong> Separates the effects of input distribution, label space, input-label mapping correctness, and formatting to isolate what each component contributes to ICL performance</li>
+            <li><strong>Model scale investigation:</strong> Analyzes how model size affects sensitivity to ground-truth labels, revealing that larger models are better at leveraging correct demonstrations</li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>Results</h2>
+        <ul class="key-points">
+            <li><strong>Ground-truth labels do matter:</strong> Contrary to prior claims, correct input-label mappings yield substantial performance gains, especially when evaluated across a broader set of conditions</li>
+            <li><strong>Model scale amplifies label sensitivity:</strong> Larger models are significantly more sensitive to the correctness of demonstration labels, increasingly benefiting from ground-truth mappings</li>
+            <li><strong>Task complexity plays a role:</strong> For more complex or fine-grained classification tasks, the gap between correct and random labels becomes more pronounced</li>
+            <li><strong>Label noise degrades gracefully:</strong> Performance degrades proportionally as the fraction of incorrect labels increases, confirming that each correct demonstration contributes meaningful learning signal</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>This work corrects an influential misconception in the ICL literature and restores the intuition that <strong>correct demonstrations teach models meaningful input-label mappings</strong>, not just formatting or label space priors. The findings have practical implications: when constructing demonstration sets for ICL, practitioners should prioritize label accuracy. More broadly, the paper deepens our understanding of the mechanism behind in-context learning and highlights the importance of rigorous, broad experimental evaluation before drawing sweeping conclusions.</p>
+    </div>
+
     <div class="section">
         <h2>Links</h2>
         <div class="links-section">
@@ -42,6 +68,7 @@
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-icl">In-Context Learning</span>
     </div>
 </div>
 <div class="footer">

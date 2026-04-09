@@ -29,11 +29,28 @@
         </figure>
     </div>
     <div class="section">
-        <h2>Key Points</h2>
+        <h2>Background</h2>
+        <p>Stacked (multi-layer) LSTMs are a standard architecture for sequence modeling, with each layer processing the hidden states of the layer below. However, a critical design limitation exists: while hidden states are passed between layers, the <em>cell states</em> &mdash; the internal memory that gives LSTMs their ability to capture long-range dependencies &mdash; are not communicated across layers. Each layer maintains an independent cell state, meaning that the rich memory accumulated in lower layers is invisible to higher layers. This information bottleneck limits the representational capacity of deep LSTM networks.</p>
+    </div>
+    <div class="section">
+        <h2>Method</h2>
         <ul class="key-points">
-            <li>Proposes a mechanism for effectively propagating cell state information across layers in stacked LSTM architectures</li>
-            <li>Enhances sentence semantic representation through cell state awareness and improves performance on various NLP tasks</li>
+            <li><strong>Cell-aware inter-layer connections:</strong> The paper introduces a modified stacked LSTM architecture where the cell state of the previous layer is explicitly fed into the gating mechanisms of the current layer. This allows upper layers to read and leverage the long-term memory stored in lower layers.</li>
+            <li><strong>Minimal architectural overhead:</strong> The modification is lightweight &mdash; it augments the existing gate computations with an additional cell-state input rather than introducing entirely new modules, keeping the parameter increase modest.</li>
+            <li><strong>Drop-in replacement:</strong> Cell-aware stacked LSTMs can serve as a direct replacement for standard stacked LSTMs in any existing pipeline, requiring no changes to the overall training procedure or loss functions.</li>
         </ul>
+    </div>
+    <div class="section">
+        <h2>Results</h2>
+        <ul class="key-points">
+            <li><strong>Consistent improvements:</strong> The cell-aware architecture yields consistent gains over standard stacked LSTMs across multiple sentence-level tasks including natural language inference, sentiment analysis, and semantic relatedness.</li>
+            <li><strong>Effective memory utilization:</strong> Analysis shows that upper layers in the cell-aware variant produce richer representations by incorporating memory signals from lower layers, confirming that inter-layer cell communication alleviates the information bottleneck.</li>
+            <li><strong>Scalability with depth:</strong> The benefits become more pronounced as the number of stacked layers increases, indicating that cell-aware connections are particularly valuable for deeper architectures.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>This work addresses a fundamental but often overlooked limitation in how multi-layer LSTMs are constructed. By enabling cross-layer cell state communication with minimal overhead, it provides a simple yet effective way to build deeper and more expressive recurrent networks. The approach is broadly applicable to any task that uses stacked LSTMs, offering a practical architectural improvement that enhances sentence representations without requiring complex training modifications.</p>
     </div>
     <div class="section">
         <h2>Links</h2>
@@ -42,6 +59,7 @@
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-repr">Representation Learning</span>
     </div>
 </div>
 <div class="footer">

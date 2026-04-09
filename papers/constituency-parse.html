@@ -29,11 +29,29 @@
         </figure>
     </div>
     <div class="section">
-        <h2>Key Points</h2>
+        <h2>Background</h2>
+        <p>A growing body of work has shown that pre-trained language models (PLMs) such as BERT encode syntactic information in their hidden representations, and several methods have been proposed to extract constituency parse trees from these representations without supervised parsing. While initial results appeared promising, most evaluations were conducted under limited and sometimes inconsistent experimental settings, making it difficult to judge whether these techniques are genuinely practical. This paper takes a step back to rigorously re-examine how well constituency parse extraction from PLMs actually works across a broader range of realistic conditions.</p>
+    </div>
+    <div class="section">
+        <h2>Method</h2>
         <ul class="key-points">
-            <li>Reassesses the practical utility of constituency structure extraction methods from multiple perspectives</li>
-            <li>Analyzes the practical limitations of existing approaches and suggests directions for improvement</li>
+            <li><strong>Systematic evaluation framework:</strong> The study establishes a unified evaluation protocol that controls for variables often inconsistent across prior work &mdash; including the choice of PLM, layer selection strategy, distance metric for span scoring, and tree decoding algorithm.</li>
+            <li><strong>Broad experimental coverage:</strong> Multiple PLMs (BERT, RoBERTa, XLNet, etc.), various layer aggregation strategies (single layer, layer averaging, learned combination), and different chart-based decoding methods are compared under identical conditions.</li>
+            <li><strong>Practical stress tests:</strong> Beyond standard PTB evaluation, the paper tests on out-of-domain data, different sentence lengths, and varying tree depths to assess robustness in conditions that better reflect real-world deployment.</li>
         </ul>
+    </div>
+    <div class="section">
+        <h2>Results</h2>
+        <ul class="key-points">
+            <li><strong>Performance is sensitive to choices:</strong> Parsing quality varies dramatically depending on the PLM, the layer used, and the decoding method. Some previously reported strong results do not replicate under controlled settings, revealing that minor implementation details heavily influence outcomes.</li>
+            <li><strong>Gap to supervised parsers remains large:</strong> Even the best extraction configurations fall substantially short of supervised constituency parsers, indicating that PLM-based extraction is not yet a practical substitute for trained parsers in downstream applications.</li>
+            <li><strong>Robustness issues:</strong> Performance degrades noticeably on longer sentences and out-of-domain text, highlighting practical limitations for real-world use.</li>
+            <li><strong>Actionable recommendations:</strong> The paper provides concrete guidance on which PLM-layer-decoder combinations work best and when extraction methods can be useful (e.g., as cheap approximations in low-resource settings).</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>This paper serves as an important reality check for the field of unsupervised constituency parsing from PLMs. By providing a rigorous, controlled comparison that had been missing from the literature, it clarifies what these methods can and cannot do in practice. The findings help researchers avoid overly optimistic conclusions and redirect efforts toward addressing the genuine bottlenecks &mdash; such as robustness to sentence length and domain shift &mdash; that must be solved before extraction-based parsing becomes practically viable.</p>
     </div>
     <div class="section">
         <h2>Links</h2>
@@ -42,6 +60,7 @@
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-parsing">Parsing &amp; Syntax</span>
     </div>
 </div>
 <div class="footer">

@@ -22,26 +22,60 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>코드 생성에서 모듈화 추구가 성능에 미치는 영향을 재검토하는 연구</p>
+        <p>모듈형 코드 생성이 LLM 성능을 항상 향상시킨다는 통념에 도전하며, 과제 난이도와 모델 능력에 따라 그 효과가 달라짐을 실증적으로 밝힌 연구입니다.</p>
         <figure class="paper-figure">
             <img src="../../images/modularity/figure1.png" alt="논문 개요">
             <figcaption><strong>Figure 1.</strong> 모듈형 vs 비모듈형 코드 생성 접근법 비교. 모듈화 추구가 실제로 LLM 기반 코드 생성 성능을 향상시키는지 검토합니다.</figcaption>
         </figure>
     </div>
+
     <div class="section">
-        <h2>핵심 내용</h2>
+        <h2>배경 및 동기</h2>
+        <p>모듈형 프로그래밍 — 문제를 작은 재사용 가능한 하위 함수로 분해하는 방식 — 은 소프트웨어 공학의 핵심 원칙입니다. 최근 LLM 기반 코드 생성 연구에서도 이 원칙을 적용하여, 모델이 최종 솔루션을 작성하기 전에 문제를 하위 함수로 분해하도록 유도하는 접근법이 등장했습니다.</p>
+        <div class="highlight-box">
+            <p><strong>가정:</strong> 모듈형 프롬프팅 전략(예: 하위 함수를 먼저 생성)이 좋은 소프트웨어 공학 관행처럼 코드 생성 품질을 향상시킬 것이라는 통념이 있었습니다.</p>
+        </div>
+        <div class="highlight-box">
+            <p><strong>핵심 질문:</strong> 모듈화 추구가 다양한 모델, 벤치마크, 문제 난이도에서 <em>실제로</em> 더 나은 코드 생성으로 이어지는가?</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>방법론</h2>
+        <p>저자들은 모듈형 vs 비모듈형 코드 생성 전략을 여러 축에서 체계적으로 평가합니다:</p>
         <ul class="key-points">
-            <li>모듈화가 성능과 일반화에 미치는 영향을 다양한 관점에서 체계적으로 분석</li>
-            <li>모듈러 접근법의 장단점을 재평가하고 효과적인 모듈화 전략에 대한 새로운 통찰 제공</li>
+            <li><strong>다양한 LLM:</strong> 오픈소스 및 상용 모델을 다양한 크기로 실험하여 일반화 가능성 검증</li>
+            <li><strong>다양한 벤치마크:</strong> HumanEval, MBPP, APPS, CodeContests 등 쉬운 문제부터 대회 수준까지 포괄하는 벤치마크에서 평가</li>
+            <li><strong>모듈화 전략:</strong> 계획 후 코딩, 하위 함수 분해, 단일 함수 생성 등 다양한 모듈형 프롬프팅 방식 비교</li>
+            <li><strong>세분화 분석:</strong> 문제 난이도, 코드 복잡도, 모델 능력별로 결과를 세분화하여 모듈화가 도움이 되는 경우와 그렇지 않은 경우를 식별</li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>주요 결과</h2>
+        <ul class="key-points">
+            <li><strong>보편적 이점 없음:</strong> 모듈형 생성이 단일 함수 생성보다 일관되게 우수하지 않으며, 많은 설정에서 동등하거나 오히려 낮은 성능을 보임</li>
+            <li><strong>난이도의 영향:</strong> 모듈화는 어려운 대회 수준 문제에서는 도움이 되지만, 단순한 문제에서는 불필요한 복잡성을 유발하여 오히려 성능 저하</li>
+            <li><strong>모델 능력의 영향:</strong> 강력한 모델은 모듈형 전략의 혜택을 더 받지만, 약한 모델은 분해의 추가 부담으로 어려움을 겪음</li>
+            <li><strong>오류 전파:</strong> 모듈형 접근법은 연쇄 오류에 취약 — 하위 함수가 잘못되면 전체 솔루션이 실패</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>왜 중요한가</h2>
+        <p>이 연구는 LLM 기반 코드 생성에서 "모듈화가 항상 좋다"는 기존 가정에 도전합니다. 세밀한 실증 분석을 통해, 연구자와 실무자가 모듈형 프롬프팅 전략을 <strong>언제 적용하고 언제 단순한 단일 생성이 더 나은 선택인지</strong> 판단할 수 있는 근거를 제공합니다. 최적의 전략은 문제 난이도와 모델 능력 간의 상호작용에 달려 있으며, 하나의 접근법이 모든 상황에 적합하지 않음을 시사합니다.</p>
+    </div>
+
     <div class="section">
         <h2>링크</h2>
         <div class="links-section">
             <a href="https://aclanthology.org/2024.findings-emnlp.676/" target="_blank" class="paper-link">ACL Anthology</a>
         </div>
     </div>
+
     <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-reasoning">Reasoning</span>
+        <span class="tag tag-benchmark">Benchmark</span>
     </div>
 </div>
 <div class="footer">

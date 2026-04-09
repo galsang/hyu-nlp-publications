@@ -29,12 +29,40 @@
         </figure>
     </div>
     <div class="section">
-        <h2>Key Points</h2>
+        <h2>Background & Motivation</h2>
+        <p>Pre-trained language models like BERT produce powerful contextual word representations, but deriving high-quality <strong>sentence-level</strong> representations from them remains challenging. Naive approaches such as averaging token embeddings or using the [CLS] token often yield sentence embeddings that underperform even non-contextual baselines like GloVe on semantic similarity tasks.</p>
+        <div class="highlight-box">
+            <p><strong>Limitation:</strong> Existing contrastive learning methods for sentence embeddings rely on external NLI datasets or data augmentation pipelines to construct positive and negative pairs, limiting their applicability when such resources are unavailable.</p>
+        </div>
+        <div class="highlight-box">
+            <p><strong>Innovation:</strong> This work proposes using the model's own intermediate-layer representations as a self-supervision signal, eliminating the need for any external data or augmentation to guide contrastive learning.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Method</h2>
+        <p>Self-Guided Contrastive Learning (SG-CL) fine-tunes BERT by contrasting its final-layer sentence representations against its own intermediate-layer representations. The key insight is that different layers of BERT capture different levels of linguistic abstraction, providing a natural source of diverse views for contrastive learning.</p>
         <ul class="key-points">
-            <li>Proposes a method for enhancing BERT sentence representations using self-guided contrastive learning</li>
-            <li>Generates richer sentence embeddings by leveraging the model's own representations without external data</li>
+            <li><strong>Self-Guided Positive Pairs:</strong> For each sentence, intermediate-layer representations serve as positive targets for the final-layer representation, encouraging consistency across layers</li>
+            <li><strong>In-Batch Negatives:</strong> Other sentences within the same mini-batch serve as negatives, pushing apart representations of different sentences</li>
+            <li><strong>No External Data Required:</strong> The entire training procedure requires only unlabeled sentences, making it applicable to any domain without NLI or paraphrase data</li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>Results</h2>
+        <ul class="key-points">
+            <li><strong>Semantic Textual Similarity:</strong> Achieves significant improvements on STS benchmarks over vanilla BERT representations and competitive performance with methods that use external supervision</li>
+            <li><strong>Transfer Tasks:</strong> Demonstrates strong performance on downstream transfer tasks including sentiment analysis, question classification, and natural language inference</li>
+            <li><strong>Data Efficiency:</strong> Because no labeled data is needed for contrastive fine-tuning, the method is particularly effective in low-resource or domain-specific settings</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>This work showed that high-quality sentence representations can be extracted from BERT without relying on curated training pairs or data augmentation. By exploiting the model's own layered structure as a self-supervision signal, SG-CL opened up a practical path toward unsupervised sentence embeddings that later influenced the broader contrastive learning for NLP community, including follow-up works like SimCSE.</p>
+    </div>
+
     <div class="section">
         <h2>Links</h2>
         <div class="links-section">
@@ -42,6 +70,7 @@
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-repr">Representation Learning</span>
     </div>
 </div>
 <div class="footer">

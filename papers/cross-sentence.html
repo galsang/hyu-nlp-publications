@@ -29,12 +29,40 @@
         </figure>
     </div>
     <div class="section">
-        <h2>Key Points</h2>
+        <h2>Background & Motivation</h2>
+        <p>Text sequence matching -- determining whether two text sequences are semantically related, entailing, or paraphrases of each other -- is a fundamental NLP task. Supervised models require large labeled datasets, which are expensive to obtain. Semi-supervised approaches can help, but most treat each sentence pair independently, ignoring useful structural dependencies across the dataset.</p>
+        <div class="highlight-box">
+            <p><strong>Limitation:</strong> Existing semi-supervised matching models encode each sentence pair in isolation and fail to capture cross-instance latent patterns that could provide additional supervisory signal from unlabeled data.</p>
+        </div>
+        <div class="highlight-box">
+            <p><strong>Innovation:</strong> This work introduces cross-sentence latent variables that capture shared structure across sentence pairs, enabling the model to propagate information from labeled examples to unlabeled ones through a shared latent space.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Method</h2>
+        <p>The proposed model augments a standard text matching architecture with a latent variable that spans across sentence pairs. Using variational inference, the model learns a shared latent space that captures dataset-level distributional patterns, allowing unlabeled data to contribute meaningful learning signal.</p>
         <ul class="key-points">
-            <li>Improves matching performance in semi-supervised settings by modeling inter-sentence relationships through latent variables</li>
-            <li>Presents a framework that effectively leverages small amounts of labeled data together with large amounts of unlabeled data</li>
+            <li><strong>Cross-Sentence Latent Variables:</strong> A latent variable model that captures dependencies not just within a sentence pair, but across multiple pairs in the dataset</li>
+            <li><strong>Variational Inference:</strong> An inference network approximates the posterior over latent variables, enabling end-to-end training with both labeled and unlabeled data</li>
+            <li><strong>Semi-Supervised Objective:</strong> Combines a supervised matching loss on labeled data with an unsupervised reconstruction/regularization loss on unlabeled data through the shared latent space</li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>Results</h2>
+        <ul class="key-points">
+            <li><strong>Natural Language Inference:</strong> Consistent improvements on NLI benchmarks in semi-supervised settings, demonstrating the value of cross-sentence latent structure</li>
+            <li><strong>Paraphrase Detection:</strong> Enhanced matching accuracy when only a fraction of training data is labeled, outperforming standard semi-supervised baselines</li>
+            <li><strong>Label Efficiency:</strong> The latent variable approach shows the largest gains in low-label regimes, confirming its effectiveness at extracting information from unlabeled data</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>This work demonstrated that modeling cross-instance dependencies through latent variables is a powerful strategy for semi-supervised text matching. By learning a shared latent space that captures dataset-level patterns, the model can transfer knowledge from labeled to unlabeled examples more effectively than approaches that treat each pair in isolation. This idea of leveraging structural dependencies across examples remains relevant in modern few-shot and low-resource NLP settings.</p>
+    </div>
+
     <div class="section">
         <h2>Links</h2>
         <div class="links-section">
@@ -42,6 +70,7 @@
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-repr">Representation Learning</span>
     </div>
 </div>
 <div class="footer">

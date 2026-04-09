@@ -29,12 +29,53 @@
         </figure>
     </div>
     <div class="section">
-        <h2>Key Points</h2>
+        <h2>Background &amp; Motivation</h2>
+        <p>Retrieval-Augmented Generation (RAG) enhances LLMs by feeding them external documents retrieved at inference time. However, retrieved passages are often noisy, irrelevant, or even contradictory to the correct answer. When a model blindly conditions on such low-quality contexts, generation quality degrades significantly.</p>
+        <div class="highlight-box">
+            <p><strong>Limitation:</strong> Standard contrastive decoding applies a fixed penalty to suppress the influence of retrieved context, but a fixed weight is suboptimal — it over-corrects when the context is actually helpful and under-corrects when the context is harmful.</p>
+        </div>
+        <div class="highlight-box">
+            <p><strong>Key Insight:</strong> The decoding strategy should <strong>adapt dynamically</strong> based on how relevant the retrieved context is to the query, applying stronger contrastive correction for noisier contexts and weaker correction for helpful ones.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Method</h2>
+        <p>The paper introduces Adaptive Contrastive Decoding (ACD), which modulates the contrastive weight at each generation step based on context relevance:</p>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Context Relevance Estimation</div>
+                <div class="step-desc">Estimate how relevant and reliable the retrieved context is for the given query, using signals derived from the model's own output distributions.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Adaptive Weight Computation</div>
+                <div class="step-desc">Compute a contrastive weight that varies based on the estimated relevance — a larger weight for noisy contexts (to suppress their influence) and a smaller weight for relevant contexts (to preserve their contribution).</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Contrastive Decoding</div>
+                <div class="step-desc">During token generation, contrast the output distribution conditioned on retrieved context against the distribution without context, scaled by the adaptive weight, to produce the final token probabilities.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Results</h2>
         <ul class="key-points">
-            <li>Dynamically adjusts contrastive decoding intensity by evaluating the relevance and quality of retrieved documents</li>
-            <li>Enhances model robustness to low-quality retrieval results and improves overall RAG system performance</li>
+            <li><strong>Noise Robustness:</strong> ACD significantly outperforms fixed contrastive decoding and standard RAG baselines when retrieved contexts contain irrelevant or misleading information</li>
+            <li><strong>Preserved Gains from Good Retrieval:</strong> Unlike fixed contrastive methods that can hurt performance when contexts are helpful, ACD retains the benefits of high-quality retrieved passages</li>
+            <li><strong>Consistent Improvements:</strong> Gains are observed across multiple open-domain QA benchmarks, demonstrating the generality of the adaptive approach</li>
+            <li><strong>No Additional Training Required:</strong> ACD operates purely at decoding time, making it a plug-and-play enhancement for any existing RAG pipeline</li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>RAG systems are increasingly deployed in production, but retrieval quality is inherently unpredictable. A system that works well with perfect retrieval can fail catastrophically with noisy results. ACD addresses this fundamental brittleness by making the generation process <strong>context-aware at the decoding level</strong>, providing a training-free mechanism that makes RAG systems more reliable in real-world conditions where retrieval quality varies widely.</p>
+    </div>
+
     <div class="section">
         <h2>Links</h2>
         <div class="links-section">
@@ -42,7 +83,7 @@
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
-        <span class="tag tag-rag">RAG / Knowledge</span>
+        <span class="tag tag-rag">RAG</span>
     </div>
 </div>
 <div class="footer">

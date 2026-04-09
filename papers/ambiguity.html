@@ -33,12 +33,58 @@
         <figcaption><strong>Figure 2.</strong> The overall process of the four-stage alignment pipeline. Samples that the model cannot explicitly handle are filtered (Stage 1), self-disambiguated to measure information gain (Stage 2), and those with high information gain are used for supervised fine-tuning (Stages 3 &amp; 4).</figcaption>
     </figure>
     <div class="section">
-        <h2>Key Points</h2>
+        <h2>Background &amp; Motivation</h2>
+        <p>When users ask questions like "Who won the national championship?", the query can refer to many different championships across different sports and years. Large language models (LLMs) typically pick a single interpretation and answer confidently, ignoring the inherent ambiguity. This leads to responses that may be technically correct for one reading but misleading overall.</p>
+        <div class="highlight-box">
+            <p><strong>Limitation:</strong> Existing LLMs tend to produce a single answer even when a question is genuinely ambiguous, failing to surface alternative valid interpretations that the user may have intended.</p>
+        </div>
+        <div class="highlight-box">
+            <p><strong>Key Insight:</strong> The degree of perceived ambiguity is <strong>model-dependent</strong> — a model with broader knowledge recognizes more possible interpretations than one with limited knowledge. Alignment should therefore be tailored to each model's own knowledge boundary.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Method</h2>
+        <p>The paper proposes a four-stage alignment pipeline that teaches an LLM to detect ambiguity and respond with disambiguating clarifications:</p>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Ambiguity Filtering</div>
+                <div class="step-desc">Identify samples that the model cannot already explicitly handle — questions where the model gives a single answer despite genuine ambiguity.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Self-Disambiguation &amp; Information Gain</div>
+                <div class="step-desc">The model self-disambiguates each question, and the information gain from disambiguation is measured to rank which samples are most valuable for training.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Supervised Fine-Tuning (SFT)</div>
+                <div class="step-desc">High information-gain samples are used to fine-tune the model, teaching it to produce responses that enumerate possible interpretations.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Preference Optimization</div>
+                <div class="step-desc">Further alignment through preference-based training to reinforce explicit ambiguity handling over single-answer responses.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Results</h2>
         <ul class="key-points">
-            <li>Proposes techniques for aligning language models to recognize and explicitly handle input ambiguity</li>
-            <li>Improves the ability to present multiple possible interpretations or request clarification for ambiguous questions</li>
+            <li><strong>Ambiguity Detection:</strong> Aligned models significantly improve their ability to recognize when a question is ambiguous rather than blindly selecting one interpretation</li>
+            <li><strong>Answer Coverage:</strong> The aligned models produce responses that cover a broader set of valid answers, addressing multiple plausible interpretations of ambiguous queries</li>
+            <li><strong>Maintained Clarity:</strong> On unambiguous questions, the aligned models continue to provide direct, single answers without unnecessary hedging</li>
+            <li><strong>Information-Gain Selection:</strong> Using information gain to select training samples proves more effective than random selection, confirming the value of the model-aware data curation strategy</li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>Real-world user queries are often underspecified or ambiguous, yet most LLMs are trained to give a single decisive answer. This work provides a principled framework for teaching models <strong>when to ask for clarification</strong> and <strong>how to present multiple valid interpretations</strong>. By grounding the alignment process in each model's own knowledge, it avoids both over-hedging (flagging clear questions as ambiguous) and under-hedging (ignoring genuine ambiguity), making LLM interactions more trustworthy and informative.</p>
+    </div>
+
     <div class="section">
         <h2>Links</h2>
         <div class="links-section">
@@ -46,6 +92,8 @@
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-knowledge">Knowledge</span>
+        <span class="tag tag-reasoning">Reasoning</span>
     </div>
 </div>
 <div class="footer">

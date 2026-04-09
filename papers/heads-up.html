@@ -29,11 +29,28 @@
         </figure>
     </div>
     <div class="section">
-        <h2>Key Points</h2>
+        <h2>Background</h2>
+        <p>Constituency parsing &mdash; decomposing a sentence into nested sub-phrases &mdash; traditionally requires expensive treebank annotations. Unsupervised parsing aims to recover this hierarchical structure without labeled data. Meanwhile, pre-trained transformers such as BERT have been shown to encode surprisingly rich syntactic information in their internal representations. A natural question arises: can the self-attention patterns of these models be directly leveraged to induce constituency trees, bypassing the need for explicit syntactic supervision altogether?</p>
+    </div>
+    <div class="section">
+        <h2>Method</h2>
         <ul class="key-points">
-            <li>Performs unsupervised constituency parsing by leveraging syntactic structure information implicitly learned in transformer self-attention heads</li>
-            <li>Demonstrates that meaningful parse trees can be extracted from attention patterns alone without labeled data</li>
+            <li><strong>Attention-based span scores:</strong> The method computes a syntactic affinity score for every possible text span by aggregating attention weights from selected self-attention heads in a pre-trained transformer. High scores indicate that the tokens within a span attend to each other more than to tokens outside, suggesting a coherent constituent.</li>
+            <li><strong>Head selection:</strong> Not all attention heads encode syntax equally. The paper introduces a head selection strategy that identifies the most syntactically informative heads, filtering out heads that capture positional or semantic (rather than structural) patterns.</li>
+            <li><strong>Greedy tree construction:</strong> Given the span scores, a greedy top-down algorithm recursively splits sentences into constituents, producing a full binary constituency tree without any labeled training data.</li>
         </ul>
+    </div>
+    <div class="section">
+        <h2>Results</h2>
+        <ul class="key-points">
+            <li><strong>Competitive unsupervised parsing:</strong> The approach achieves competitive F1 scores on the Penn Treebank (PTB) benchmark compared to existing unsupervised parsers that rely on more complex generative models or specialized training objectives.</li>
+            <li><strong>Head-level analysis:</strong> Detailed analysis reveals that a small subset of attention heads in middle layers of BERT consistently encode syntactic constituency information, while other heads focus on different linguistic phenomena.</li>
+            <li><strong>Robustness:</strong> The method generalizes across different pre-trained models and demonstrates stable performance without task-specific fine-tuning.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>This work provides concrete evidence that transformer self-attention heads implicitly learn hierarchical syntactic structure during pre-training. By showing that constituency trees can be extracted from attention patterns alone, it opens a lightweight, annotation-free pathway to syntactic analysis. The findings also deepen our understanding of what linguistic knowledge is encoded in different components of pre-trained language models, informing future model design and interpretability research.</p>
     </div>
     <div class="section">
         <h2>Links</h2>
@@ -42,6 +59,7 @@
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-parsing">Parsing &amp; Syntax</span>
     </div>
 </div>
 <div class="footer">

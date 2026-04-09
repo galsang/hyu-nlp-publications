@@ -22,18 +22,37 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>Universal domain adaptation for robust handling of distributional shifts</p>
+        <p>A universal domain adaptation framework that jointly handles covariate shift and label shift in NLP by learning domain-invariant representations and detecting out-of-domain samples.</p>
         <figure class="paper-figure">
             <img src="../images/universal-da/figure1.png" alt="Paper overview">
-            <figcaption><strong>Figure 1.</strong> Universal domain adaptation for robust handling of distributional shifts in NLP, addressing the challenge of adapting models across diverse domains.</figcaption>
+            <figcaption><strong>Figure 1.</strong> Overview of universal domain adaptation, which must handle both shared-label and private-label classes across source and target domains under distributional shift.</figcaption>
         </figure>
     </div>
     <div class="section">
-        <h2>Key Points</h2>
+        <h2>Background</h2>
+        <p>Domain adaptation in NLP typically assumes that the source and target domains share the same label space, only differing in input distribution (covariate shift). In practice, however, the target domain may contain novel classes absent from the source (label shift), or some source classes may be irrelevant to the target. <em>Universal domain adaptation</em> (UniDA) tackles the most general setting where the label spaces can overlap partially, requiring the model to (1) classify shared-class samples correctly and (2) detect target-private samples as unknown. Prior UniDA work has largely focused on vision; adapting these ideas to NLP, where representations and domain gaps behave differently, remains underexplored.</p>
+    </div>
+    <div class="section">
+        <h2>Method</h2>
         <ul class="key-points">
-            <li>Proposes a universal domain adaptation methodology that effectively bridges gaps across diverse domains</li>
-            <li>Presents an adaptation strategy that operates reliably even when the label spaces of source and target domains differ</li>
+            <li><strong>Domain-invariant representation learning.</strong> The model learns representations that are aligned across source and target domains so that shared-class samples cluster together regardless of domain origin.</li>
+            <li><strong>Sample-level transferability scoring.</strong> A calibrated scoring mechanism estimates how likely each target sample belongs to a shared class versus a target-private (unknown) class, enabling selective adaptation.</li>
+            <li><strong>Unknown-class detection.</strong> Samples with low transferability scores are flagged as out-of-distribution, preventing negative transfer from classes that have no counterpart in the source domain.</li>
+            <li><strong>End-to-end training.</strong> Representation alignment, transferability scoring, and classification are optimized jointly, avoiding error propagation from separate pipeline stages.</li>
         </ul>
+    </div>
+    <div class="section">
+        <h2>Results</h2>
+        <ul class="key-points">
+            <li>Achieves consistent improvements over prior domain adaptation baselines across multiple NLP benchmarks covering sentiment analysis and natural language inference.</li>
+            <li>Demonstrates robustness under varying degrees of label-space mismatch, including open-set, partial, and fully open-partial scenarios.</li>
+            <li>The transferability scoring mechanism effectively separates known from unknown target samples, yielding high unknown-class detection accuracy.</li>
+            <li>Ablation studies confirm that each component (representation alignment, transferability scoring, unknown detection) contributes meaningfully to overall performance.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>Real-world NLP deployments rarely enjoy the luxury of matching label spaces between training and deployment domains. This work provides a principled framework that handles the most general form of domain shift, making NLP models more reliable when applied to new domains with potentially unseen categories. The approach is especially relevant for safety-critical applications where silently misclassifying out-of-domain inputs can be costly.</p>
     </div>
     <div class="section">
         <h2>Links</h2>
@@ -42,6 +61,8 @@
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-repr">Representation Learning</span>
+        <span class="tag tag-detection">Detection</span>
     </div>
 </div>
 <div class="footer">

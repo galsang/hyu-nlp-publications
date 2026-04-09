@@ -33,19 +33,80 @@
         <figcaption><strong>Figure 3.</strong> Hyper-CL의 훈련 절차. 모든 임베딩은 동일한 인코더 f의 출력이며, 하이퍼네트워크가 조건 임베딩을 기반으로 문장을 조건화하는 투영 행렬을 생성함.</figcaption>
     </figure>
     <div class="section">
-        <h2>핵심 내용</h2>
+        <h2>배경</h2>
+        <p>문장 임베딩은 많은 NLP 응용의 핵심이며, 대조 학습이 그 품질 향상을 이끌어 왔습니다. 그러나 표준 문장 표현은 문장 의미의 단일하고 고정된 관점만을 포착합니다. 실제로 문장 간 유사도는 <strong>특정 관점이나 조건</strong>에 따라 달라지는 경우가 많습니다 -- 예를 들어, 두 문장이 주제 면에서는 유사하지만 감성 면에서는 다를 수 있습니다. 기존 아키텍처는 다음과 같은 트레이드오프에 직면합니다:</p>
+        <div class="highlight-box">
+            <p><strong>Bi-encoder:</strong> 정확하지만 |S| x |C|번의 인코더 순전파가 필요 (계산 비용이 높음)</p>
+        </div>
+        <div class="highlight-box">
+            <p><strong>Tri-encoder:</strong> 사전 계산된 임베딩과 캐싱으로 효율적이지만, 문장과 조건 간 상호작용이 제한되어 성능 저하</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>방법</h2>
+        <p>Hyper-CL은 하이퍼네트워크를 tri-encoder 프레임워크에 통합하여, 캐싱의 이점을 유지하면서 동적 조건화를 가능하게 하여 정확도-효율성 간극을 해소합니다.</p>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">문장 및 조건 인코딩</div>
+                <div class="step-desc">공유 인코더 f를 사용하여 임베딩 생성: 문장에 대해 h_s = f(s), 조건에 대해 h_c = f(c)</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">하이퍼네트워크를 통한 투영 생성</div>
+                <div class="step-desc">하이퍼네트워크 q가 조건 임베딩을 조건 특화 투영 행렬로 변환: W_c = q(h_c), 동적으로 조건 부분공간을 생성</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">조건 인식 투영</div>
+                <div class="step-desc">문장 임베딩을 조건 부분공간으로 투영: h_sc = W_c * h_s, 같은 문장이 다른 조건에서 다른 표현을 가질 수 있게 함</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">대조 학습</div>
+                <div class="step-desc">태스크 특화 대조 목적 함수로 학습 (C-STS에는 MSE + InfoNCE; 지식 그래프 완성에는 SimKGC 적용)</div>
+            </div>
+        </div>
+        <div class="highlight-box">
+            <p><strong>효율성 기법:</strong> LoRA 원리에 따른 저순위 분해로 하이퍼네트워크 출력의 파라미터 수를 대폭 줄이고, 변환 행렬 W_c는 조건에만 의존하므로 캐싱이 가능합니다.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>실험 결과</h2>
+        <table class="results-table">
+            <thead>
+                <tr><th>벤치마크</th><th>지표</th><th>성능</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>C-STS (조건부 STS)</td><td>Spearman</td><td class="highlight-cell">38.75 (tri-encoder 대비 +7.25)</td></tr>
+                <tr><td>WN18RR (KG 완성)</td><td>MRR</td><td class="highlight-cell">0.616</td></tr>
+                <tr><td>WN18RR (KG 완성)</td><td>Hits@1</td><td class="highlight-cell">0.506</td></tr>
+            </tbody>
+        </table>
         <ul class="key-points">
-            <li>하이퍼네트워크를 활용하여 태스크나 기준에 따라 유연하게 문장 표현을 조건부 생성하는 대조 학습 프레임워크</li>
-            <li>다양한 다운스트림 태스크에서 조건부 문장 임베딩의 효과를 실험적으로 검증</li>
+            <li><strong>C-STS:</strong> Tri-encoder와 bi-encoder 간 성능 격차를 13.3에서 6.05로 축소</li>
+            <li><strong>속도:</strong> WN18RR 테스트 세트에서 bi-encoder 대비 108배 빠름 (BERT-large 기준 1.93초 vs. 209.98초)</li>
+            <li><strong>저순위 변형:</strong> hyper64-cl이 75M개의 추가 파라미터만으로 Spearman 38.36을 달성, 전체 모델에 거의 근접</li>
+            <li><strong>클러스터링 품질:</strong> 조건 특화 투영 후 엔트로피가 0.739에서 0.270으로 감소, 효과적인 의미 재구성을 보여줌</li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>왜 중요한가?</h2>
+        <p>Hyper-CL은 문장 임베딩이 정적이고 획일적인 벡터일 필요가 없음을 보여줍니다. 하이퍼네트워크가 생성하는 투영을 도입함으로써, 동일한 사전 계산된 문장 임베딩을 거의 추가 추론 비용 없이 <strong>다양한 관점에 동적으로 적응</strong>시킬 수 있습니다. 이는 "유사성"의 개념이 근본적으로 맥락에 의존하는 조건부 검색, 지식 그래프 추론 등 보다 세밀한 NLP 응용의 가능성을 열어주며, 실제 배포에 필요한 계산 효율성도 유지합니다.</p>
+    </div>
+
     <div class="section">
         <h2>링크</h2>
         <div class="links-section">
             <a href="https://aclanthology.org/2024.acl-long.41/" target="_blank" class="paper-link">ACL Anthology</a>
+            <a href="https://arxiv.org/abs/2403.09490" target="_blank" class="paper-link">arXiv</a>
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-repr">Representation Learning</span>
     </div>
 </div>
 <div class="footer">

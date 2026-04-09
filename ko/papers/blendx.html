@@ -22,22 +22,42 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>단일 발화 내에서 복합적인 다중 의도 패턴을 감지하는 방법</p>
+        <p>단순 연결을 넘어 다양하고 복잡한 언어 패턴으로 단일 의도 발화를 혼합하여, 다중 의도 감지를 위한 엄밀한 벤치마크를 구축한 연구.</p>
     </div>
     <figure class="paper-figure">
         <img src="https://arxiv.org/html/2403.18277v1/x1.png" alt="기존 다중 의도 감지 데이터셋의 한계와 BlendX의 필요성">
         <figcaption><strong>Figure 1.</strong> BlendX의 동기: 기존 다중 의도 감지 데이터셋(MixX)이 지나치게 단순한 연결 패턴에 의존하고 있어, 보다 엄밀한 다중 의도 감지 테스트베드의 필요성을 보여줌.</figcaption>
     </figure>
+    <div class="section">
+        <h2>배경</h2>
+        <p>다중 의도 감지(Multi-Intent Detection, MID)는 하나의 사용자 발화에 여러 의도가 포함된 현실적인 상황을 다루는 과제입니다. 실제 프로덕션 대화 시스템에서는 전체 발화의 절반 이상이 복수의 의도를 포함하는 것으로 보고되고 있습니다. 그러나 대표적인 MID 벤치마크인 MixATIS와 MixSNIPS는 <em>"and," "and then," "and also,"</em> 콤마 등 단 4종의 접속사만으로 다중 의도 예시를 구성합니다. 이러한 지나치게 단순한 구성 방식은 모델이 의미를 진정으로 이해하지 않고도 표면적인 연결 패턴만으로 높은 성능을 달성할 수 있게 하여, 실제 성능을 과대평가하는 문제를 야기합니다.</p>
+    </div>
     <figure class="paper-figure">
         <img src="https://arxiv.org/html/2403.18277v1/x3.png" alt="BlendX에서 연결의 복잡도와 방법론 측면 도식">
         <figcaption><strong>Figure 3.</strong> 연결(concatenation)의 복잡도(왼쪽)와 방법론(오른쪽) 측면의 도식. 각 접근법은 연결 과정에서 발생하는 가능한 변형(가운데)의 서로 다른 부분을 다룸.</figcaption>
     </figure>
     <div class="section">
-        <h2>핵심 내용</h2>
+        <h2>방법</h2>
+        <p>BlendX는 두 가지 직교 차원을 따라 벤치마크를 구축합니다:</p>
         <ul class="key-points">
-            <li>단일 발화 내에서 여러 의도를 동시에 인식하는 복합 다중 의도 감지 프레임워크 제안</li>
-            <li>실제 대화 환경에서 여러 의도가 혼합된 복잡한 발화를 효과적으로 처리</li>
+            <li><strong>복잡도 &mdash; 명시적 vs. 암시적:</strong> 명시적 연결은 다양한 접속사(예: <em>and, or, before, after, additionally</em>)를 사용합니다. 암시적 연결은 접속사를 완전히 제거하고, 생략, 대용어, 분사 구문 등을 활용하여 자연스러운 발화를 생성합니다.</li>
+            <li><strong>방법론 &mdash; Na&iuml;ve, Manual, Generative:</strong> Na&iuml;ve는 기존 MixX 방식을 재현하고, Manual은 다양한 접속어와 암시적 패턴을 적용하는 규칙 기반 휴리스틱을 사용하며, Generative는 SBERT 기반 유사도 필터링(코사인 유사도 &ge; 0.7)과 ChatGPT를 활용하여 자연스러운 다중 의도 발화를 생성합니다.</li>
+            <li><strong>복잡도 지표:</strong> 단어 수 감소(생략), 접속사 부재, 대명사 도입(대용어) 등 세 가지 통계 지표를 새롭게 제안하여, 데이터셋이 단순 연결 기준 대비 얼마나 어려운지를 정량화합니다.</li>
         </ul>
+        <p>널리 사용되는 4개의 단일 의도 데이터셋(ATIS, SNIPS, Banking77, CLINC150)을 단일/이중/삼중 의도 발화 비율 3:5:2로 다중 의도 버전으로 확장합니다.</p>
+    </div>
+    <div class="section">
+        <h2>실험 결과</h2>
+        <ul class="key-points">
+            <li><strong>성능의 급격한 하락:</strong> MixX로 학습하고 BlendX로 평가하면 정확도가 최대 40%p 하락합니다(예: Banking77에서 TFMN 76.61% &rarr; 37.31%). 이는 기존 모델이 표면적 연결 패턴에 크게 의존하고 있음을 보여줍니다.</li>
+            <li><strong>평가 모델:</strong> TFMN(임계값 기반), SLIM(이진 분류), ChatGPT(인컨텍스트 러닝)를 평가하였으며, 모든 모델이 MixX 대비 BlendX에서 크게 어려움을 겪었습니다.</li>
+            <li><strong>구성 방법별 분석:</strong> 세 가지 구성 방법 중 Manual(암시적 패턴)이 가장 어렵고, Generative, Na&iuml;ve 순으로 나타나, 암시적 혼합이 난이도의 주요 원인임을 확인하였습니다.</li>
+            <li><strong>BlendX 학습 효과:</strong> BlendX로 학습하고 평가해도 MixX 전용 평가 대비 성능이 상당히 낮아, BlendX 자체의 본질적 복잡성을 입증합니다.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>의의</h2>
+        <p>BlendX는 다중 의도 감지 연구의 치명적 사각지대를 드러냅니다. MixATIS/MixSNIPS에서 보고된 최신 성능은 실제 활용 능력을 크게 과대평가하고 있습니다. 언어학적으로 더 다양하고 엄밀한 벤치마크를 제공함으로써, BlendX는 얕은 연결 패턴에 의존하지 않고 구성적 의미론을 진정으로 이해하는 모델 개발의 방향을 제시합니다. 이는 프로덕션 환경에서 보다 강건한 목적 지향 대화 시스템을 구축하는 데 직접적인 시사점을 제공합니다.</p>
     </div>
     <div class="section">
         <h2>링크</h2>
@@ -47,6 +67,7 @@
     </div>
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-dialogue">Dialogue</span>
+        <span class="tag tag-benchmark">Benchmark</span>
     </div>
 </div>
 <div class="footer">

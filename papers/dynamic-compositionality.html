@@ -29,11 +29,28 @@
         </figure>
     </div>
     <div class="section">
-        <h2>Key Points</h2>
+        <h2>Background</h2>
+        <p>Recursive neural networks (RecNNs) build sentence representations by composing word vectors bottom-up along a syntactic parse tree. A key limitation of standard RecNNs is that they apply the <em>same</em> composition function at every node &mdash; whether combining a determiner with a noun or merging two clauses. Linguistically, however, different syntactic constructions call for different composition operations. This mismatch limits the expressiveness of traditional recursive models and motivates the need for <em>dynamic</em> composition that adapts to the syntactic context at each tree node.</p>
+    </div>
+    <div class="section">
+        <h2>Method</h2>
         <ul class="key-points">
-            <li>Introduces structure-aware tag representations into recursive neural networks to implement dynamic composition operations guided by syntactic structure</li>
-            <li>Improves sentence representation quality by adaptively adjusting composition functions according to the structural characteristics of the input</li>
+            <li><strong>Structure-aware tag representations:</strong> Each node in the parse tree is augmented with a learned representation of its syntactic tag (e.g., NP, VP, S). These tag embeddings encode the structural role of each constituent and serve as conditioning signals for the composition function.</li>
+            <li><strong>Dynamic composition functions:</strong> Instead of a single fixed weight matrix, the composition function at each node is dynamically generated based on the tag representations of the children and parent. This allows the model to apply different transformations for different syntactic configurations (e.g., adjective-noun vs. subject-verb).</li>
+            <li><strong>Seamless integration:</strong> The approach is compatible with existing RecNN variants (TreeLSTM, TreeGRU) and can be applied on top of any parse tree, requiring only the addition of tag embeddings and a lightweight parameter generation network.</li>
         </ul>
+    </div>
+    <div class="section">
+        <h2>Results</h2>
+        <ul class="key-points">
+            <li><strong>Improved sentence representations:</strong> Dynamic compositionality yields consistent improvements over standard RecNNs on sentiment analysis (SST) and natural language inference (SNLI), demonstrating that structure-aware composition produces higher-quality sentence embeddings.</li>
+            <li><strong>Qualitative analysis:</strong> Visualization of the learned composition functions shows that the model learns distinct operations for different syntactic patterns, confirming that the dynamic mechanism captures meaningful linguistic distinctions.</li>
+            <li><strong>Complementary to tree quality:</strong> Gains hold across both gold parse trees and automatically generated parses, indicating that dynamic compositionality is robust to parse errors.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>This work bridges a gap between linguistic theory and neural network design by making recursive composition syntactically aware. Rather than treating all tree nodes identically, the model adapts its computation to the local syntactic context, producing richer and more linguistically grounded sentence representations. The approach demonstrates that injecting even simple structural signals into neural architectures can yield meaningful improvements, offering a principled direction for building syntax-sensitive NLP models.</p>
     </div>
     <div class="section">
         <h2>Links</h2>
@@ -42,6 +59,8 @@
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-repr">Representation Learning</span>
+        <span class="tag tag-parsing">Parsing &amp; Syntax</span>
     </div>
 </div>
 <div class="footer">

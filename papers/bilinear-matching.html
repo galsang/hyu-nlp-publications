@@ -29,11 +29,28 @@
         </figure>
     </div>
     <div class="section">
-        <h2>Key Points</h2>
+        <h2>Background</h2>
+        <p>Sentence matching &mdash; determining the semantic relationship between two sentences &mdash; is a core task underlying natural language inference, paraphrase detection, and question answering. Standard approaches either encode each sentence independently and compare the resulting vectors, or build complex cross-attention networks that are computationally expensive. A middle ground is needed: an interaction mechanism that captures fine-grained relationships between sentence representations while remaining parameter-efficient and easy to integrate into existing architectures.</p>
+    </div>
+    <div class="section">
+        <h2>Method</h2>
         <ul class="key-points">
-            <li>Performs fine-grained semantic matching by modeling element-wise bilinear interactions between sentence pairs</li>
-            <li>Improves sentence matching task performance through a concise yet effective interaction mechanism</li>
+            <li><strong>Element-wise bilinear interaction:</strong> Instead of computing a full bilinear product (which requires a large weight tensor), the paper proposes an element-wise bilinear function that models interactions between corresponding dimensions of two sentence vectors. This dramatically reduces the number of parameters from O(d<sup>3</sup>) to O(d) while retaining expressive power.</li>
+            <li><strong>Factored interaction design:</strong> The interaction is factored so that each dimension of the sentence embeddings interacts through a small, learnable bilinear form, enabling the model to capture multiplicative relationships that simple dot products or concatenation-based methods miss.</li>
+            <li><strong>Lightweight integration:</strong> The proposed interaction layer can be inserted into any sentence-encoding pipeline as a drop-in matching component, requiring no architectural changes to the upstream encoder.</li>
         </ul>
+    </div>
+    <div class="section">
+        <h2>Results</h2>
+        <ul class="key-points">
+            <li><strong>Strong performance on NLI:</strong> On the SNLI benchmark, the element-wise bilinear model achieves competitive accuracy with significantly fewer parameters than full bilinear or attention-heavy baselines.</li>
+            <li><strong>Effective on multiple tasks:</strong> The method shows consistent improvements on sentence matching tasks including paraphrase identification and semantic textual similarity, confirming its generality.</li>
+            <li><strong>Efficiency gains:</strong> The element-wise formulation provides a favorable accuracy-to-parameter ratio, making it practical for resource-constrained settings.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>This work demonstrates that sophisticated sentence-pair interactions do not require heavyweight architectures. By distilling the bilinear interaction down to an element-wise operation, the paper provides a practical and efficient building block for sentence matching. The approach influenced subsequent work on lightweight interaction mechanisms and remains relevant as a design principle: capturing multiplicative cross-sentence signals is important, but can be done with far fewer parameters than typically assumed.</p>
     </div>
     <div class="section">
         <h2>Links</h2>
@@ -42,6 +59,7 @@
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-repr">Representation Learning</span>
     </div>
 </div>
 <div class="footer">

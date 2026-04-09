@@ -29,12 +29,41 @@
         </figure>
     </div>
     <div class="section">
-        <h2>Key Points</h2>
+        <h2>Background & Motivation</h2>
+        <p>Pre-trained language models (PLMs) like BERT and ELMo have shown remarkable success across NLP tasks, suggesting they encode substantial linguistic knowledge during pre-training. A natural question arises: do these models implicitly learn syntactic structure, such as phrase boundaries and constituency, even without explicit syntactic supervision?</p>
+        <div class="highlight-box">
+            <p><strong>Question:</strong> Can we extract meaningful parse trees from pre-trained language models without any syntactic annotations, and how do these compare to dedicated unsupervised grammar induction methods?</p>
+        </div>
+        <div class="highlight-box">
+            <p><strong>Approach:</strong> This paper proposes simple but surprisingly effective methods to probe PLMs for constituency structure, establishing strong baselines that challenge purpose-built grammar induction models.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Method</h2>
+        <p>The paper designs probing methods that extract constituency parse trees from the internal representations of pre-trained language models. The core idea is to measure how much the representation of a span differs from its surrounding context, using this as a signal for phrase boundaries.</p>
         <ul class="key-points">
-            <li>Proposes an unsupervised learning methodology for automatically inducing grammatical structures from unlabeled text</li>
-            <li>A key early work demonstrating the potential of neural network-based grammar induction</li>
+            <li><strong>Representation-Based Scoring:</strong> Computes a score for each possible text span based on the difference between the span's internal representation and its surrounding context in the PLM's hidden layers</li>
+            <li><strong>Chart-Based Decoding:</strong> Uses CKY-style chart parsing to find the highest-scoring tree structure given the span scores, producing a full constituency parse without any training</li>
+            <li><strong>Layer Analysis:</strong> Systematically investigates which layers of PLMs encode the most syntactic information, revealing that middle layers tend to capture phrase structure most effectively</li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>Results</h2>
+        <ul class="key-points">
+            <li><strong>Competitive with Specialized Models:</strong> The simple probing baselines achieve parsing F1 scores competitive with or exceeding dedicated unsupervised grammar induction models on the WSJ10 and WSJ benchmarks</li>
+            <li><strong>PLMs Encode Syntax:</strong> Results confirm that pre-trained language models capture substantial phrase-level syntactic knowledge, even without any explicit syntactic training signal</li>
+            <li><strong>Layer-Wise Insights:</strong> Middle layers of BERT consistently outperform early and late layers for grammar induction, suggesting a hierarchical organization of linguistic information</li>
+            <li><strong>Cross-Model Analysis:</strong> The findings hold across different PLM architectures (BERT, ELMo, GPT), demonstrating the generality of implicit syntactic knowledge in language model pre-training</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>This paper was among the first to rigorously demonstrate that pre-trained language models are "aware of phrases" and implicitly learn constituency structure. By showing that simple probing methods can rival specialized unsupervised parsers, it fundamentally shifted the understanding of what linguistic knowledge PLMs acquire during pre-training. The work laid important groundwork for subsequent research on syntactic probing, grammar induction from neural models, and understanding the internal representations of large language models.</p>
+    </div>
+
     <div class="section">
         <h2>Links</h2>
         <div class="links-section">
@@ -42,6 +71,7 @@
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-parsing">Parsing & Syntax</span>
     </div>
 </div>
 <div class="footer">

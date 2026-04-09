@@ -29,12 +29,40 @@
         </figure>
     </div>
     <div class="section">
-        <h2>Key Points</h2>
+        <h2>Background & Motivation</h2>
+        <p>A large portion of the Korean vocabulary originates from Sino-Korean words (Hanja), where each syllable carries specific meaning rooted in Chinese characters. For example, the Korean word "university" (대학, 大學) consists of syllables meaning "big" (大) and "learning" (學). Standard word embedding methods treat Korean words as opaque surface forms and miss this rich etymological structure.</p>
+        <div class="highlight-box">
+            <p><strong>Limitation:</strong> Existing subword-based approaches (e.g., character or jamo decomposition) only capture surface-level morphological information and fail to exploit the semantic information encoded in Hanja origins.</p>
+        </div>
+        <div class="highlight-box">
+            <p><strong>Innovation:</strong> This work proposes going beyond surface forms by mapping Korean words to their underlying Hanja representations, injecting deep etymological semantics directly into word embeddings.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Method</h2>
+        <p>The proposed approach augments word representation models by incorporating Hanja-level information alongside standard Korean character representations. A Hanja lookup maps Sino-Korean syllables to their corresponding Chinese characters, and these are composed into word-level representations.</p>
         <ul class="key-points">
-            <li>Enhances the semantic richness of word representations by leveraging Hanja information embedded in Korean vocabulary</li>
-            <li>Improves performance on various Korean NLP tasks by integrating morphological and semantic information from Hanja into embeddings</li>
+            <li><strong>Hanja Decomposition:</strong> Korean words are mapped to their Hanja equivalents using a dictionary, revealing the underlying semantic components of each syllable</li>
+            <li><strong>Multi-Level Composition:</strong> Word representations are built by combining surface-level Korean character embeddings with deeper Hanja character embeddings through a composition function</li>
+            <li><strong>Flexible Integration:</strong> The Hanja-enhanced representations can be plugged into existing word embedding frameworks (e.g., Skip-gram, GloVe) as a drop-in improvement</li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>Results</h2>
+        <ul class="key-points">
+            <li><strong>Word Similarity:</strong> Significant improvements on Korean word similarity benchmarks, demonstrating that Hanja information captures semantic relationships missed by surface forms</li>
+            <li><strong>Analogy Tasks:</strong> Enhanced performance on word analogy tasks, where the compositional semantics of Hanja provide strong relational cues</li>
+            <li><strong>Downstream NLP Tasks:</strong> Improvements on Korean NLP tasks including text classification and named entity recognition, showing the practical value of Hanja-enriched embeddings</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>This paper demonstrates that language-specific etymological knowledge can substantially improve word representations. For Korean, where over 60% of the vocabulary has Sino-Korean origins, Hanja provides a powerful and largely untapped source of semantic information. The approach highlights that going beyond surface-level subword tokenization to incorporate deeper linguistic structure is a valuable direction for building better NLP systems for morphologically rich and historically layered languages.</p>
+    </div>
+
     <div class="section">
         <h2>Links</h2>
         <div class="links-section">
@@ -42,6 +70,7 @@
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-repr">Representation Learning</span>
     </div>
 </div>
 <div class="footer">

@@ -22,26 +22,60 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>A study revisiting the impact of pursuing modularity on code generation performance</p>
+        <p>A comprehensive study revealing that modular code generation — widely assumed to help LLMs — does not consistently improve performance and can even hurt it, depending on the task and model.</p>
         <figure class="paper-figure">
             <img src="../images/modularity/figure1.png" alt="Paper overview">
             <figcaption><strong>Figure 1.</strong> Comparison of modular and non-modular code generation approaches. The study examines whether pursuing modularity actually improves LLM-based code generation performance.</figcaption>
         </figure>
     </div>
+
     <div class="section">
-        <h2>Key Points</h2>
+        <h2>Background & Motivation</h2>
+        <p>Modular programming — breaking a problem into smaller, reusable sub-functions — is a cornerstone of software engineering. Recent work on LLM-based code generation has adopted this principle, prompting models to decompose problems into helper functions before writing the final solution.</p>
+        <div class="highlight-box">
+            <p><strong>Assumption:</strong> Modular prompting strategies (e.g., generating sub-functions first) should improve code generation quality, mirroring good human engineering practice.</p>
+        </div>
+        <div class="highlight-box">
+            <p><strong>Question:</strong> Does pursuing modularity <em>actually</em> lead to better code generation across different models, benchmarks, and problem difficulties?</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Method</h2>
+        <p>The authors systematically evaluate modular vs. non-modular code generation strategies across multiple axes:</p>
         <ul class="key-points">
-            <li>Systematically analyzes the impact of modularity on performance and generalization from multiple perspectives</li>
-            <li>Reassesses the pros and cons of modular approaches and provides new insights on effective modularity strategies</li>
+            <li><strong>Multiple LLMs:</strong> Experiments span both open-source and proprietary models of varying sizes to test generalizability</li>
+            <li><strong>Diverse Benchmarks:</strong> Evaluation on established code generation benchmarks (HumanEval, MBPP, APPS, CodeContests) covering easy to competition-level problems</li>
+            <li><strong>Modularity Strategies:</strong> Comparison of different modular prompting approaches — including planning-then-coding, sub-function decomposition, and self-contained monolithic generation</li>
+            <li><strong>Fine-grained Analysis:</strong> Results broken down by problem difficulty, code complexity, and model capability to identify when modularity helps or hurts</li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>Key Results</h2>
+        <ul class="key-points">
+            <li><strong>No universal benefit:</strong> Modular generation does not consistently outperform monolithic generation; in many settings it performs comparably or worse</li>
+            <li><strong>Difficulty matters:</strong> Modularity tends to help on harder, competition-level problems but can hurt on simpler tasks where decomposition introduces unnecessary complexity</li>
+            <li><strong>Model capability matters:</strong> Stronger models benefit more from modular strategies, while weaker models often struggle with the added overhead of decomposition</li>
+            <li><strong>Error propagation:</strong> Modular approaches are susceptible to cascading errors — if a sub-function is incorrect, the entire solution fails</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>This work challenges the prevailing assumption that "modular is always better" in LLM-based code generation. By providing a nuanced, empirically grounded analysis, it helps researchers and practitioners make <strong>informed decisions</strong> about when to apply modular prompting strategies — and when simpler, monolithic generation is the better choice. The findings suggest that the optimal strategy depends on the interplay between problem difficulty and model capability, rather than a one-size-fits-all approach.</p>
+    </div>
+
     <div class="section">
         <h2>Links</h2>
         <div class="links-section">
             <a href="https://aclanthology.org/2024.findings-emnlp.676/" target="_blank" class="paper-link">ACL Anthology</a>
         </div>
     </div>
+
     <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-reasoning">Reasoning</span>
+        <span class="tag tag-benchmark">Benchmark</span>
     </div>
 </div>
 <div class="footer">

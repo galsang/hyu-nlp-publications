@@ -29,12 +29,40 @@
         </figure>
     </div>
     <div class="section">
-        <h2>핵심 내용</h2>
+        <h2>배경 및 동기</h2>
+        <p>BERT와 같은 사전학습 언어 모델은 강력한 문맥적 단어 표현을 생성하지만, 이로부터 고품질의 <strong>문장 수준</strong> 표현을 도출하는 것은 여전히 어려운 과제입니다. 토큰 임베딩 평균이나 [CLS] 토큰을 사용하는 단순한 방법은 의미 유사도 태스크에서 GloVe와 같은 비문맥적 기준선보다도 낮은 성능을 보이는 경우가 많습니다.</p>
+        <div class="highlight-box">
+            <p><strong>한계:</strong> 기존의 문장 임베딩을 위한 대조 학습 방법들은 긍정/부정 쌍 구성을 위해 외부 NLI 데이터셋이나 데이터 증강 파이프라인에 의존하여, 이러한 자원이 없는 환경에서는 적용이 제한적이었습니다.</p>
+        </div>
+        <div class="highlight-box">
+            <p><strong>핵심 아이디어:</strong> 본 연구는 모델 자체의 중간 레이어 표현을 자기 지도 신호로 활용하여, 외부 데이터나 증강 없이도 대조 학습을 수행할 수 있는 방법을 제안합니다.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>방법론</h2>
+        <p>Self-Guided Contrastive Learning (SG-CL)은 BERT의 최종 레이어 문장 표현을 자체 중간 레이어 표현과 대조하여 미세조정합니다. BERT의 서로 다른 레이어가 서로 다른 수준의 언어적 추상화를 포착한다는 점을 활용하여, 대조 학습을 위한 자연스러운 다양한 관점을 제공합니다.</p>
         <ul class="key-points">
-            <li>자기 안내 대조 학습을 활용하여 BERT 문장 표현을 향상시키는 방법 제안</li>
-            <li>외부 데이터 없이 모델 자체의 표현을 활용하여 더 풍부한 문장 임베딩 생성</li>
+            <li><strong>자기 안내 긍정 쌍:</strong> 각 문장에 대해 중간 레이어 표현이 최종 레이어 표현의 긍정 타겟으로 작용하여 레이어 간 일관성을 촉진</li>
+            <li><strong>배치 내 부정 샘플:</strong> 같은 미니배치 내의 다른 문장들이 부정 샘플로 작용하여 서로 다른 문장의 표현을 분리</li>
+            <li><strong>외부 데이터 불필요:</strong> 전체 학습 과정에 비레이블 문장만 필요하므로, NLI나 패러프레이즈 데이터 없이도 모든 도메인에 적용 가능</li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>실험 결과</h2>
+        <ul class="key-points">
+            <li><strong>의미 텍스트 유사도:</strong> STS 벤치마크에서 기본 BERT 표현 대비 큰 폭의 성능 향상을 달성하며, 외부 지도 신호를 사용하는 방법들과 경쟁적인 성능을 보임</li>
+            <li><strong>전이 학습 태스크:</strong> 감성 분석, 질문 분류, 자연어 추론 등 다양한 하위 태스크에서 우수한 성능을 입증</li>
+            <li><strong>데이터 효율성:</strong> 대조 미세조정에 레이블 데이터가 필요 없으므로, 저자원 또는 특정 도메인 환경에서 특히 효과적</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>의의</h2>
+        <p>본 연구는 별도의 학습 쌍 구성이나 데이터 증강 없이도 BERT로부터 고품질 문장 표현을 추출할 수 있음을 보여주었습니다. 모델 자체의 계층적 구조를 자기 지도 신호로 활용함으로써, 비지도 문장 임베딩을 향한 실용적인 경로를 열었으며, SimCSE 등 후속 연구에도 영향을 미친 NLP 분야 대조 학습 연구의 선구적 연구입니다.</p>
+    </div>
+
     <div class="section">
         <h2>링크</h2>
         <div class="links-section">
@@ -42,6 +70,7 @@
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-repr">Representation Learning</span>
     </div>
 </div>
 <div class="footer">

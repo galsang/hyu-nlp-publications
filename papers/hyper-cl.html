@@ -33,19 +33,80 @@
         <figcaption><strong>Figure 3.</strong> Training procedure of Hyper-CL. Every embedding is the output of the same encoder f. The hypernetwork constructs projection matrices to condition sentence representations based on the embedding of the condition.</figcaption>
     </figure>
     <div class="section">
-        <h2>Key Points</h2>
+        <h2>Background</h2>
+        <p>Sentence embeddings are central to many NLP applications, and contrastive learning has driven major advances in their quality. However, standard sentence representations capture a single, fixed view of a sentence's meaning. In practice, similarity between sentences often depends on a <strong>specific perspective or condition</strong> -- for example, two sentences may be similar in topic but dissimilar in sentiment. Existing architectures face a trade-off:</p>
+        <div class="highlight-box">
+            <p><strong>Bi-encoder:</strong> Accurate but requires |S| x |C| encoder forward passes (computationally expensive)</p>
+        </div>
+        <div class="highlight-box">
+            <p><strong>Tri-encoder:</strong> Efficient with pre-computed embeddings and caching, but limited interaction between sentence and condition leads to underperformance</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Method</h2>
+        <p>Hyper-CL bridges the accuracy-efficiency gap by integrating hypernetworks into a tri-encoder framework, enabling dynamic conditioning without sacrificing caching benefits.</p>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Encode Sentence & Condition</div>
+                <div class="step-desc">Use a shared encoder f to produce embeddings: h_s = f(s) for the sentence and h_c = f(c) for the condition</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Generate Projection via Hypernetwork</div>
+                <div class="step-desc">A hypernetwork q transforms the condition embedding into a condition-specific projection matrix: W_c = q(h_c), dynamically creating a condition subspace</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Condition-Aware Projection</div>
+                <div class="step-desc">Project sentence embeddings into the condition subspace: h_sc = W_c * h_s, enabling the same sentence to have different representations under different conditions</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Contrastive Training</div>
+                <div class="step-desc">Train with task-specific contrastive objectives (MSE + InfoNCE for C-STS; adapted SimKGC for knowledge graph completion)</div>
+            </div>
+        </div>
+        <div class="highlight-box">
+            <p><strong>Efficiency trick:</strong> Low-rank decomposition (following LoRA principles) reduces the hypernetwork output from cubic to manageable parameter size, and transformation matrices W_c can be cached since they depend only on conditions.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Results</h2>
+        <table class="results-table">
+            <thead>
+                <tr><th>Benchmark</th><th>Metric</th><th>Performance</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>C-STS (Conditional STS)</td><td>Spearman</td><td class="highlight-cell">38.75 (+7.25 over tri-encoder)</td></tr>
+                <tr><td>WN18RR (KG Completion)</td><td>MRR</td><td class="highlight-cell">0.616</td></tr>
+                <tr><td>WN18RR (KG Completion)</td><td>Hits@1</td><td class="highlight-cell">0.506</td></tr>
+            </tbody>
+        </table>
         <ul class="key-points">
-            <li>A contrastive learning framework that leverages hypernetworks to flexibly generate sentence representations conditioned on tasks or criteria</li>
-            <li>Experimentally validates the effectiveness of conditional sentence embeddings across various downstream tasks</li>
+            <li><strong>C-STS:</strong> Reduces the performance gap between tri-encoder and bi-encoder from 13.3 to 6.05 points</li>
+            <li><strong>Speed:</strong> 108x faster than bi-encoder on WN18RR test set (1.93s vs. 209.98s with BERT-large)</li>
+            <li><strong>Low-rank variant:</strong> hyper64-cl achieves 38.36 Spearman with only 75M additional parameters, nearly matching the full model</li>
+            <li><strong>Clustering quality:</strong> Entropy drops from 0.739 to 0.270 after condition-specific projection, showing effective semantic reorganization</li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>Hyper-CL demonstrates that sentence embeddings do not need to be static, one-size-fits-all vectors. By introducing hypernetwork-generated projections, the same pre-computed sentence embedding can be <strong>dynamically adapted to different perspectives</strong> at near-zero additional inference cost. This opens the door to more nuanced NLP applications -- from conditional retrieval to knowledge graph reasoning -- where the notion of "similarity" fundamentally depends on context, all while maintaining the computational efficiency needed for real-world deployment.</p>
+    </div>
+
     <div class="section">
         <h2>Links</h2>
         <div class="links-section">
             <a href="https://aclanthology.org/2024.acl-long.41/" target="_blank" class="paper-link">ACL Anthology</a>
+            <a href="https://arxiv.org/abs/2403.09490" target="_blank" class="paper-link">arXiv</a>
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-repr">Representation Learning</span>
     </div>
 </div>
 <div class="footer">

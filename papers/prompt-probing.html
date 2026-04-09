@@ -22,19 +22,44 @@
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>Enhancing linear probing performance by leveraging prompts</p>
-        <figure class="paper-figure">
-            <img src="../images/prompt-probing/figure1.png" alt="Paper overview">
-            <figcaption><strong>Figure 1.</strong> Prompt-augmented linear probing framework that scales beyond the limits of few-shot in-context learners by combining prompt engineering with efficient probing methods.</figcaption>
-        </figure>
+        <p>Enhancing linear probing performance by leveraging prompts to scale beyond the limits of few-shot in-context learners.</p>
     </div>
+
+    <figure class="paper-figure">
+        <img src="../images/prompt-probing/figure1.png" alt="Paper overview">
+        <figcaption><strong>Figure 1.</strong> Prompt-augmented linear probing framework that scales beyond the limits of few-shot in-context learners by combining prompt engineering with efficient probing methods.</figcaption>
+    </figure>
+
     <div class="section">
-        <h2>Key Points</h2>
+        <h2>Background & Motivation</h2>
+        <p>Large language models (LLMs) can perform tasks with just a few demonstrations through <strong>in-context learning (ICL)</strong>, but this approach has fundamental limitations: performance saturates or even degrades as the number of demonstrations grows, constrained by the model's fixed context window. Meanwhile, <strong>linear probing</strong> -- training a simple linear classifier on top of frozen LLM representations -- can leverage more labeled data but often underperforms ICL because it does not fully exploit the model's language understanding capabilities. This paper asks: can we combine the strengths of both approaches?</p>
+    </div>
+
+    <div class="section">
+        <h2>Method</h2>
+        <p>The proposed method, <strong>Prompt-Augmented Linear Probing (PALP)</strong>, bridges prompting and probing in a unified framework:</p>
         <ul class="key-points">
-            <li>Combines prompts with the linear probing process to more effectively leverage the representational power of pre-trained models</li>
-            <li>Demonstrates that even a simple linear classifier can achieve high performance through prompt augmentation</li>
+            <li><strong>Prompt-augmented representations:</strong> Instead of extracting representations from raw inputs, PALP prepends task-specific prompts (e.g., templates and verbalizers) to inputs before passing them through the frozen LLM, producing richer, task-aware hidden states</li>
+            <li><strong>Linear probing on augmented features:</strong> A lightweight linear classifier is trained on these prompt-augmented representations using all available labeled data, removing the context-length bottleneck of standard ICL</li>
+            <li><strong>Multiple prompt ensembling:</strong> Different prompt templates yield diverse representations; PALP ensembles predictions from multiple prompts to further boost performance and robustness</li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>Results</h2>
+        <ul class="key-points">
+            <li><strong>Surpasses ICL:</strong> PALP consistently outperforms standard few-shot ICL across a range of NLU benchmarks, especially as the number of labeled examples increases beyond what fits in a context window</li>
+            <li><strong>Scales with data:</strong> Unlike ICL whose performance plateaus, PALP continues to improve as more labeled examples are provided, demonstrating true scalability</li>
+            <li><strong>Efficient and parameter-light:</strong> Only a linear layer is trained on top of frozen LLM features, requiring minimal computation compared to full fine-tuning</li>
+            <li><strong>Prompt ensembling gains:</strong> Combining multiple prompt templates further improves accuracy and reduces variance across tasks</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>PALP demonstrates that the power of prompting and the scalability of classical probing are not mutually exclusive. By augmenting frozen LLM representations with prompt-based conditioning, practitioners can efficiently leverage <strong>all available labeled data</strong> without fine-tuning model parameters or being limited by context window size. This offers a practical, scalable pathway for deploying LLMs in data-rich settings where few-shot ICL falls short.</p>
+    </div>
+
     <div class="section">
         <h2>Links</h2>
         <div class="links-section">
@@ -42,6 +67,7 @@
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-icl">In-Context Learning</span>
     </div>
 </div>
 <div class="footer">

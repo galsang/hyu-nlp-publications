@@ -33,12 +33,58 @@
         <figcaption><strong>Figure 2.</strong> 4단계 정렬 파이프라인의 전체 과정. 모델이 명시적으로 처리할 수 없는 샘플을 필터링(1단계)하고, 자기 모호성 해소를 통해 정보 이득을 측정(2단계)한 후, 높은 정보 이득을 가진 샘플을 지도 미세조정에 활용(3&amp;4단계).</figcaption>
     </figure>
     <div class="section">
-        <h2>핵심 내용</h2>
+        <h2>배경 및 동기</h2>
+        <p>"누가 전국 대회에서 우승했나요?"와 같은 질문은 다양한 종목과 연도의 대회를 지칭할 수 있어 본질적으로 모호합니다. 그러나 대부분의 대형 언어 모델(LLM)은 하나의 해석만 선택하여 자신 있게 답변하며, 내재된 모호성을 무시합니다.</p>
+        <div class="highlight-box">
+            <p><strong>한계:</strong> 기존 LLM은 질문이 실제로 모호한 경우에도 단일 답변을 생성하는 경향이 있어, 사용자가 의도했을 수 있는 다른 유효한 해석을 제시하지 못합니다.</p>
+        </div>
+        <div class="highlight-box">
+            <p><strong>핵심 통찰:</strong> 모호성의 인식 정도는 <strong>모델에 따라 다릅니다</strong> — 넓은 지식을 가진 모델은 제한된 지식을 가진 모델보다 더 많은 가능한 해석을 인식합니다. 따라서 정렬은 각 모델 고유의 지식 경계에 맞춰 수행되어야 합니다.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>방법론</h2>
+        <p>본 논문은 LLM이 모호성을 감지하고 명확화 응답을 생성하도록 학습시키는 4단계 정렬 파이프라인을 제안합니다:</p>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">모호성 필터링</div>
+                <div class="step-desc">모델이 아직 명시적으로 처리하지 못하는 샘플, 즉 실제로 모호함에도 단일 답변을 제공하는 질문을 식별합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">자기 모호성 해소 및 정보 이득 측정</div>
+                <div class="step-desc">모델이 각 질문의 모호성을 자체적으로 해소하고, 모호성 해소로 인한 정보 이득을 측정하여 학습에 가장 유용한 샘플 순위를 매깁니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">지도 미세조정 (SFT)</div>
+                <div class="step-desc">높은 정보 이득을 가진 샘플을 사용하여 모델을 미세조정하고, 가능한 해석들을 열거하는 응답을 생성하도록 학습시킵니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">선호도 최적화</div>
+                <div class="step-desc">선호도 기반 학습을 통해 단일 답변 응답보다 명시적 모호성 처리를 강화합니다.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>실험 결과</h2>
         <ul class="key-points">
-            <li>입력의 모호성을 인식하고 명시적으로 처리하도록 언어 모델을 정렬하는 기법 제안</li>
-            <li>모호한 질문에 대해 여러 가능한 해석을 제시하거나 명확화를 요청하는 능력 향상</li>
+            <li><strong>모호성 감지:</strong> 정렬된 모델은 질문이 모호한 경우를 인식하는 능력이 크게 향상되어, 하나의 해석만 맹목적으로 선택하는 문제를 개선</li>
+            <li><strong>답변 커버리지:</strong> 정렬된 모델은 모호한 질의의 여러 타당한 해석을 다루는 더 포괄적인 응답을 생성</li>
+            <li><strong>명확성 유지:</strong> 모호하지 않은 질문에 대해서는 불필요한 유보 없이 직접적이고 단일한 답변을 계속 제공</li>
+            <li><strong>정보 이득 기반 선택:</strong> 학습 샘플 선택에 정보 이득을 활용하는 것이 무작위 선택보다 효과적이며, 모델 인지 기반 데이터 큐레이션 전략의 가치를 확인</li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>왜 중요한가</h2>
+        <p>실제 사용자 질의는 종종 불충분하거나 모호하지만, 대부분의 LLM은 단일한 확정적 답변을 제공하도록 학습됩니다. 본 연구는 모델이 <strong>언제 명확화를 요청해야 하는지</strong>와 <strong>여러 유효한 해석을 어떻게 제시해야 하는지</strong>를 가르치는 원칙적 프레임워크를 제공합니다. 각 모델 고유의 지식을 기반으로 정렬 과정을 수행함으로써, 과도한 유보(명확한 질문을 모호하다고 판단)와 과소 유보(실제 모호성을 무시) 모두를 방지하여 LLM과의 상호작용을 더 신뢰할 수 있고 유익하게 만듭니다.</p>
+    </div>
+
     <div class="section">
         <h2>링크</h2>
         <div class="links-section">
@@ -46,6 +92,8 @@
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-knowledge">Knowledge</span>
+        <span class="tag tag-reasoning">Reasoning</span>
     </div>
 </div>
 <div class="footer">

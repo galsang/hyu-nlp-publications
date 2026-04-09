@@ -22,19 +22,45 @@
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>암시적 레이어 앙상블을 통해 자연어 이해에서 분포 외 탐지를 향상시키는 방법</p>
-        <figure class="paper-figure">
-            <img src="../../images/ood-detection/figure1.png" alt="논문 개요">
-            <figcaption><strong>Figure 1.</strong> 암시적 레이어 앙상블을 통한 자연어 이해에서의 분포 외 탐지 향상 프레임워크. 트랜스포머 레이어의 중간 표현을 활용합니다.</figcaption>
-        </figure>
+        <p>트랜스포머 중간 레이어 표현을 암시적으로 앙상블하여 자연어 이해에서의 분포 외(OOD) 탐지를 향상시킵니다.</p>
     </div>
+
+    <figure class="paper-figure">
+        <img src="../../images/ood-detection/figure1.png" alt="논문 개요">
+        <figcaption><strong>Figure 1.</strong> 암시적 레이어 앙상블을 통한 자연어 이해에서의 분포 외 탐지 향상 프레임워크. 트랜스포머 레이어의 중간 표현을 활용합니다.</figcaption>
+    </figure>
+
     <div class="section">
-        <h2>핵심 내용</h2>
+        <h2>배경 및 동기</h2>
+        <p>NLU 모델을 실제 환경에 배포하면, 학습 데이터 분포 밖의 입력인 <strong>분포 외(OOD) 입력</strong>이 불가피하게 들어옵니다. 이러한 입력에 대해 모델이 높은 확신으로 잘못된 예측을 내놓으면 심각한 신뢰성 및 안전성 문제가 발생합니다. 기존 NLU용 OOD 탐지 방법은 주로 트랜스포머의 최종 레이어 표현이나 출력 로짓에 의존합니다. 그러나 트랜스포머의 각 레이어는 서로 다른 수준의 언어적 추상화를 포착하며, <strong>중간 레이어에 유용한 OOD 판별 신호가 존재</strong>할 수 있으나 최종 레이어만 사용할 경우 이를 활용하지 못합니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>방법론</h2>
+        <p>본 논문은 OOD 탐지를 위한 <strong>암시적 레이어 앙상블(implicit layer ensemble)</strong> 전략을 제안합니다:</p>
         <ul class="key-points">
-            <li>학습 데이터 분포 밖의 입력을 정확하게 식별하기 위한 향상된 OOD 탐지 기법 제안</li>
-            <li>모델의 신뢰도 추정을 개선하여 실제 배포 환경에서의 안전성 강화</li>
+            <li><strong>다중 레이어 표현 추출:</strong> 최종 트랜스포머 레이어에만 의존하는 대신, 사전학습 모델의 여러 중간 레이어에서 은닉 표현을 추출합니다</li>
+            <li><strong>집계를 통한 암시적 앙상블:</strong> 다중 레이어 표현을 경량 메커니즘으로 집계하여 통합 OOD 점수를 산출하며, 별도 모델 학습 없이 서로 다른 레이어의 판단을 효과적으로 앙상블합니다</li>
+            <li><strong>기존 탐지기와의 호환성:</strong> 마할라노비스 거리, 에너지 스코어 등 다양한 기존 OOD 스코어링 함수와 호환되는 플러그인 방식으로 설계되어, 더 풍부한 표현 신호를 제공하여 성능을 향상시킵니다</li>
+            <li><strong>추가 학습 비용 없음:</strong> 표준 순전파 과정에서 이미 계산된 표현을 활용하므로 최소한의 추가 연산만 필요합니다</li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>실험 결과</h2>
+        <ul class="key-points">
+            <li><strong>일관된 성능 향상:</strong> 암시적 레이어 앙상블은 최종 레이어만 사용하는 기준선 대비 다양한 NLU 벤치마크에서 OOD 탐지 성능을 일관되게 향상시킵니다</li>
+            <li><strong>폭넓은 호환성:</strong> 다양한 OOD 스코어링 방법과 결합했을 때 모두 성능 향상이 관찰되어 접근법의 범용성을 입증합니다</li>
+            <li><strong>상호 보완적 레이어 정보:</strong> 분석 결과, 서로 다른 레이어가 OOD의 서로 다른 측면을 포착하여 중간 표현이 유용한 판별 신호를 담고 있다는 가설을 검증합니다</li>
+            <li><strong>분포 내 성능 유지:</strong> 향상된 OOD 탐지가 분포 내 예제에 대한 모델 정확도를 저하시키지 않습니다</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>의의</h2>
+        <p>신뢰할 수 있는 OOD 탐지는 NLU 시스템의 안전한 배포를 위한 전제 조건입니다. 본 연구는 <strong>트랜스포머 중간 레이어에 상당한 OOD 판별 정보가 숨겨져 있으며</strong>, 레이어 간 단순 앙상블로 이를 활용할 수 있음을 밝힙니다. 플러그인 방식의 특성으로 향후 OOD 탐지 기법과도 쉽게 결합할 수 있습니다. 모델 예측의 신뢰 여부를 판단하는 능력을 향상시킴으로써, 프로덕션 환경에서 더 안전하고 신뢰할 수 있는 NLP 애플리케이션 구축에 기여합니다.</p>
+    </div>
+
     <div class="section">
         <h2>링크</h2>
         <div class="links-section">

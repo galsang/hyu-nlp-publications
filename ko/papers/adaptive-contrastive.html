@@ -29,12 +29,53 @@
         </figure>
     </div>
     <div class="section">
-        <h2>핵심 내용</h2>
+        <h2>배경 및 동기</h2>
+        <p>검색 증강 생성(RAG)은 추론 시 외부 문서를 검색하여 LLM에 제공함으로써 성능을 향상시킵니다. 그러나 검색된 문서는 종종 노이즈가 많거나, 무관하거나, 심지어 정답과 모순되는 경우가 있습니다. 모델이 이러한 저품질 문맥을 맹목적으로 조건화하면 생성 품질이 크게 저하됩니다.</p>
+        <div class="highlight-box">
+            <p><strong>한계:</strong> 기존의 대조적 디코딩은 검색된 문맥의 영향을 억제하기 위해 고정된 가중치를 적용하지만, 고정 가중치는 문맥이 실제로 유용할 때는 과도하게 보정하고, 문맥이 유해할 때는 보정이 부족한 문제가 있습니다.</p>
+        </div>
+        <div class="highlight-box">
+            <p><strong>핵심 통찰:</strong> 디코딩 전략은 검색된 문맥이 질의에 얼마나 관련이 있는지에 따라 <strong>동적으로 적응</strong>해야 하며, 노이즈가 많은 문맥에는 더 강한 대조 보정을, 유용한 문맥에는 더 약한 보정을 적용해야 합니다.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>방법론</h2>
+        <p>본 논문은 문맥 관련성에 기반하여 각 생성 단계에서 대조 가중치를 조절하는 적응적 대조 디코딩(ACD)을 제안합니다:</p>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">문맥 관련성 추정</div>
+                <div class="step-desc">모델 자체의 출력 분포에서 파생된 신호를 활용하여 검색된 문맥이 주어진 질의에 얼마나 관련되고 신뢰할 수 있는지 추정합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">적응적 가중치 계산</div>
+                <div class="step-desc">추정된 관련성에 따라 변화하는 대조 가중치를 계산합니다 — 노이즈가 많은 문맥에는 큰 가중치(영향 억제), 관련 있는 문맥에는 작은 가중치(기여 보존)를 적용합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">대조적 디코딩</div>
+                <div class="step-desc">토큰 생성 시, 검색된 문맥을 조건으로 한 출력 분포와 문맥 없는 분포를 적응적 가중치로 스케일링하여 대조함으로써 최종 토큰 확률을 생성합니다.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>실험 결과</h2>
         <ul class="key-points">
-            <li>검색된 문서의 관련성과 품질을 평가하여 대조적 디코딩 강도를 동적으로 조절</li>
-            <li>저품질 검색 결과에 대한 모델의 강건성을 향상시키고 전체 RAG 시스템 성능 개선</li>
+            <li><strong>노이즈 강건성:</strong> ACD는 검색된 문맥에 무관하거나 오해의 소지가 있는 정보가 포함된 경우, 고정 대조 디코딩 및 표준 RAG 베이스라인을 크게 능가</li>
+            <li><strong>양질 검색의 이점 보존:</strong> 문맥이 유용할 때 성능을 저하시킬 수 있는 고정 대조 방법과 달리, ACD는 고품질 검색 문서의 이점을 유지</li>
+            <li><strong>일관된 성능 향상:</strong> 여러 오픈 도메인 QA 벤치마크에서 개선이 관찰되어 적응적 접근법의 범용성을 입증</li>
+            <li><strong>추가 학습 불필요:</strong> ACD는 순수하게 디코딩 시점에 작동하므로, 기존 RAG 파이프라인에 플러그 앤 플레이 방식으로 적용 가능</li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>왜 중요한가</h2>
+        <p>RAG 시스템은 점점 더 많은 실제 서비스에 배포되고 있지만, 검색 품질은 본질적으로 예측 불가능합니다. 완벽한 검색에서 잘 작동하는 시스템도 노이즈가 있는 결과에서는 치명적으로 실패할 수 있습니다. ACD는 생성 과정을 <strong>디코딩 수준에서 문맥 인식</strong>하게 만들어 이 근본적인 취약성을 해결하며, 검색 품질이 크게 변동하는 실제 환경에서 RAG 시스템의 신뢰성을 높이는 학습 불필요 메커니즘을 제공합니다.</p>
+    </div>
+
     <div class="section">
         <h2>링크</h2>
         <div class="links-section">
@@ -42,7 +83,7 @@
         </div>
     </div>
     <div class="paper-tags" style="margin-top:24px;">
-        <span class="tag tag-rag">RAG / Knowledge</span>
+        <span class="tag tag-rag">RAG</span>
     </div>
 </div>
 <div class="footer">
