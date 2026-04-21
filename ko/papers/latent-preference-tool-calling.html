@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Latent Preference Modeling for Cross-Session Personalized Tool Calling - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="../../papers/latent-preference-tool-calling.html">EN</a>
+        <a href="latent-preference-tool-calling.html" class="active">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; 전체 논문 목록</a>
+        <h1>Latent Preference Modeling for Cross-Session Personalized Tool Calling</h1>
+        <div class="meta">
+            <span class="venue-badge">arXiv 2026</span>
+        </div>
+        <div class="authors">Yejin Yoon*, Minseo Kim*, Taeuk Kim (*: 공동 1저자)</div>
+    </div>
+</div>
+
+<div class="detail-content">
+    <div class="section">
+        <h2>한줄 요약</h2>
+        <p>세션을 넘나드는 개인화된 도구 호출(personalized tool calling)을 위해 265개 다중 세션 대화 / 2,020개 세션 규모의 <strong>MPT</strong> 벤치마크를 <em>선호 재사용(Recall)</em>, <em>선호 귀납(Induction)</em>, <em>선호 전이(Transfer)</em>의 세 가지 과제로 구성하고, 잠재 선호를 <strong>수정 가능한 가설</strong>로 다루는 생성&ndash;검증&ndash;수정(PRefine) 메모리를 제안합니다. PRefine은 전체 히스토리 대비 토큰의 <strong>1.24%</strong>만 사용하면서 도구 호출 정확도를 일관되게 향상시킵니다.</p>
+    </div>
+
+    <figure class="paper-figure">
+        <img src="../../images/latent-preference-tool-calling/figure1.png" alt="PRefine의 생성-검증-수정 루프">
+        <figcaption><strong>Figure 1.</strong> PRefine은 추상화된 선호를 하나의 메모리로 유지하고, 추론 시점에 대상 도메인 스키마에 맞추어 API 인자로 접지(grounding)하여 세션과 도메인을 넘나드는 개인화된 도구 호출을 가능하게 합니다.</figcaption>
+    </figure>
+
+    <div class="section">
+        <h2>배경 및 동기</h2>
+        <p>LLM 기반 에이전트는 점점 더 외부 도구에 의존하며, 도구는 대부분 완전히 지정된 인자를 요구합니다. 그러나 실제 사용자는 요청을 자주 불완전하게 표현하기 때문에, 누락된 값을 과거 상호작용으로부터 추론해야 합니다. 이는 단순히 유사한 과거 행동을 검색하는 문제를 넘어 <em>암묵적이고 지속적인 제약</em>을 추상화해 여러 맥락과 세션에서 일관되게 적용하는 문제입니다.</p>
+        <p>기존 개인화 연구는 대체로 사용자 선호가 정적인 프로필이나 명시적 지침으로 주어진다고 가정하거나, 좁은 도메인 내에서 반복되는 명시적 행동으로만 나타난다고 가정합니다. 그러나 현대적 에이전트는 다양한 작업 공간에서 사전 정의된 선호 스펙 없이 동작합니다. 대형 언어 모델은 유사한 과거 행동을 떠올리는 것은 잘하지만, 도메인을 가로지르는 규칙성을 <em>일반화 가능한 선호 가설</em>로 추상화하는 데는 약합니다.</p>
+        <div class="highlight-box">
+            <p><strong>동기 예시:</strong> 항공, 식당, 호텔에서 지속적으로 저가 옵션을 선택하는 사용자는 명시적으로 언급하지 않아도 &ldquo;이코노미 여행 선호&rdquo;라는 잠재 선호를 드러냅니다. 이 제약은 여러 세션과 도메인에 걸쳐 분산되어 있고, 누적된 증거가 쌓여야만 드러나며, 새로운 행동이 관찰되면 지속적으로 갱신되어야 합니다.</p>
+        </div>
+        <p>이로부터 두 가지 공개된 질문이 제기됩니다: (i) 이러한 잠재 선호를 어떻게 효율적으로 표현하고 유지할 수 있는가, 그리고 (ii) 그 선호가 도메인과 심지어 서로 다른 API 스키마 간에도 전이될 수 있는가?</p>
+    </div>
+
+    <div class="section">
+        <h2>제안 방법: PRefine</h2>
+        <p>PRefine은 잠재 선호를 <em>검색해야 할 정적 사실</em>이 아니라 <strong>수정 가능한 선호 제약 가설</strong>로 취급합니다. 현재까지 관찰된 행동 규칙성의 가장 좋은 추상화 한 줄만 메모리에 유지하고, 새로운 세션이 생길 때마다 생성&ndash;검증&ndash;수정 루프로 갱신합니다.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div>
+                    <div class="step-title">Generate (생성)</div>
+                    <div class="step-desc">세션 <em>T+1</em>에서 현재 대화, 실행된 API 호출, 이전 메모리 M<sub>T</sub>를 바탕으로 선호 후보 가설들을 생성합니다. 후보는 단순한 슬롯 수준의 재사용부터 도메인 횡단 행동 신호까지 다양한 추상화 수준을 포함합니다.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div>
+                    <div class="step-title">Verify (검증)</div>
+                    <div class="step-desc">각 가설은 네 가지 기준으로 평가됩니다 &mdash; <strong>증거 지지</strong>(여러 일관된 상호작용에 기반하는가), <strong>추상화 품질</strong>(단일 이벤트나 슬롯 반복을 넘어 일반화되는가), <strong>실행 가능성</strong>(향후 API 인자 선택을 의미 있게 편향시킬 수 있는가), <strong>시간적 일관성</strong>(최근의 안정적 행동과 양립하는가).</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div>
+                    <div class="step-title">Refine (수정)</div>
+                    <div class="step-desc">검증에서 기각된 가설은 검증기의 피드백과 함께 생성기로 되돌아가 수정됩니다. 루프는 최대 3회까지 반복되며(그 이상 반복해도 추가 성능 이득이 없음을 실험적으로 확인), 수용된 가설이 새로운 메모리 M<sub>T+1</sub>로 저장됩니다.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div>
+                    <div class="step-title">스키마 독립적 메모리</div>
+                    <div class="step-desc">핵심 설계로, 메모리는 특정 API의 슬롯 이름이 아니라 <em>추상적 선호 제약</em>(예: &ldquo;예산 중심의 상호작용 성향&rdquo;)만 저장합니다. 구체적 인자로의 접지는 추론 시점에 일어나기 때문에, 한 스키마에서 구축된 메모리가 슬롯 이름이나 인자 구성이 다른 테스트 시점 스키마에도 그대로 적용될 수 있습니다.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">5</div>
+                <div>
+                    <div class="step-title">추론</div>
+                    <div class="step-desc">세션 <em>T+1</em> 추론 단계에서 모델은 현재 쿼리 <em>q</em>, 유지된 메모리 M<sub>T</sub>, 그리고 대상 도메인의 스키마를 함께 조건으로 사용합니다. 추상 선호는 LLM 추론을 통해 구체적인 API 인자로 접지되며, 선호 표현과 스키마 적응이 한 단계에서 동시에 이루어집니다.</div>
+                </div>
+            </div>
+        </div>
+
+        <p style="margin-top:16px;"><strong>예시로 보는 동작.</strong> 세션 1에서 <code>GetMovies(average_rating=6)</code>가 관찰되면, 초기 가설 &ldquo;중간 평점 영화를 선호&rdquo;는 지나치게 구체적이어서 기각되고, &ldquo;영화에 대한 관심이 적음&rdquo;으로 수정되어 메모리로 채택됩니다. 이후 세션에서 <code>GetRentalCars(car_type=Standard)</code>, <code>GetRestaurants(price_range=Cheap)</code>이 관찰되면 생성기는 &ldquo;도메인 전반에서 경제적이고 단순한 옵션을 선호&rdquo;라는 도메인 횡단 추상화를 제안하고, 이는 검증을 통과하여 메모리로 유지된 뒤 이후 항공권 예약 등에서 접지됩니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>MPT 벤치마크</h2>
+        <p>MPT(Multi-Session Personalized Tool Calling)는 세션을 넘나드는 개인화 자체를 평가 대상으로 삼습니다. Schema-Guided Dialogue(SGD)에 다중 세션 그룹화와 수동 선호 어노테이션을 더해 구축되었습니다.</p>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>통계량</th><th>값</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>다중 세션 대화 수</td><td>265</td></tr>
+                <tr><td>전체 세션 수</td><td>2,020</td></tr>
+                <tr><td>전체 턴 수</td><td>39,884</td></tr>
+                <tr><td>대화당 평균 세션 수</td><td>7.6</td></tr>
+                <tr><td>세션당 평균 턴 수</td><td>19.7</td></tr>
+            </tbody>
+        </table>
+
+        <p style="margin-top:16px;">MPT는 서로 다른 개인화 능력을 분리 평가하기 위한 세 가지 과제를 정의합니다.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div>
+                    <div class="step-title">Preference Recall — 선호 재사용 (332개)</div>
+                    <div class="step-desc">누락된 인자를 <em>동일 도메인 내</em> 과거의 동일 선택을 그대로 재사용해 채울 수 있는 과제입니다(예: <code>flight_class=Economy</code>를 반복 선택한 경우).</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div>
+                    <div class="step-title">Preference Induction — 선호 귀납 (293개)</div>
+                    <div class="step-desc">단순 재사용으로는 해결되지 않는 과제. 서로 다른 작업과 도메인에 분산된 행동 증거를 종합해 잠재 선호를 추론하고, 이를 구체적인 인자 값으로 실체화해야 합니다.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div>
+                    <div class="step-title">Preference Transfer — 선호 전이 (472개)</div>
+                    <div class="step-desc">대상 인자에 대한 도메인 내 증거가 전혀 없는 상황에서, 다른 도메인(예: 식당/호텔에서 관찰된 예산 성향)에서 학습한 잠재 선호를 새 도메인(예: 항공권)에 적용해야 하는 과제입니다.</div>
+                </div>
+            </div>
+        </div>
+
+        <p style="margin-top:16px;">각 인스턴스는 두 가지 쿼리 유형으로 평가됩니다. <strong>문맥 포함(context-guided)</strong> 쿼리는 부분적인 명시 제약을 제공하는 세션 내 대화를 함께 포함하여 부분 지정 상황에서의 선호 기반 인자 완성 능력을 평가하고, <strong>문맥 제거(context-free)</strong> 쿼리는 대화 맥락을 모두 제거하여 순수한 선호 모델링 능력만을 분리해 측정합니다. 선호는 58개의 API&ndash;인자 쌍을 상위 카테고리(예: <em>예산</em> &mdash; <code>price_range=cheap</code>, <code>car_type=Compact</code>, <code>flight_class=Economy</code>; <em>여행 인원</em> &mdash; <code>passengers=1</code> vs. <code>passengers=2-4</code>)로 수동 그룹화하였으며, 19명의 인간 어노테이터가 <strong>예산 그룹 89.7%</strong>, <strong>여행 그룹 97.4%</strong>의 일치도를 보였습니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>실험 결과</h2>
+        <p>총 8종의 추론 LLM(CodeGemma-7B, Gemma-3-12B, R1-Distill-Llama-8B, R1-Distill-Qwen-7B, GPT-4o-mini, GPT-5-mini, GPT-5, Gemini-3-Flash)을 4종의 메모리 베이스라인(RAG, Mem0, LangMem, PRefine)과 비교하였습니다.</p>
+
+        <h3 style="margin-top:16px;">문맥 포함 쿼리 — 베이스 프롬프팅 대비 평균 이득</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>과제</th><th>Base P-EM</th><th>Base OA-F1</th><th>PRefine &Delta;P-EM</th><th>PRefine &Delta;OA-F1</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Preference Recall</td><td>33.51%</td><td>54.94%</td><td class="highlight-cell">+13.11</td><td class="highlight-cell">+11.99</td></tr>
+                <tr><td>Preference Induction</td><td>16.89%</td><td>51.46%</td><td class="highlight-cell">+6.88</td><td class="highlight-cell">+10.52</td></tr>
+                <tr><td>Preference Transfer</td><td>7.81%</td><td>44.81%</td><td class="highlight-cell">+2.87</td><td class="highlight-cell">+9.27</td></tr>
+            </tbody>
+        </table>
+
+        <h3 style="margin-top:16px;">문맥 제거 쿼리 — 평균 F1 이득</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>과제</th><th>Base F1</th><th>PRefine &Delta;F1</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Preference Recall</td><td>33.62%</td><td class="highlight-cell">+9.82</td></tr>
+                <tr><td>Preference Induction</td><td>13.41%</td><td class="highlight-cell">+5.20</td></tr>
+                <tr><td>Preference Transfer</td><td>22.25%</td><td class="highlight-cell">+3.38</td></tr>
+            </tbody>
+        </table>
+
+        <h3 style="margin-top:16px;">메모리 설계 비교</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>방법</th><th>메모리 형태</th><th>갱신 방식</th><th>실행 가능성</th><th>잠재 선호 인지</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>RAG</td><td>원시 발화</td><td>정적 인덱스</td><td>&ndash;</td><td>&ndash;</td></tr>
+                <tr><td>Mem0</td><td>추출된 사실</td><td>덧붙이기 / 덮어쓰기</td><td>&ndash;</td><td>&ndash;</td></tr>
+                <tr><td>LangMem</td><td>구조화된 사실</td><td>LLM 재작성</td><td>&check;</td><td>&ndash;</td></tr>
+                <tr><td class="highlight-cell"><strong>PRefine</strong></td><td class="highlight-cell">잠재 제약</td><td class="highlight-cell">생성&ndash;검증&ndash;수정</td><td class="highlight-cell">&check;</td><td class="highlight-cell">&check;</td></tr>
+            </tbody>
+        </table>
+
+        <ul class="key-points">
+            <li><strong>관찰 vs. 추상화 격차:</strong> 베이스 프롬프팅은 문맥 제거 설정에서 Recall 53.19% F1을 달성하지만, Induction에서는 43.00%, Transfer에서는 16.26%로 급락합니다. 전체 히스토리를 접근할 수 있다 해도 자동으로 잠재 선호 추상화가 되는 것은 아니라는 점을 보여줍니다.</li>
+            <li><strong>메모리 효율성:</strong> PRefine의 평균 메모리 크기는 대화당 <strong>23.28 토큰</strong>으로, 전체 히스토리 프롬프팅의 <strong>1.24%</strong>에 불과하며, 다른 메모리 기법 대비 약 <strong>80% 감소</strong>에 해당합니다. 세션이 10개까지 누적되어도 메모리 크기(20&ndash;25 토큰)가 거의 일정하게 유지됩니다.</li>
+            <li><strong>인자 개수 보정:</strong> 예측 인자 수와 정답 인자 수의 평균 절대 편차가 문맥 포함 설정에서 0.77 &rarr; 0.56, 문맥 제거 설정에서 1.08 &rarr; 0.77로 약 28% 감소하여, 불필요한 인자와 누락된 인자가 모두 줄어듭니다.</li>
+            <li><strong>동적 스키마 일반화:</strong> 슬롯 이름과 구조가 다른 낯선 API 도메인에서, GPT-5의 문맥 포함 P-EM이 <strong>3.75% &rarr; 47.00%</strong>, 문맥 제거 F1이 <strong>36.39% &rarr; 51.45%</strong>로 크게 향상되어, 스키마 독립적 메모리가 구조적으로 다른 도구 인터페이스에도 전이됨을 확인했습니다.</li>
+            <li><strong>베이스라인은 무너지고 PRefine은 유지:</strong> RAG / Mem0 / LangMem은 Recall에서는 어느 정도 작동하지만 Induction과 Transfer에서 급격히 성능이 떨어지는 반면, PRefine의 이득은 세 과제에 걸쳐 상대적으로 일관됩니다.</li>
+            <li><strong>예측 가능한 트레이드오프:</strong> 일부 보수적인 백본(R1-Distill-Llama-8B 등)은 PRefine과 결합 시 과도하게 신중해져 평균 인자 수가 3.34 &rarr; 2.85로 줄고 EA-F1이 낮아질 수 있습니다. 행동 공간을 좁히는 이점이 때로는 필요 인자의 누락이라는 비용으로 나타날 수 있습니다.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>의의</h2>
+        <p>개인 에이전트는 점차 단발성 도구 호출이 아니라 <em>여러 세션을 거치며 사용자를 얼마나 잘 이해해 가는가</em>로 평가될 것입니다. 이 논문은 효과적인 개인화가 <em>사용자의 선택 그 자체가 아니라 그 선택의 이유</em>를 포착하는 데 달려 있으며, 원시 히스토리보다 짧고 수정 가능한 가설 형태의 메모리가 훨씬 더 확장 가능한 표현임을 보여줍니다.</p>
+        <ul class="key-points">
+            <li><strong>새로운 문제 정의:</strong> 잠재 선호 모델링을 과거 행동 검색과 분리해 Recall / Induction / Transfer로 분해함으로써 세션 간 개인화를 측정 가능하게 만들었습니다.</li>
+            <li><strong>재사용 가능한 벤치마크:</strong> 89.7&ndash;97.4%의 일치도로 검증된 선호 어노테이션을 갖춘 MPT는 선호 인지 에이전트 연구에 통제된 테스트베드를 제공합니다.</li>
+            <li><strong>확장 가능한 메모리 설계:</strong> 선호를 추상적이고 수정 가능한 가설로 표현하면 토큰 비용이 1.24% 수준으로 줄고 동적 API 스키마에도 자연스럽게 전이되므로, 히스토리가 쌓이고 API가 변하는 실제 에이전트 운영 환경에 잘 맞습니다.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>링크</h2>
+        <div class="links-section">
+            <a href="https://arxiv.org/abs/2604.17886" target="_blank" class="paper-link">arXiv Paper</a>
+        </div>
+    </div>
+
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-dialogue">Dialogue</span>
+        <span class="tag tag-benchmark">Benchmark</span>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="../index.html">&#8592; 전체 논문 목록</a></p>
+    <p style="margin-top:8px;">한양대학교 자연어처리 연구실 | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

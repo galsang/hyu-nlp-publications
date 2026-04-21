@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Latent Preference Modeling for Cross-Session Personalized Tool Calling - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="latent-preference-tool-calling.html" class="active">EN</a>
+        <a href="../ko/papers/latent-preference-tool-calling.html">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; All Publications</a>
+        <h1>Latent Preference Modeling for Cross-Session Personalized Tool Calling</h1>
+        <div class="meta">
+            <span class="venue-badge">arXiv 2026</span>
+        </div>
+        <div class="authors">Yejin Yoon*, Minseo Kim*, Taeuk Kim (*: equal contribution)</div>
+    </div>
+</div>
+
+<div class="detail-content">
+    <div class="section">
+        <h2>One-Line Summary</h2>
+        <p>The paper introduces <strong>MPT</strong>, a 265-dialogue / 2,020-session benchmark for cross-session personalized tool calling across <em>Preference Recall</em>, <em>Induction</em>, and <em>Transfer</em>, and proposes <strong>PRefine</strong>, a generate&ndash;verify&ndash;refine memory that stores latent preferences as revisable hypotheses and consumes only <strong>1.24%</strong> of full-history tokens while improving tool-calling accuracy.</p>
+    </div>
+
+    <figure class="paper-figure">
+        <img src="../images/latent-preference-tool-calling/figure1.png" alt="PRefine generate-verify-refine loop for preference-aware tool calling">
+        <figcaption><strong>Figure 1.</strong> PRefine maintains an abstract preference memory that is grounded to API arguments at inference time, enabling preference-driven tool calls across sessions and domains.</figcaption>
+    </figure>
+
+    <div class="section">
+        <h2>Background &amp; Motivation</h2>
+        <p>LLM-based agents increasingly rely on external tools that demand fully specified arguments, yet real users habitually under-specify their requests. Completing such incomplete requests requires more than retrieving similar past actions &mdash; it requires <em>abstracting implicit, persistent constraints</em> that guide decision-making across contexts and sessions.</p>
+        <p>Prior personalization work assumes preferences are either directly available (as static profiles or predefined instructions) or emerge through explicit repeated actions inside a narrow domain. Modern agents, however, operate over diverse task spaces without predefined preference specifications. While LLMs can surface similar past actions easily, they struggle to abstract cross-domain regularities into <em>generalizable preference hypotheses</em> that transfer to new contexts.</p>
+        <div class="highlight-box">
+            <p><strong>Motivating example:</strong> A user who consistently picks budget-friendly options across flights, restaurants, and hotels reveals a latent preference for economy-class travel &mdash; even without ever stating it. This constraint is distributed across sessions and domains, emerges only from accumulated evidence, and must be refined as new behaviors are observed.</p>
+        </div>
+        <p>This motivates two open questions that drive the paper: (i) how should such latent preferences be represented and maintained efficiently, and (ii) can they transfer across domains and even across differing API schemas?</p>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method: PRefine</h2>
+        <p>PRefine treats latent preferences <em>not as static facts to retrieve</em> but as <strong>revisable hypotheses of preference constraints</strong>. It maintains a single compact memory entry &mdash; the best current abstraction of behavioral regularities &mdash; and updates it through each new session via a generate&ndash;verify&ndash;refine loop.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div>
+                    <div class="step-title">Generate</div>
+                    <div class="step-desc">At session <em>T+1</em>, the generator proposes candidate preference hypotheses from the current dialogue, executed API calls, and prior memory M<sub>T</sub>. Candidates span multiple abstraction levels, from slot-level reuses to cross-domain behavioral signals.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div>
+                    <div class="step-title">Verify</div>
+                    <div class="step-desc">Each hypothesis is judged against four criteria: <strong>Evidence Support</strong> (grounded in multiple consistent interactions), <strong>Abstraction Quality</strong> (generalizes beyond a single event or slot restatement), <strong>Actionability</strong> (can meaningfully bias future API argument selection), and <strong>Temporal Consistency</strong> (compatible with recent stable behavior).</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div>
+                    <div class="step-title">Refine</div>
+                    <div class="step-desc">Rejected hypotheses return to the generator with verifier feedback for revision. The loop iterates up to three times (experiments show more iterations give no consistent gain), and the accepted hypothesis becomes the new memory M<sub>T+1</sub>.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div>
+                    <div class="step-title">Schema-Agnostic Memory</div>
+                    <div class="step-desc">Crucially, memory stores <em>abstract preference constraints</em> (e.g., "budget-conscious interaction style") rather than schema-specific API signatures. Grounding to concrete arguments happens at inference time, so memory built under one API schema remains applicable when slot names or argument inventories differ at test time.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">5</div>
+                <div>
+                    <div class="step-title">Inference</div>
+                    <div class="step-desc">At session <em>T+1</em>, the inference LLM conditions on the current query <em>q</em>, retained memory M<sub>T</sub>, and the target-domain schema. Abstract preferences are grounded into concrete API arguments through LLM reasoning, jointly handling preference expression and schema adaptation.</div>
+                </div>
+            </div>
+        </div>
+
+        <p style="margin-top:16px;"><strong>Worked example.</strong> Session 1 observes <code>GetMovies(average_rating=6)</code>; the initial "prefers moderately rated movies" hypothesis fails verification as over-specific and refines to "minimal interest in movies". Later sessions with <code>GetRentalCars(car_type=Standard)</code> and <code>GetRestaurants(price_range=Cheap)</code> lead to the cross-domain abstraction "economical and simple options across domains," which is retained as memory and later grounded when booking flights.</p>
+    </div>
+
+    <div class="section">
+        <h2>MPT Benchmark</h2>
+        <p>MPT (Multi-Session Personalized Tool Calling) targets cross-session personalization directly. It is built on top of Schema-Guided Dialogue (SGD) with multi-session grouping and manual preference annotations.</p>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>Statistic</th><th>Value</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Multi-session dialogues</td><td>265</td></tr>
+                <tr><td>Total sessions</td><td>2,020</td></tr>
+                <tr><td>Total turns</td><td>39,884</td></tr>
+                <tr><td>Avg. sessions per dialogue</td><td>7.6</td></tr>
+                <tr><td>Avg. turns per session</td><td>19.7</td></tr>
+            </tbody>
+        </table>
+
+        <p style="margin-top:16px;">MPT defines three evaluation challenges that isolate distinct personalization abilities:</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div>
+                    <div class="step-title">Preference Recall (332 instances)</div>
+                    <div class="step-desc">The missing argument can be filled by direct reuse of previous identical choices <em>within the same domain</em> (e.g., repeatedly choosing <code>flight_class=Economy</code>).</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div>
+                    <div class="step-title">Preference Induction (293 instances)</div>
+                    <div class="step-desc">Direct reuse is insufficient; the model must aggregate behavioral evidence spanning different tasks and domains and instantiate a latent preference as concrete argument values.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div>
+                    <div class="step-title">Preference Transfer (472 instances)</div>
+                    <div class="step-desc">No in-domain evidence exists for the target argument &mdash; a preference observed in other domains (e.g., budget-conscious restaurant and hotel choices) must be transferred to guide selection in a new domain (e.g., flights).</div>
+                </div>
+            </div>
+        </div>
+
+        <p style="margin-top:16px;">Each instance is evaluated under two query types: <strong>context-guided</strong> queries include in-session dialogue providing partial explicit constraints, while <strong>context-free</strong> queries omit context to isolate pure preference modeling capability. Preferences are manually grouped over 58 API&ndash;argument pairs (e.g., <em>Budget</em>: <code>price_range=cheap</code>, <code>car_type=Compact</code>, <code>flight_class=Economy</code>; <em>Travel group size</em>: <code>passengers=1</code> vs. <code>passengers=2-4</code>). Nineteen human annotators achieved <strong>89.7%</strong> agreement on budget groupings and <strong>97.4%</strong> on travel groupings.</p>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <p>Eight inference LLMs were evaluated (CodeGemma-7B, Gemma-3-12B, R1-Distill-Llama-8B, R1-Distill-Qwen-7B, GPT-4o-mini, GPT-5-mini, GPT-5, Gemini-3-Flash) against four memory baselines: RAG, Mem0, LangMem, and PRefine.</p>
+
+        <h3 style="margin-top:16px;">Context-Guided Queries &mdash; Average Gains over Base Prompting</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Challenge</th><th>Base P-EM</th><th>Base OA-F1</th><th>PRefine &Delta;P-EM</th><th>PRefine &Delta;OA-F1</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Preference Recall</td><td>33.51%</td><td>54.94%</td><td class="highlight-cell">+13.11</td><td class="highlight-cell">+11.99</td></tr>
+                <tr><td>Preference Induction</td><td>16.89%</td><td>51.46%</td><td class="highlight-cell">+6.88</td><td class="highlight-cell">+10.52</td></tr>
+                <tr><td>Preference Transfer</td><td>7.81%</td><td>44.81%</td><td class="highlight-cell">+2.87</td><td class="highlight-cell">+9.27</td></tr>
+            </tbody>
+        </table>
+
+        <h3 style="margin-top:16px;">Context-Free Queries &mdash; Average F1 Gains</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Challenge</th><th>Base F1</th><th>PRefine &Delta;F1</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Preference Recall</td><td>33.62%</td><td class="highlight-cell">+9.82</td></tr>
+                <tr><td>Preference Induction</td><td>13.41%</td><td class="highlight-cell">+5.20</td></tr>
+                <tr><td>Preference Transfer</td><td>22.25%</td><td class="highlight-cell">+3.38</td></tr>
+            </tbody>
+        </table>
+
+        <h3 style="margin-top:16px;">Memory Design Comparison</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Method</th><th>Memory Type</th><th>Update Mechanism</th><th>Actionable</th><th>Latent-Preference-Aware</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>RAG</td><td>Raw utterances</td><td>Static index</td><td>&ndash;</td><td>&ndash;</td></tr>
+                <tr><td>Mem0</td><td>Extracted facts</td><td>Append / overwrite</td><td>&ndash;</td><td>&ndash;</td></tr>
+                <tr><td>LangMem</td><td>Structured facts</td><td>LLM rewrite</td><td>&check;</td><td>&ndash;</td></tr>
+                <tr><td class="highlight-cell"><strong>PRefine</strong></td><td class="highlight-cell">Latent constraints</td><td class="highlight-cell">Generate&ndash;verify&ndash;refine</td><td class="highlight-cell">&check;</td><td class="highlight-cell">&check;</td></tr>
+            </tbody>
+        </table>
+
+        <ul class="key-points">
+            <li><strong>Observation vs. abstraction gap:</strong> Base prompting reaches 53.19% F1 on Recall but collapses to 43.00% on Induction and 16.26% on Transfer (context-free), showing that full history access alone does not yield abstraction.</li>
+            <li><strong>Extreme memory efficiency:</strong> PRefine averages just <strong>23.28 tokens</strong> per dialogue &mdash; <strong>1.24%</strong> of full-history prompting and roughly an <strong>80% reduction</strong> versus other memory methods. Footprint stays flat (20&ndash;25 tokens) even after ten accumulated sessions.</li>
+            <li><strong>Better argument calibration:</strong> Mean absolute deviation between predicted and ground-truth argument counts drops 0.77 &rarr; 0.56 (context-guided) and 1.08 &rarr; 0.77 (context-free) &mdash; about a 28% reduction in both spurious extras and missing arguments.</li>
+            <li><strong>Dynamic schema generalization:</strong> Under unseen API domains with different slot names, GPT-5 improves context-guided P-EM from <strong>3.75% &rarr; 47.00%</strong> and context-free F1 from <strong>36.39% &rarr; 51.45%</strong> &mdash; schema-agnostic memory transfers across structurally different tool interfaces.</li>
+            <li><strong>Baselines degrade, PRefine holds:</strong> RAG / Mem0 / LangMem all perform reasonably on Recall but degrade sharply on Induction and Transfer, while PRefine&apos;s gains stay consistent across all three challenges.</li>
+            <li><strong>Predictable trade-off:</strong> Some conservative backbones (e.g., R1-Distill-Llama-8B) become over-restrictive with PRefine, reducing average argument count (3.34 &rarr; 2.85) and thus EA-F1 &mdash; tighter action-space control can sacrifice recall when pruned arguments are genuinely required.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>Personal agents will increasingly be judged not by isolated tool calls but by how well they accumulate <em>understanding</em> of a user across many sessions. This paper argues that effective personalization depends on capturing <em>the reasons behind user choices, not just the choices themselves</em>, and shows that a compact, revisable hypothesis is a far more scalable representation than raw history.</p>
+        <ul class="key-points">
+            <li><strong>New problem framing.</strong> Latent preference modeling is formalized as distinct from action retrieval and decomposed into Recall, Induction, and Transfer &mdash; making cross-session personalization measurable.</li>
+            <li><strong>A reusable benchmark.</strong> MPT with validated preference annotations (89.7&ndash;97.4% agreement) gives the community a controlled testbed for preference-aware agents.</li>
+            <li><strong>A scalable memory design.</strong> Representing preferences as abstract, revisable hypotheses yields 1.24% token cost and naturally transfers to dynamic API schemas &mdash; an appealing recipe for real-world agent deployments where history grows and APIs change.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://arxiv.org/abs/2604.17886" target="_blank" class="paper-link">arXiv Paper</a>
+        </div>
+    </div>
+
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-dialogue">Dialogue</span>
+        <span class="tag tag-benchmark">Benchmark</span>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="../index.html">&#8592; Back to All Publications</a></p>
+    <p style="margin-top:8px;">Hanyang University NLP Lab | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>
