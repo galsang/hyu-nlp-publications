@@ -16,32 +16,181 @@
         <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; All Publications</a>
         <h1>Superficial Success vs. Internal Breakdown: An Empirical Study of Generalization in Adaptive Multi-Agent Systems</h1>
         <div class="meta"><span class="venue-badge">ACL 2026 Findings</span></div>
-        <div class="authors">Namyeong So, Seokgyu Jang, Taeuk Kim</div>
+        <div class="authors">Namyoung So*, Seokgyu Jang*, Taeuk Kim (*: equal contribution)</div>
     </div>
 </div>
+
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>An empirical study analyzing cases where models appear to perform well on the surface but fail internally</p>
+        <p>An empirical study of two representative adaptive multi-agent systems (<strong>AFlow</strong>, <strong>AgentDropout</strong>) across six domains shows that learned topologies (i) fail to transfer out-of-distribution (<em>topological overfitting</em>) and (ii) often retain reasonable accuracy while the underlying collaboration has already collapsed (<em>illusory coordination</em>)&mdash;with role-related and connection-related breakdowns accounting for <strong>~59%</strong> of failures under domain shift.</p>
     </div>
+
+    <figure class="paper-figure">
+        <img src="../images/superficial-success/figure1.png" alt="Example of superficial success vs. internal breakdown under domain transfer: a legal-trained MAS applied to science produces role misalignment, task derailment, and step repetition, yet the final answer is still correct because of a strong base LLM.">
+        <figcaption><strong>Figure 1.</strong> An adaptive MAS trained on the legal domain is deployed on science. Agents make multiple collaboration errors (Legal Text Extractor solving a physics problem, Verifier with nothing to verify, Holding Selector re-solving the problem from scratch), yet the final answer remains correct&mdash;surface accuracy masks <em>illusory coordination</em>.</figcaption>
+    </figure>
+
     <div class="section">
-        <h2>Key Points</h2>
+        <h2>Background &amp; Motivation</h2>
+        <p>Adaptive multi-agent systems (MAS) optimize both the set of agents <em>A</em> (roles) and their connections <em>C</em> (communication topology) from data, much like supervised topology search. The appeal is obvious: plug in a strong base LLM, learn a task-specific collaboration graph, and enjoy the gains. The paradox is that these systems are built from general-purpose LLMs yet are routinely tuned on a narrow slice of tasks&mdash;so it is unclear whether they behave as general-purpose systems at all.</p>
+        <p>This is more than an academic concern. Constructing an adaptive MAS is expensive (multiple LLM calls, repeated search, orchestration overhead), and deploying a separate MAS per task defeats the original motivation. If adaptive MAS only work in-domain, they are effectively narrow solvers in disguise.</p>
+        <div class="highlight-box">
+            <p><strong>Central question:</strong> When an adaptive MAS transfers well across domains, is the transfer driven by genuine collective intelligence, or simply by the raw ability of the underlying LLM? The paper argues the latter is alarmingly common and proposes metrics that expose it.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Study Setup</h2>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div>
+                    <div class="step-title">Two Representative Adaptive MAS</div>
+                    <div class="step-desc"><strong>AFlow</strong> (bottom-up) incrementally constructs communication paths and jointly optimizes roles <em>A</em> and connections <em>C</em>. <strong>AgentDropout</strong> (top-down) prunes redundant links from a fully connected graph and optimizes only <em>C</em>, with <strong>AgentInit</strong> used to fix <em>A</em> beforehand.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div>
+                    <div class="step-title">Six Domains / Reasoning Types</div>
+                    <div class="step-desc">CaseHOLD (Legal), COM2 (Detective), MuSiQue (Multi-Hop), SciBench (Scientific), TheoremQA (Math), StrategyQA (Commonsense). Training uses the conventional small budgets (60 instances for AgentDropout, 100 for AFlow); the learned topology is frozen and applied to the other five domains for OOD evaluation, plus a multi-domain variant that mixes all six while keeping the total instance count constant.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div>
+                    <div class="step-title">Base LLMs and Judge</div>
+                    <div class="step-desc">Main experiments use <strong>GPT-oss-20B</strong> as the base agent LLM, with <strong>Qwen3-30B-A3B</strong> confirming the trends in the appendix. <strong>GPT-oss-120B</strong> serves as the LLM-as-judge for failure taxonomy labeling. All numbers are averaged over three independent runs.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div>
+                    <div class="step-title">Qualitative Lens: MAST Taxonomy</div>
+                    <div class="step-desc">Execution traces are labeled with the 14-category <strong>Multi-Agent System Failure Taxonomy (MAST)</strong> of Cemri et al. (2025). 100 logs are judged per setting, isolating role violations, miscommunication, task derailment, step repetition, and missing verification.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">5</div>
+                <div>
+                    <div class="step-title">Quantitative Lens: Two New Metrics</div>
+                    <div class="step-desc"><strong>Role Alignment</strong> R<sub>i</sub> = S1<sub>i</sub> &middot; (1 &minus; S2<sub>i</sub>), where S1 is cosine similarity between an agent&rsquo;s role prompt and its output (all-MiniLM-L6-v2 embeddings) and S2 is the average similarity to other agents&rsquo; outputs&mdash;large R means each agent contributes unique, role-faithful content. <strong>Connection Significance</strong> O<sub>i</sub> = &sum;<sub>&ell;</sub> &alpha;<sub>i,&ell;</sub> s<sub>i,&ell;</sub>, where &alpha; weights incoming messages via softmax influence against the static priors (role, query) and s &isin; {+1, &minus;1} is a per-message usefulness judgment from an LLM-as-judge. O near 0 means messages are ignored; O &lt; 0 means influential but unhelpful; O &gt; 0 means influential and helpful.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Finding 1: Topological Overfitting</h2>
+        <p>Single-domain MAS optimization produces topologies that are surprisingly brittle under distribution shift. AgentDropout trained on CaseHOLD (Legal) drops from <strong>63.5%</strong> in-domain to an average of <strong>55.78%</strong> across the five unseen domains, and AgentDropout trained on StrategyQA (Commonsense) cannot even produce valid outputs on most other domains (e.g., <strong>0.6% / 0.5% / 0.1% / 15.7%</strong> on Legal / Detective / Science / Math) because topologies tuned for binary true/false answers fail to produce multiple-choice or numerical solutions.</p>
+
+        <h3 style="margin-top:16px;">AgentDropout on GPT-oss-20B &mdash; Train Domain (row) &rarr; Test Domain (col) Accuracy</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Train / Test</th><th>Legal</th><th>Detective</th><th>Multi-Hop</th><th>Science</th><th>Math</th><th>Commonsense</th></tr>
+            </thead>
+            <tbody>
+                <tr><td class="highlight-cell">CaseHOLD (Legal)</td><td class="highlight-cell">63.5</td><td>44.2</td><td>57.4</td><td>41.8</td><td>65.5</td><td>70.0</td></tr>
+                <tr><td>COM2 (Detective)</td><td>53.4</td><td class="highlight-cell">47.9</td><td>53.8</td><td>35.8</td><td>54.4</td><td>19.5</td></tr>
+                <tr><td>MuSiQue (Multi-Hop)</td><td>63.2</td><td>49.0</td><td class="highlight-cell">58.4</td><td>40.1</td><td>65.4</td><td>73.8</td></tr>
+                <tr><td>SciBench (Science)</td><td>61.8</td><td>34.2</td><td>54.9</td><td class="highlight-cell">38.9</td><td>62.8</td><td>47.5</td></tr>
+                <tr><td>TheoremQA (Math)</td><td>62.2</td><td>47.2</td><td>57.5</td><td>36.9</td><td class="highlight-cell">63.8</td><td>75.1</td></tr>
+                <tr><td>StrategyQA (Commonsense)</td><td>0.6</td><td>0.5</td><td>41.5</td><td>0.1</td><td>15.7</td><td class="highlight-cell">72.5</td></tr>
+                <tr><td><strong>Multi-Domain Training</strong></td><td>60.2</td><td>46.7</td><td>52.9</td><td>41.1</td><td>64.4</td><td>75.3</td></tr>
+            </tbody>
+        </table>
+        <p style="margin-top:12px;">A simple mitigation&mdash;mixing training data across all six domains while holding the total instance budget constant&mdash;recovers most of the in-domain baselines and significantly stabilizes the worst cases, hinting that generalization failures are driven by narrow training scope rather than an intrinsic limit of adaptive MAS.</p>
+    </div>
+
+    <div class="section">
+        <h2>Finding 2: Illusory Coordination</h2>
+        <p>Even where accuracy looks acceptable, the qualitative and quantitative analyses reveal that collaboration is often not the reason. Applying MAST to 100 execution logs, role- and connection-related failures (categories 1&ndash;6) make up roughly <strong>59%</strong> of all errors under domain transfer.</p>
+
+        <h3 style="margin-top:16px;">Failure Distribution under Domain Transfer (MAST)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Failure Type</th><th>Share</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Disobey Role Specification</td><td>15.22%</td></tr>
+                <tr><td>No or Incorrect Verification</td><td>10.10%</td></tr>
+                <tr><td>Task Derailment</td><td>8.97%</td></tr>
+                <tr><td>Disobey Task Specification</td><td>8.94%</td></tr>
+                <tr><td>Step Repetition</td><td>8.65%</td></tr>
+                <tr><td>Ignored Other Agent&rsquo;s Input</td><td>7.21%</td></tr>
+                <tr><td>Miscellaneous (8 other MAST cases)</td><td>40.90%</td></tr>
+            </tbody>
+        </table>
+        <p style="margin-top:12px;">Representative case studies show the pattern vividly: a <em>Legal Text Extractor</em> attempting Carnot-efficiency physics (role misalignment), a <em>Validator</em> ignoring prior agent outputs and re-solving from scratch (input neglect), and an <em>Answer Synthesizer</em> replying &ldquo;True&rdquo; to a multiple-choice question (task violation).</p>
+
+        <h3 style="margin-top:16px;">Role Alignment (R) and Connection Significance (O) under Domain Transfer &mdash; AgentDropout</h3>
+        <p>Each value is normalized per row by the row-wise maximum, so the diagonal (in-domain) entries equal 1.00. Low normalized values expose illusory coordination even when raw accuracy is deceptively reasonable.</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Train / Test</th><th>L (R / O)</th><th>D</th><th>MH</th><th>S</th><th>MA</th><th>CS</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>CaseHOLD (Legal)</td><td class="highlight-cell">1.00 / 1.00</td><td>0.56 / 0.07</td><td>0.04 / &minus;1.79</td><td>0.22 / &minus;2.07</td><td>0.25 / &minus;1.89</td><td>0.54 / &minus;1.56</td></tr>
+                <tr><td>COM2 (Detective)</td><td>0.79 / 0.90</td><td class="highlight-cell">1.00 / 1.00</td><td>0.04 / 0.17</td><td>0.43 / 0.65</td><td>0.47 / 0.58</td><td>0.82 / 0.46</td></tr>
+                <tr><td>MuSiQue (Multi-Hop)</td><td>0.69 / 1.00</td><td>1.00 / 0.96</td><td class="highlight-cell">0.38 / 0.15</td><td>0.50 / 0.95</td><td>0.58 / 0.80</td><td>0.58 / 0.86</td></tr>
+                <tr><td>SciBench (Science)</td><td>0.44 / &minus;0.75</td><td>0.49 / &minus;0.50</td><td>0.04 / &minus;0.57</td><td class="highlight-cell">1.00 / 1.00</td><td>0.62 / 0.77</td><td>0.46 / &minus;0.07</td></tr>
+                <tr><td>TheoremQA (Math)</td><td>0.38 / &minus;0.12</td><td>0.36 / 0.21</td><td>0.04 / &minus;0.07</td><td>0.60 / 1.00</td><td class="highlight-cell">1.00 / 0.88</td><td>0.32 / 0.48</td></tr>
+                <tr><td>StrategyQA (Commonsense)</td><td>1.00 / 0.93</td><td>0.96 / 0.95</td><td>0.07 / 0.17</td><td>0.32 / 1.00</td><td>0.45 / 0.90</td><td class="highlight-cell">0.95 / 0.81</td></tr>
+                <tr><td><strong>Multi-Domain Training</strong></td><td>0.89 / 0.69</td><td>1.00 / 0.99</td><td>0.31 / &minus;0.23</td><td>0.58 / 0.88</td><td>0.62 / 0.85</td><td>0.98 / 1.00</td></tr>
+            </tbody>
+        </table>
         <ul class="key-points">
-            <li>Systematically analyzes the phenomenon where models achieve seemingly high performance while their internal mechanisms do not function correctly</li>
-            <li>Diagnoses the gap between superficial success and internal breakdown, and proposes more reliable evaluation methodologies</li>
+            <li><strong>Accuracy up, R collapsed:</strong> CaseHOLD &rarr; SciBench accuracy looks tolerable, but R falls to <strong>22%</strong> of its in-domain value&mdash;the &ldquo;success&rdquo; does not come from role adherence.</li>
+            <li><strong>Accuracy down, R intact:</strong> COM2 &rarr; StrategyQA shows R at <strong>82%</strong> of in-domain despite poor accuracy&mdash;confirming that accuracy and collaboration quality are largely dissociated.</li>
+            <li><strong>Influential but unhelpful messages:</strong> CaseHOLD-trained topologies produce strongly <em>negative</em> O under most transfers (down to &minus;2.07 at SciBench), meaning messages drive outputs yet degrade them.</li>
+            <li><strong>Accuracy is a weak signal:</strong> Pearson correlations between accuracy and R / O are near-zero or mixed across all six benchmarks (|&rho;| &le; 0.12), formalizing that final-answer correctness is not a reliable proxy for coordination quality.</li>
+            <li><strong>Multi-domain training helps, but unevenly:</strong> It yields more stable positive O and higher R on most pairs, yet multi-hop transfer remains fragile.</li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>Correlation and Ablation</h2>
+        <p>A component-swap ablation isolates what exactly overfits. <strong>Role-OOD</strong> (keep in-domain connections, swap roles with OOD ones) drops accuracy by an average of <strong>&minus;13.00 pp</strong>, while <strong>Connection-OOD</strong> (swap only connections) drops by only <strong>&minus;1.24 pp</strong>&mdash;indicating that learned roles are substantially more task-specific than learned connections. A notable exception is MuSiQue (Multi-Hop), where Connection-OOD alone causes a <strong>5.36 pp</strong> drop, showing that valid inter-agent links matter most when the task itself requires multi-hop integration.</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Benchmark</th><th>Acc &ndash; R (Pearson)</th><th>Acc &ndash; O (Pearson)</th><th>In-Domain</th><th>Connection-OOD</th><th>Role-OOD</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>CaseHOLD</td><td>&minus;0.007</td><td>0.0002</td><td>63.50</td><td>62.88 (&minus;0.62)</td><td class="highlight-cell">48.26 (&minus;15.24)</td></tr>
+                <tr><td>COM2</td><td>&minus;0.035**</td><td>0.045***</td><td>47.90</td><td>50.68 (+2.78)</td><td class="highlight-cell">34.50 (&minus;13.40)</td></tr>
+                <tr><td>MuSiQue</td><td>0.003</td><td>0.123***</td><td>58.40</td><td class="highlight-cell">53.04 (&minus;5.36)</td><td>48.44 (&minus;9.96)</td></tr>
+                <tr><td>SciBench</td><td>0.084***</td><td>&minus;0.039*</td><td>38.90</td><td>38.69 (&minus;0.21)</td><td class="highlight-cell">30.29 (&minus;8.61)</td></tr>
+                <tr><td>TheoremQA</td><td>0.113***</td><td>&minus;0.081***</td><td>63.80</td><td>61.26 (&minus;2.54)</td><td class="highlight-cell">51.64 (&minus;12.16)</td></tr>
+                <tr><td>StrategyQA</td><td>&minus;0.096***</td><td>0.067**</td><td>72.50</td><td>71.00 (&minus;1.50)</td><td class="highlight-cell">53.89 (&minus;18.61)</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>The paper reframes what it means for an adaptive MAS to &ldquo;work.&rdquo; A system can post competitive numbers on a new benchmark while internally collapsing into a single strong LLM carrying the load, with other agents producing irrelevant or actively misleading messages. Benchmarks that reward only final-answer accuracy miss this, and the field&rsquo;s current optimization objectives actively encourage it.</p>
+        <ul class="key-points">
+            <li><strong>Diagnosis, not dismissal.</strong> Illusory coordination is defined as a diagnostic regime (high accuracy, low R and/or low O)&mdash;the claim is not that collaboration is always fake, but that it is invisible unless measured.</li>
+            <li><strong>Two portable metrics.</strong> R and O are lightweight&mdash;sentence-embedding cosines plus a per-message LLM-as-judge&mdash;and can be added to any adaptive MAS evaluation pipeline.</li>
+            <li><strong>Design implication.</strong> Because roles are the dominant source of overfitting, future adaptive MAS may benefit from role regularization, multi-domain role libraries, or joint role&ndash;connection objectives that explicitly reward cross-domain transfer.</li>
+            <li><strong>Evaluation implication.</strong> The community should move beyond single-domain accuracy and pair it with internal-dynamics diagnostics; reporting only aggregate correctness can reward systems that do not actually coordinate.</li>
+        </ul>
+    </div>
+
     <div class="section">
         <h2>Links</h2>
         <div class="links-section">
-            <a href="https://nlp.hanyang.ac.kr/home/publications" target="_blank" class="paper-link">Lab Page</a>
+            <a href="https://arxiv.org/abs/2604.18951" target="_blank" class="paper-link">arXiv Paper</a>
         </div>
     </div>
+
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-safety">Safety</span>
         <span class="tag tag-reasoning">Reasoning</span>
     </div>
 </div>
+
 <div class="footer">
     <p><a href="../index.html">&#8592; Back to All Publications</a></p>
     <p style="margin-top:8px;">Hanyang University NLP Lab | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>

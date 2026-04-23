@@ -16,32 +16,181 @@
         <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; 전체 논문 목록</a>
         <h1>Superficial Success vs. Internal Breakdown: An Empirical Study of Generalization in Adaptive Multi-Agent Systems</h1>
         <div class="meta"><span class="venue-badge">ACL 2026 Findings</span></div>
-        <div class="authors">Namyeong So, Seokgyu Jang, Taeuk Kim</div>
+        <div class="authors">Namyoung So*, Seokgyu Jang*, Taeuk Kim (*: 공동 제1저자)</div>
     </div>
 </div>
+
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>적응형 멀티에이전트 시스템에서 표면적 성공과 내부 실패 간의 괴리를 실증적으로 분석</p>
+        <p>대표적인 적응형 멀티에이전트 시스템(<strong>AFlow</strong>, <strong>AgentDropout</strong>)을 6개 도메인에 걸쳐 실증적으로 분석하여, 학습된 토폴로지가 (i) 분포 밖 도메인으로 일반화되지 않는 <em>토폴로지 과적합(topological overfitting)</em>과 (ii) 정확도는 유지되지만 내부 협업은 이미 붕괴된 <em>환상적 협응(illusory coordination)</em>이라는 두 가지 실패 양상을 보이며, 도메인 전이에서 발생하는 실패의 약 <strong>59%</strong>가 역할(role)·연결(connection) 관련 붕괴에서 비롯됨을 밝혔다.</p>
     </div>
+
+    <figure class="paper-figure">
+        <img src="../../images/superficial-success/figure1.png" alt="도메인 전이 상황에서 표면적 성공과 내부 붕괴가 어긋나는 사례: 법률 도메인에서 학습된 MAS를 과학 문제에 적용할 때 역할 오정렬·태스크 일탈·단계 반복이 발생하지만, 개별 LLM의 힘으로 최종 정답은 유지된다.">
+        <figcaption><strong>Figure 1.</strong> 법률 도메인에서 학습된 적응형 MAS를 과학 도메인에 적용한 예시. 에이전트들은 협업 중 다수의 오류(Legal Text Extractor가 물리 문제를 풀고, Verifier가 검증할 대상이 없으며, Holding Selector가 문제를 처음부터 다시 푸는 등)를 일으키지만, 개별 LLM의 능력 덕분에 최종 정답은 유지된다&mdash;표면적 정확도가 <em>환상적 협응</em>을 가리고 있는 전형적 사례.</figcaption>
+    </figure>
+
     <div class="section">
-        <h2>핵심 내용</h2>
+        <h2>배경 및 동기</h2>
+        <p>적응형 멀티에이전트 시스템(MAS)은 에이전트 집합 <em>A</em>(역할)와 연결 <em>C</em>(통신 토폴로지)를 데이터로부터 함께 학습한다. 일반 목적의 LLM을 기반으로 태스크별 협업 그래프를 최적화해 성능을 끌어올린다는 아이디어는 매력적이지만, 학습이 지극히 좁은 태스크에 맞춰지기 때문에 과연 이 시스템이 <em>일반 목적</em>으로 동작하는지는 불분명하다.</p>
+        <p>이 문제는 단순한 이론적 관심사가 아니다. 적응형 MAS 구축에는 여러 번의 LLM 호출, 반복적 탐색, 오케스트레이션 비용이 수반되며, 태스크마다 별도의 MAS를 배포한다면 범용 에이전트라는 애초의 목표가 무너진다. 적응형 MAS가 도메인 내에서만 작동한다면, 결국 복잡한 껍질을 쓴 전용 해결사에 불과하다.</p>
+        <div class="highlight-box">
+            <p><strong>핵심 질문:</strong> 적응형 MAS가 도메인 간 전이에서 잘 동작할 때, 그 성공은 진정한 집단 지능에서 오는가, 아니면 단지 개별 LLM의 강력한 성능에서 오는가? 본 논문은 후자가 놀랄 만큼 흔함을 보이고, 이를 노출하는 정량적 지표를 제안한다.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>연구 설계</h2>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div>
+                    <div class="step-title">두 가지 대표 적응형 MAS</div>
+                    <div class="step-desc"><strong>AFlow</strong>(bottom-up)는 통신 경로를 점진적으로 쌓아 올리며 역할 <em>A</em>와 연결 <em>C</em>를 동시에 최적화한다. <strong>AgentDropout</strong>(top-down)은 완전 연결 그래프에서 불필요한 연결을 제거해 <em>C</em>만 최적화하며, 역할 <em>A</em>는 <strong>AgentInit</strong>으로 사전 결정한다.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div>
+                    <div class="step-title">6개 도메인/추론 유형</div>
+                    <div class="step-desc">CaseHOLD(법률), COM2(추리), MuSiQue(멀티홉 QA), SciBench(과학), TheoremQA(수학), StrategyQA(상식). 기존 관례에 맞춰 학습 인스턴스를 AgentDropout 60개, AFlow 100개로 제한하고, 학습된 토폴로지를 고정한 채 나머지 다섯 도메인에서 OOD 평가를 수행한다. 전체 인스턴스 수를 동일하게 유지하며 6개 도메인을 섞는 다중 도메인 변형도 함께 비교한다.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div>
+                    <div class="step-title">기반 LLM 및 평가자</div>
+                    <div class="step-desc">주 실험은 <strong>GPT-oss-20B</strong>를 기반 에이전트 LLM으로 사용하며, <strong>Qwen3-30B-A3B</strong> 결과가 동일한 경향을 부록에서 확인한다. 실패 유형 라벨링을 위한 LLM-as-judge로는 <strong>GPT-oss-120B</strong>를 활용하고, 모든 수치는 독립적인 3회 실행 평균이다.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div>
+                    <div class="step-title">정성 분석: MAST 분류</div>
+                    <div class="step-desc">실행 로그는 Cemri et al. (2025)의 14개 범주 <strong>Multi-Agent System Failure Taxonomy (MAST)</strong>로 라벨링된다. 설정당 100개의 로그를 판별해 역할 위반, 의사소통 오류, 태스크 일탈, 단계 반복, 검증 누락 등을 분리한다.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">5</div>
+                <div>
+                    <div class="step-title">정량 분석: 두 가지 새로운 지표</div>
+                    <div class="step-desc"><strong>Role Alignment</strong> R<sub>i</sub> = S1<sub>i</sub> &middot; (1 &minus; S2<sub>i</sub>). S1은 에이전트의 역할 프롬프트와 출력 간 코사인 유사도(all-MiniLM-L6-v2 임베딩), S2는 다른 에이전트 출력과의 평균 유사도이며, R이 클수록 각 에이전트가 고유하고 역할에 충실한 기여를 한다는 의미이다. <strong>Connection Significance</strong> O<sub>i</sub> = &sum;<sub>&ell;</sub> &alpha;<sub>i,&ell;</sub> s<sub>i,&ell;</sub>. &alpha;는 정적 사전(역할, 질의)과 비교한 softmax 영향력 가중치이고, s &isin; {+1, &minus;1}은 메시지의 유용성에 대한 LLM-as-judge 판단이다. O가 0에 가까우면 메시지가 무시된 상태, O &lt; 0이면 영향은 크지만 해로운 메시지, O &gt; 0이면 영향도 크고 유용한 메시지를 의미한다.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>발견 1: 토폴로지 과적합</h2>
+        <p>단일 도메인에서 최적화된 MAS 토폴로지는 분포 변화에 놀라울 만큼 취약하다. CaseHOLD(법률)로 학습된 AgentDropout은 도메인 내 <strong>63.5%</strong>에서 미학습 5개 도메인 평균 <strong>55.78%</strong>로 떨어진다. StrategyQA(상식)로 학습된 경우에는 이진(참/거짓) 답변에 맞춰진 토폴로지가 다른 도메인에서는 유효한 답조차 생성하지 못해 법률·추리·과학·수학에서 <strong>0.6 / 0.5 / 0.1 / 15.7%</strong>로 붕괴한다.</p>
+
+        <h3 style="margin-top:16px;">AgentDropout (GPT-oss-20B) &mdash; 학습 도메인(행) &rarr; 테스트 도메인(열) 정확도</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>학습 / 테스트</th><th>법률</th><th>추리</th><th>멀티홉</th><th>과학</th><th>수학</th><th>상식</th></tr>
+            </thead>
+            <tbody>
+                <tr><td class="highlight-cell">CaseHOLD (법률)</td><td class="highlight-cell">63.5</td><td>44.2</td><td>57.4</td><td>41.8</td><td>65.5</td><td>70.0</td></tr>
+                <tr><td>COM2 (추리)</td><td>53.4</td><td class="highlight-cell">47.9</td><td>53.8</td><td>35.8</td><td>54.4</td><td>19.5</td></tr>
+                <tr><td>MuSiQue (멀티홉)</td><td>63.2</td><td>49.0</td><td class="highlight-cell">58.4</td><td>40.1</td><td>65.4</td><td>73.8</td></tr>
+                <tr><td>SciBench (과학)</td><td>61.8</td><td>34.2</td><td>54.9</td><td class="highlight-cell">38.9</td><td>62.8</td><td>47.5</td></tr>
+                <tr><td>TheoremQA (수학)</td><td>62.2</td><td>47.2</td><td>57.5</td><td>36.9</td><td class="highlight-cell">63.8</td><td>75.1</td></tr>
+                <tr><td>StrategyQA (상식)</td><td>0.6</td><td>0.5</td><td>41.5</td><td>0.1</td><td>15.7</td><td class="highlight-cell">72.5</td></tr>
+                <tr><td><strong>다중 도메인 학습</strong></td><td>60.2</td><td>46.7</td><td>52.9</td><td>41.1</td><td>64.4</td><td>75.3</td></tr>
+            </tbody>
+        </table>
+        <p style="margin-top:12px;">전체 학습 인스턴스 수를 동일하게 유지하면서 6개 도메인을 혼합 학습하는 단순한 완화책만으로 대부분의 도메인 내 기준선을 회복하고 최악의 경우들이 눈에 띄게 안정화된다. 이는 일반화 실패가 적응형 MAS의 본질적 한계라기보다는 좁은 학습 범위에서 비롯됨을 시사한다.</p>
+    </div>
+
+    <div class="section">
+        <h2>발견 2: 환상적 협응</h2>
+        <p>정확도가 그럭저럭 유지되는 경우조차 정성·정량 분석은 &ldquo;성공&rdquo;의 근원이 협업이 아님을 드러낸다. 100개 실행 로그에 MAST를 적용한 결과 역할·연결 관련 실패(카테고리 1&ndash;6)가 도메인 전이 상의 모든 오류의 약 <strong>59%</strong>를 차지한다.</p>
+
+        <h3 style="margin-top:16px;">도메인 전이 시 실패 유형 분포 (MAST)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>실패 유형</th><th>비율</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>역할 사양 위반 (Disobey Role Specification)</td><td>15.22%</td></tr>
+                <tr><td>검증 누락/오류 (No or Incorrect Verification)</td><td>10.10%</td></tr>
+                <tr><td>태스크 일탈 (Task Derailment)</td><td>8.97%</td></tr>
+                <tr><td>태스크 사양 위반 (Disobey Task Specification)</td><td>8.94%</td></tr>
+                <tr><td>단계 반복 (Step Repetition)</td><td>8.65%</td></tr>
+                <tr><td>다른 에이전트 입력 무시 (Ignored Other Agent&rsquo;s Input)</td><td>7.21%</td></tr>
+                <tr><td>기타 MAST 8개 범주</td><td>40.90%</td></tr>
+            </tbody>
+        </table>
+        <p style="margin-top:12px;">대표 사례들은 이 양상을 생생히 보여준다. <em>Legal Text Extractor</em>가 Carnot 효율 계산에 뛰어들고(역할 오정렬), <em>Validator</em>가 선행 에이전트 출력을 무시한 채 처음부터 다시 풀며(입력 무시), <em>Answer Synthesizer</em>가 객관식 문항에 &ldquo;True&rdquo;로 답하는(태스크 위반) 식이다.</p>
+
+        <h3 style="margin-top:16px;">Role Alignment (R) / Connection Significance (O) &mdash; AgentDropout</h3>
+        <p>각 값은 행 방향 최댓값으로 정규화되어 도메인 내(대각) 값이 1.00이다. 정규화된 값이 낮을수록, 원시 정확도가 겉보기에 괜찮더라도 환상적 협응이 드러난다.</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>학습 / 테스트</th><th>법률 (R / O)</th><th>추리</th><th>멀티홉</th><th>과학</th><th>수학</th><th>상식</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>CaseHOLD (법률)</td><td class="highlight-cell">1.00 / 1.00</td><td>0.56 / 0.07</td><td>0.04 / &minus;1.79</td><td>0.22 / &minus;2.07</td><td>0.25 / &minus;1.89</td><td>0.54 / &minus;1.56</td></tr>
+                <tr><td>COM2 (추리)</td><td>0.79 / 0.90</td><td class="highlight-cell">1.00 / 1.00</td><td>0.04 / 0.17</td><td>0.43 / 0.65</td><td>0.47 / 0.58</td><td>0.82 / 0.46</td></tr>
+                <tr><td>MuSiQue (멀티홉)</td><td>0.69 / 1.00</td><td>1.00 / 0.96</td><td class="highlight-cell">0.38 / 0.15</td><td>0.50 / 0.95</td><td>0.58 / 0.80</td><td>0.58 / 0.86</td></tr>
+                <tr><td>SciBench (과학)</td><td>0.44 / &minus;0.75</td><td>0.49 / &minus;0.50</td><td>0.04 / &minus;0.57</td><td class="highlight-cell">1.00 / 1.00</td><td>0.62 / 0.77</td><td>0.46 / &minus;0.07</td></tr>
+                <tr><td>TheoremQA (수학)</td><td>0.38 / &minus;0.12</td><td>0.36 / 0.21</td><td>0.04 / &minus;0.07</td><td>0.60 / 1.00</td><td class="highlight-cell">1.00 / 0.88</td><td>0.32 / 0.48</td></tr>
+                <tr><td>StrategyQA (상식)</td><td>1.00 / 0.93</td><td>0.96 / 0.95</td><td>0.07 / 0.17</td><td>0.32 / 1.00</td><td>0.45 / 0.90</td><td class="highlight-cell">0.95 / 0.81</td></tr>
+                <tr><td><strong>다중 도메인 학습</strong></td><td>0.89 / 0.69</td><td>1.00 / 0.99</td><td>0.31 / &minus;0.23</td><td>0.58 / 0.88</td><td>0.62 / 0.85</td><td>0.98 / 1.00</td></tr>
+            </tbody>
+        </table>
         <ul class="key-points">
-            <li>모델이 표면적으로 높은 성능을 달성하지만 내부 메커니즘이 올바르게 작동하지 않는 현상을 체계적으로 분석</li>
-            <li>표면적 성공과 내부 붕괴 간의 격차를 진단하고, 보다 신뢰할 수 있는 평가 방법론을 제안</li>
+            <li><strong>정확도는 괜찮지만 R은 무너짐:</strong> CaseHOLD &rarr; SciBench는 정확도가 어느 정도 유지되지만 R이 도메인 내 값의 <strong>22%</strong>로 추락하여, &ldquo;성공&rdquo;이 역할 충실도에서 오는 것이 아님을 보여준다.</li>
+            <li><strong>정확도는 낮지만 R은 유지됨:</strong> COM2 &rarr; StrategyQA에서는 정확도가 저조함에도 R이 도메인 내 값의 <strong>82%</strong>를 유지하여, 정확도와 협업 품질이 거의 분리되어 있음을 확인한다.</li>
+            <li><strong>강하지만 해로운 메시지:</strong> CaseHOLD에서 학습된 토폴로지는 대부분의 전이에서 O가 강하게 음수(SciBench에서 &minus;2.07까지)로 나타나, 메시지가 출력을 지배하지만 실제로는 결과를 악화시키고 있음을 의미한다.</li>
+            <li><strong>정확도는 약한 신호:</strong> 6개 벤치마크 모두에서 정확도와 R/O의 Pearson 상관은 0 근처이거나 혼합(|&rho;| &le; 0.12)이다. 최종 정답 정확도는 협업 품질의 대리지표로 신뢰하기 어렵다.</li>
+            <li><strong>다중 도메인 학습은 도움이 되지만 불균등:</strong> 대부분의 경우 O가 안정적으로 양수로 유지되고 R도 상승하지만, 멀티홉 전이는 여전히 취약하다.</li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>상관 분석 및 소거 실험</h2>
+        <p>구성 요소 교체(component-swap) 소거 실험은 어느 쪽이 과적합되는지를 정확히 짚어낸다. <strong>Role-OOD</strong>(도메인 내 연결을 유지하고 역할만 OOD로 교체)는 평균 <strong>&minus;13.00pp</strong>의 정확도 하락을, <strong>Connection-OOD</strong>(연결만 교체)는 <strong>&minus;1.24pp</strong>의 하락만을 일으킨다. 즉, 학습된 역할이 학습된 연결보다 훨씬 더 태스크 특화적이다. 다만 MuSiQue(멀티홉)에서는 Connection-OOD만으로도 <strong>5.36pp</strong> 하락이 발생하여, 멀티홉 추론과 같이 과제 자체가 정보 통합을 요구하는 경우에는 유효한 연결이 특히 중요함을 보여준다.</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>벤치마크</th><th>Acc &ndash; R (Pearson)</th><th>Acc &ndash; O (Pearson)</th><th>In-Domain</th><th>Connection-OOD</th><th>Role-OOD</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>CaseHOLD</td><td>&minus;0.007</td><td>0.0002</td><td>63.50</td><td>62.88 (&minus;0.62)</td><td class="highlight-cell">48.26 (&minus;15.24)</td></tr>
+                <tr><td>COM2</td><td>&minus;0.035**</td><td>0.045***</td><td>47.90</td><td>50.68 (+2.78)</td><td class="highlight-cell">34.50 (&minus;13.40)</td></tr>
+                <tr><td>MuSiQue</td><td>0.003</td><td>0.123***</td><td>58.40</td><td class="highlight-cell">53.04 (&minus;5.36)</td><td>48.44 (&minus;9.96)</td></tr>
+                <tr><td>SciBench</td><td>0.084***</td><td>&minus;0.039*</td><td>38.90</td><td>38.69 (&minus;0.21)</td><td class="highlight-cell">30.29 (&minus;8.61)</td></tr>
+                <tr><td>TheoremQA</td><td>0.113***</td><td>&minus;0.081***</td><td>63.80</td><td>61.26 (&minus;2.54)</td><td class="highlight-cell">51.64 (&minus;12.16)</td></tr>
+                <tr><td>StrategyQA</td><td>&minus;0.096***</td><td>0.067**</td><td>72.50</td><td>71.00 (&minus;1.50)</td><td class="highlight-cell">53.89 (&minus;18.61)</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>의의</h2>
+        <p>본 논문은 적응형 MAS가 &ldquo;작동한다&rdquo;는 말의 의미를 다시 묻는다. 시스템이 새 벤치마크에서 경쟁력 있는 수치를 달성하면서도 내부적으로는 단 하나의 강력한 LLM이 짐을 떠맡고 다른 에이전트들은 무관하거나 오히려 해로운 메시지를 쏟아내는 상태로 붕괴할 수 있다. 최종 정답 정확도만을 보상하는 현 벤치마크와 최적화 목표는 이런 상태를 오히려 조장하고 있다.</p>
+        <ul class="key-points">
+            <li><strong>진단으로서의 정의.</strong> 환상적 협응은 &ldquo;높은 정확도 + 낮은 R 및/또는 낮은 O&rdquo;라는 진단 체계로 정의된다. 모든 협업이 가짜라는 주장이 아니라, 측정하지 않으면 보이지 않는 실패라는 점이 핵심이다.</li>
+            <li><strong>이식 가능한 두 지표.</strong> R과 O는 문장 임베딩 코사인 유사도와 메시지 단위 LLM-as-judge만으로 계산되는 경량 지표로, 어떤 적응형 MAS 평가 파이프라인에도 쉽게 추가할 수 있다.</li>
+            <li><strong>설계 시사점.</strong> 과적합의 주된 근원이 역할이므로, 향후 적응형 MAS는 역할 정규화, 다중 도메인 역할 라이브러리, 교차 도메인 전이를 명시적으로 보상하는 역할&ndash;연결 공동 최적화 등을 고려할 필요가 있다.</li>
+            <li><strong>평가 시사점.</strong> 단일 도메인 정확도를 넘어 내부 역학 진단 지표와 함께 보고해야 한다. 전체 정답률만 보고하는 관행은 실제로는 협업하지 않는 시스템을 보상할 수 있다.</li>
+        </ul>
+    </div>
+
     <div class="section">
         <h2>링크</h2>
         <div class="links-section">
-            <a href="https://nlp.hanyang.ac.kr/home/publications" target="_blank" class="paper-link">Lab Page</a>
+            <a href="https://arxiv.org/abs/2604.18951" target="_blank" class="paper-link">arXiv Paper</a>
         </div>
     </div>
+
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-safety">Safety</span>
         <span class="tag tag-reasoning">Reasoning</span>
     </div>
 </div>
+
 <div class="footer">
     <p><a href="../index.html">&#8592; 전체 논문 목록으로 돌아가기</a></p>
     <p style="margin-top:8px;">한양대학교 자연어처리 연구실 | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
