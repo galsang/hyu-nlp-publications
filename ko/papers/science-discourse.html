@@ -19,28 +19,167 @@
         <div class="authors">Jin Eun Yoo, Nam-Hwa Kang, Suna Ryu, Jun-ki Lee, Youngsun Kwak, Taeuk Kim, Hyeong Gwan Kim, Youngwoo Shin, Uiji Hwang</div>
     </div>
 </div>
+
 <div class="detail-content">
     <div class="section">
         <h2>한줄 요약</h2>
-        <p>NLP를 활용하여 과학 교실 담화를 분석하는 도구 개발</p>
+        <p>과학교육 교수진과 현직 중학교 과학교사가 공동으로 설계한 <strong>이중 전문성(dual-expertise)</strong> 발화 단위 LLM 코딩 프레임워크. <strong>20개 주제 범주, 137개 수업 용어 글로서리</strong>로 운영화하며, 한국 중학교 실수업 <strong>68개 차시(8,651개 발화)</strong>로 검증하였다. 프롬프팅과 파인튜닝 패러다임을 모두 비교한 결과, 평정(rating) 과제에서 가중 F1 <strong>84.59%</strong>, 주제(theme) 과제에서 <strong>52.01%</strong>를 달성하였다.</p>
     </div>
+
     <div class="section">
-        <h2>핵심 내용</h2>
+        <h2>배경 및 동기</h2>
+        <p>기존의 자동 교실담화 분석 도구(CLASS, MQI, NCTE 등)는 차시 전체를 거시적으로 평가하기 위해 설계되어, 교사가 실제로 활용 가능한 형성적 피드백에 필요한 발화 단위 분석에는 부적합하다. 또 LLM 응용 연구도 수학과 영어과에 집중되어 있어, 본질적으로 학제적이며 한 교사가 자신의 전공이 아닌 영역까지 가르치는 일이 잦은 과학 수업 담화는 거의 다루어지지 않았다.</p>
+        <p>이러한 공백을 메우기 위해 두 가지 동기가 작동한다. 첫째, 7&ndash;15분 단위의 고정 분절보다 술어 단위(predicate-level) 발화가 LLM 입력에 더 적합하지만, 실제 K&ndash;12 과학 수업 담화의 <em>모든</em> 수업 차원을 포괄하는 LLM-친화적 코딩 체계는 아직 존재하지 않았다. 둘째, 전사 자료에서 도출되는 평정과 주제는 학문적 이론(과학교육 교수진)과 교실 현장성(경험 많은 교사) 모두를 충족할 때에야 교육학적으로 의미 있다.</p>
+        <div class="highlight-box">
+            <p><strong>연구 질문.</strong> (RQ1) 과학교육 영역 지식을 LLM 기반 코딩 프레임워크에 어떻게 체계적으로 통합할 수 있는가? (RQ2) 실제 과학 교실 데이터에서 도출된 평정·주제 범주 예측에서 LLM 아키텍처와 설정들은 어떻게 비교되는가?</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>데이터셋</h2>
+        <p>한국의 중학교 과학교사 <strong>12명(여 9명, 남 3명)</strong>이 2024년 2학기에 녹화한 <strong>68개 수업 차시</strong>로 구성된다. 각 교사는 본인의 전공과 비전공 과학 영역에서 약 45분 길이의 강의식 수업을 최소 3차시 이상 녹화하였다.</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>과목</th><th>차시 수</th><th>코딩된 발화 수</th><th>평균 평정 (SD)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>물리</td><td>15 (22.1%)</td><td>2,001</td><td>3.025 (0.263)</td></tr>
+                <tr><td>화학</td><td>15 (22.1%)</td><td>2,636</td><td>2.989 (0.408)</td></tr>
+                <tr><td>생명과학</td><td>21 (30.9%)</td><td>1,500</td><td>3.130 (0.363)</td></tr>
+                <tr><td>지구과학</td><td>17 (25.0%)</td><td>2,514</td><td>3.144 (0.444)</td></tr>
+                <tr><td><strong>전체</strong></td><td><strong>68</strong></td><td><strong>고유 발화 8,651개</strong></td><td>&mdash;</td></tr>
+            </tbody>
+        </table>
+        <p style="margin-top:12px;">한 발화가 여러 주제에 걸치는 경우(이중 769개, 삼중 8개)를 분리하면 분석용 데이터셋은 <strong>9,436개의 주제&ndash;발화 인스턴스</strong>이며, 주제와 평정으로 동시 층화하여 8:1:1로 7,549 / 943 / 944 (학습/검증/평가)로 분할한다. 차시의 <strong>45.59%</strong>는 교사 본인의 전공 과목, <strong>54.41%</strong>는 비전공 과목으로, 한국 중학교 과학 수업의 학제적 현실을 반영한다.</p>
+    </div>
+
+    <div class="section">
+        <h2>이중 전문성 코딩 프레임워크</h2>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div>
+                    <div class="step-title">술어 단위 청킹(Predicate-Level Chunking)</div>
+                    <div class="step-desc">문장 단위와 단락 단위를 비교한 끝에, 분석 단위로 <em>술어 단위</em> 청킹을 채택하였다. 이는 LLM 모델링에 가장 적합한 세분성을 제공하면서 교사 발화의 분포적 변동성(긴 발화 vs. 단어 수준 발화)과 STT 분절 잡음을 함께 흡수한다. 청킹 자체는 과학교육 교수진이 직접 수행하고, 코딩은 코더가 책임진다.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div>
+                    <div class="step-title">137개 용어 글로서리, 20개 주제 범주</div>
+                    <div class="step-desc">초기 수집된 678개 용어를 4명의 과학교육 교수와 1명의 교육평가 교수가 다단계로 정련하여 최종적으로 <strong>137개 수업 용어</strong>로 통합하였다. <strong>주제 1: 교수 실천(Teaching Practices)</strong>은 17개 범주, 123개 용어(예: <em>과학 지식의 잠정성</em>, <em>과학기술 발전 설명</em> 등). <strong>주제 2: 학급 운영(Classroom Management)</strong>은 3개 범주, 14개 용어(예: <em>과제 제시</em>, <em>교과서 읽기</em>, <em>차시 마무리</em>). 글로서리 개발은 과학교육 분야의 RTOP, ISIOP 관찰 프로토콜의 영향을 받았다.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div>
+                    <div class="step-title">1&ndash;5점 품질 평정</div>
+                    <div class="step-desc">각 청킹된 발화에 1&ndash;5점을 부여한다(1: 오개념을 유발하는 심각한 내용·운영 오류, 2: 경미한 오류, 3: 보통, 4: 효과적, 5: 모범적). 한국 교실의 높은 기본 실천 수준을 반영해 <strong>전체의 86.7%가 3점</strong>이며 1, 5점은 각각 0.5% 미만 &mdash; 모델링 측면에서는 의미 있는 클래스 불균형이 발생한다.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div>
+                    <div class="step-title">이중 전문성 코딩 절차</div>
+                    <div class="step-desc">각 과목 팀은 과학교육 교수 1명과 경험 많은 교사 코더 2명으로 구성된다. 교수가 전사 자료를 분절하고, 두 코더가 최신 글로서리를 참조해 독립적으로 평정·코딩한 뒤 합치 회의를 통해 조정한다. 총 <strong>코더 8명(교수 경력 6&ndash;22년)</strong>과 <strong>과학교육 교수 4명</strong>이 참여하였다. 합의가 어려울 때 교수의 한 표는 코더의 표와 동등한 가중치를 가지며, 이는 교사들의 현장 전문성이 정당하게 반영되도록 한다.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">5</div>
+                <div>
+                    <div class="step-title">평정자 일치도</div>
+                    <div class="step-desc">1&ndash;5 평정의 가중 정확도·정밀도·재현율·F1은 모든 과목에서 <strong>0.9 이상</strong>이었다. 20개 주제 범주에서는 생명과학이 가장 낮은 <strong>0.709&ndash;0.713</strong>, 물리가 <strong>0.808&ndash;0.973</strong>, 화학과 지구과학은 0.90을 상회하였다. 기존 NCTE 연구의 일반적 범위(&kappa; &asymp; 0.3&ndash;0.4 ~ ICC &asymp; 0.8&ndash;0.9)와 비교해 <em>매우 높은 일치도</em>이다.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>LLM 방법론</h2>
+        <p>두 가지 과제가 평가된다: <strong>평정 예측</strong>(1&ndash;5점 순서형)과 <strong>주제 예측</strong>(20개 범주 분류).</p>
         <ul class="key-points">
-            <li>과학 수업에서의 교사-학생 담화를 자동으로 분석하는 NLP 기반 도구를 개발</li>
-            <li>교실 담화 패턴을 체계적으로 분류하고 실제 교육 현장에 적용 가능한 분석 프레임워크를 제시</li>
+            <li><strong>프롬프팅(GPT-5-mini).</strong> 다섯 가지 전략 비교: <em>기본(Default)</em>, <em>(a) 맥락 증강</em>(평정용 5턴, 주제용 10턴 선행 발화), <em>(b) 시연 선택</em>(<em>Qwen3-Embedding-8B</em> 기반 검색 증강 few-shot; 평정 K=7, 주제 K=12), <em>(c) Chain-of-Thought</em>, <em>(d) 하위범주 프롬프팅</em>(주제별 정의 + 하위 라벨 제공) 및 그 조합.</li>
+            <li><strong>인코더 파인튜닝.</strong> <em>klue/roberta-large</em> 위에 [CLS] 표상에 대한 2층 MLP 헤드를 얹고 종단(end-to-end) 파인튜닝(AdamW, <em>lr</em>=2e&minus;5, batch=256, 최대 30 epochs). 손실 함수는 <em>KL 발산</em>이며, 평정에는 순서형 평활화(정답 &plusmn;1로 질량 분산), 주제에는 라벨 평활화 일핫(label-smoothed one-hot)을 사용한다.</li>
+            <li><strong>디코더 파인튜닝.</strong> <em>google/gemma-3-12b-it</em>를 모든 매개변수 풀파인튜닝(최대 6 epochs, batch=8&ndash;16, lr&isin;{1e&minus;5, 1e&minus;6, 1e&minus;7}). 클래스 불균형 대응 4종 비교: <em>cross-entropy</em>, <em>weighted CE</em>, <em>focal loss</em>, 다수 클래스를 평정 500 / 주제 700개로 줄이는 <em>undersampling</em>.</li>
+            <li><strong>양방향 디코더.</strong> 인코더로 변환된 디코더 <em>gte-Qwen2-7B-instruct</em>를 동일한 4종 손실 설정으로 학습(batch=128, weight decay=0.01, 최대 30 epochs).</li>
+            <li><strong>하드웨어.</strong> NVIDIA H200 GPU 2장(각 141GB VRAM).</li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>결과: 평정 예측</h2>
+        <p>1&ndash;5점 순서형 평정 과제에서는 파인튜닝이 프롬프팅을 명확히 앞선다. 양방향 디코더에 cross-entropy를 사용한 모델이 가중 F1에서 최고치를, 인코더(KL)는 정확도에서 최고치를 기록하였다.</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>패러다임</th><th>방법</th><th>정확도(%)</th><th>가중 정밀도</th><th>가중 재현율</th><th>가중 F1</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>프롬프팅</td><td>Default</td><td>60.06</td><td>81.36</td><td>60.06</td><td>68.34</td></tr>
+                <tr><td>프롬프팅</td><td>시연 선택 (b)</td><td>69.28</td><td>81.98</td><td>69.28</td><td>74.54</td></tr>
+                <tr><td>프롬프팅</td><td>Chain-of-Thought (c)</td><td>64.62</td><td>83.75</td><td>64.62</td><td>71.15</td></tr>
+                <tr><td>프롬프팅</td><td>a + b + c</td><td>47.78</td><td><strong>84.20</strong></td><td>47.78</td><td>57.49</td></tr>
+                <tr><td>파인튜닝</td><td>Encoder (KL-div)</td><td class="highlight-cell"><strong>88.24</strong></td><td>77.95</td><td class="highlight-cell"><strong>88.24</strong></td><td>82.78</td></tr>
+                <tr><td>파인튜닝</td><td>Decoder (CE)</td><td>88.12</td><td>77.83</td><td>88.12</td><td>82.66</td></tr>
+                <tr><td>파인튜닝</td><td class="highlight-cell">Bidirectional Decoder (CE)</td><td>87.92</td><td class="highlight-cell">83.50</td><td>87.92</td><td class="highlight-cell"><strong>84.59</strong></td></tr>
+            </tbody>
+        </table>
+        <ul class="key-points">
+            <li><strong>시연 선택이 단일 프롬프팅 기법 중 가장 효과적</strong>이다. 의미적으로 유사한 few-shot 예시 노출만으로 평정 정확도가 60.06% &rarr; 69.28%로 상승한다 &mdash; CoT나 단순 맥락 추가보다 효과가 크다.</li>
+            <li><strong>맥락만 단순 추가하면 오히려 해롭다.</strong> 가공되지 않은 선행 발화(맥락 증강 단독)는 정확도를 36.86%까지 떨어뜨려, 의미 안내 없는 대화 이력은 신호보다 잡음으로 작동함을 시사한다.</li>
+            <li><strong>여기서는 Cross-entropy가 불균형 대응 손실보다 낫다.</strong> 가중 CE, focal, undersampling 모두 디코더와 양방향 디코더에서 plain CE에 미치지 못하는데, 이는 다수 클래스인 평정 3점이 한국 교실의 실제 수업 품질 분포를 진정으로 반영하기 때문이다.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>결과: 주제 예측</h2>
+        <p>20개 전문가 정의 범주에 걸친 주제 예측은 더 어렵고, 프롬프팅과 파인튜닝의 격차가 좁혀진다. 최적 프롬프팅 구성(a + b + c + d)은 가중 F1 <strong>52.01%</strong>로 최고 파인튜닝 모델과 사실상 비등하다.</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>패러다임</th><th>방법</th><th>정확도(%)</th><th>가중 정밀도</th><th>가중 재현율</th><th>가중 F1</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>프롬프팅</td><td>Default</td><td>27.22</td><td>33.42</td><td>27.22</td><td>28.92</td></tr>
+                <tr><td>프롬프팅</td><td>Chain-of-Thought (c)</td><td>47.99</td><td>50.64</td><td>47.99</td><td>48.00</td></tr>
+                <tr><td>프롬프팅</td><td>a + b + c + d</td><td>52.22</td><td>54.65</td><td>52.22</td><td><strong>52.01</strong></td></tr>
+                <tr><td>파인튜닝</td><td>Encoder (KL-div)</td><td>53.18</td><td>51.58</td><td>53.18</td><td>51.63</td></tr>
+                <tr><td>파인튜닝</td><td>Decoder (Undersampling)</td><td>49.79</td><td><strong>55.66</strong></td><td>49.79</td><td>50.37</td></tr>
+                <tr><td>파인튜닝</td><td class="highlight-cell">Bidirectional Decoder (Weighted CE)</td><td class="highlight-cell"><strong>53.92</strong></td><td>52.47</td><td class="highlight-cell"><strong>53.92</strong></td><td><strong>51.93</strong></td></tr>
+            </tbody>
+        </table>
+        <ul class="key-points">
+            <li><strong>프롬프팅 전략은 누적적으로 효과적</strong>이다(a + b + c + d &gt; b + c + d &gt; b + d &gt; CoT 단독). 평정 예측에서 단순 결합이 오히려 해로웠던 양상과 달리, 주제 예측에서는 모든 전략이 보완적으로 작동한다.</li>
+            <li><strong>하위범주 프롬프팅이 효과적</strong>이다. 각 주제의 하위 라벨을 함께 제시하면 20-way 분류의 결정 경계가 더 선명해진다.</li>
+            <li><strong>최적 프롬프팅된 GPT-5-mini가 파인튜닝 모델과 가중 F1에서 동등하다</strong>(52.01% vs. 인코더 51.63%, 양방향 디코더 51.93%). 다만 파인튜닝이 전반적으로 더 안정적이며 특히 소수 주제에서 강점을 가진다.</li>
+            <li><strong>다섯 개 범주</strong> &mdash; 문제 식별, 결론 도출, 미디어 활용, 수업 전략, 학생 의사소통 &mdash; 가 각각 전체 입력의 1% 미만이며, 추가적인 교사 주석이 가장 가치 있는 영역을 가리킨다.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>의의</h2>
+        <p>본 연구는 과학 교실 담화를 위해 처음으로 설계된 발화 단위 LLM 코딩 프레임워크를 제시한다. 검증된 관찰 프로토콜(RTOP, ISIOP)에 이론적으로 정박하면서도, LLM이 가장 잘 다루는 술어 단위 입력에 정합한다. 방법론적으로는, 이론적으로 잘 다듬어진 글로서리가 뒷받침될 때 LLM이 세분화된 전문가 정의 수업 범주와도 유의미하게 상호작용할 수 있음을 보였다. 또한 과학교육 교수진과 경험 많은 교사를 모델 설계 단계에서부터 통합한 이중 전문성 접근이 해석 가능성과 교육학적 적합성을 동시에 강화함을 입증하였다.</p>
+        <ul class="key-points">
+            <li><strong>도메인 커버리지:</strong> 중학교 과학 4개 영역(물리·화학·생명·지구) <em>전부</em>를 단일한 20범주, 137용어 체계로 다룬 최초의 프레임워크.</li>
+            <li><strong>순서형 평정에서는 파인튜닝이 우위</strong>(Bidirectional Decoder CE: 가중 F1 84.59%)이지만, <strong>주제 예측에서는 잘 설계된 프롬프팅이 파인튜닝과 동급</strong>(52.01% vs. 51.93%)으로, 라벨 자원이 제한된 환경에서 실용적 대안을 제공한다.</li>
+            <li><strong>교사 전문성 개발을 위한 형성적 피드백:</strong> 발화 단위 초점은 RTOP/ISIOP가 수업 행위를 운영화하는 방식과 일치하며, 교사 자기 성찰을 위한 실행 가능하고 이론적으로 근거 있는 피드백을 가능케 한다.</li>
+            <li><strong>공개 자원:</strong> 137개 용어 글로서리는 요청 시 제공되며, 다른 언어와 교육 시스템에서의 재현·검증을 지원한다.</li>
+        </ul>
+    </div>
+
     <div class="section">
         <h2>링크</h2>
         <div class="links-section">
-            <a href="https://nlp.hanyang.ac.kr/home/publications" target="_blank" class="paper-link">Lab Page</a>
+            <a href="https://dl.acm.org/doi/10.1145/3785022.3785122" target="_blank" class="paper-link">ACM DL</a>
+            <a href="https://doi.org/10.1145/3785022.3785122" target="_blank" class="paper-link">DOI</a>
         </div>
     </div>
+
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-domain">Domain LLM</span>
+        <span class="tag tag-benchmark">Benchmark</span>
+        <span class="tag tag-dialogue">Dialogue</span>
     </div>
 </div>
+
 <div class="footer">
     <p><a href="../index.html">&#8592; 전체 논문 목록으로 돌아가기</a></p>
     <p style="margin-top:8px;">한양대학교 자연어처리 연구실 | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>

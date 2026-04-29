@@ -19,28 +19,167 @@
         <div class="authors">Jin Eun Yoo, Nam-Hwa Kang, Suna Ryu, Jun-ki Lee, Youngsun Kwak, Taeuk Kim, Hyeong Gwan Kim, Youngwoo Shin, Uiji Hwang</div>
     </div>
 </div>
+
 <div class="detail-content">
     <div class="section">
         <h2>One-Line Summary</h2>
-        <p>Development of an NLP-based tool for analyzing science classroom discourse</p>
+        <p>A dual-expertise, utterance-level coding framework for LLM-based science classroom discourse analysis &mdash; co-developed by science-education faculty and in-service middle-school science teachers, operationalized as a <strong>137-term glossary across 20 thematic categories</strong>, validated on <strong>68 authentic Korean middle-school science lessons (8,651 utterances)</strong>, and benchmarked across prompting and fine-tuning paradigms (best <strong>weighted F1 84.59%</strong> for rating, <strong>52.01%</strong> for theme).</p>
     </div>
+
     <div class="section">
-        <h2>Key Points</h2>
+        <h2>Background &amp; Motivation</h2>
+        <p>Existing automated classroom-discourse analyses (CLASS, MQI, NCTE) were designed for global, lesson-level scoring rather than the local, utterance-level decisions teachers need for actionable feedback. Prior LLM applications also concentrate on mathematics or English-language arts &mdash; science discourse, which is interdisciplinary by nature (a single teacher often instructs outside their major), has received much less attention.</p>
+        <p>Two pressures motivate the framework. First, fine-grained, predicate-level utterances are a better fit for LLM input than 7&ndash;15 minute fixed segments, but no LLM-ready coding scheme yet covers <em>all</em> instructional dimensions of authentic K&ndash;12 science discourse. Second, ratings and themes derived from raw transcripts must remain pedagogically meaningful, which requires both academic theory (science-education faculty) and classroom realism (experienced teachers).</p>
+        <div class="highlight-box">
+            <p><strong>Research questions.</strong> (RQ1) How can domain knowledge in science education be systematically incorporated into an LLM-based coding framework? (RQ2) How do different LLM architectures and configurations compare in predicting rating and theme categories derived from authentic science classroom data?</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Dataset</h2>
+        <p>The corpus comprises <strong>68 instructional sessions</strong> from <strong>12 in-service middle-school science teachers</strong> in South Korea (Fall 2024). Each teacher recorded at least three ~45-minute lectures in both their major and a non-major science discipline.</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Subject</th><th>Sessions</th><th>Coded Utterances</th><th>Mean Rating (SD)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Physics</td><td>15 (22.1%)</td><td>2,001</td><td>3.025 (0.263)</td></tr>
+                <tr><td>Chemistry</td><td>15 (22.1%)</td><td>2,636</td><td>2.989 (0.408)</td></tr>
+                <tr><td>Life Science</td><td>21 (30.9%)</td><td>1,500</td><td>3.130 (0.363)</td></tr>
+                <tr><td>Earth Science</td><td>17 (25.0%)</td><td>2,514</td><td>3.144 (0.444)</td></tr>
+                <tr><td><strong>Total</strong></td><td><strong>68</strong></td><td><strong>8,651 unique utterances</strong></td><td>&mdash;</td></tr>
+            </tbody>
+        </table>
+        <p style="margin-top:12px;">After disaggregating utterances coded under multiple themes (769 dual- and 8 triple-labeled), the analytic dataset contains <strong>9,436 theme&ndash;utterance instances</strong>, split 8:1:1 into 7,549 / 943 / 944 train/val/test, stratified jointly by theme and rating. <strong>45.59%</strong> of sessions were taught in a teacher's major and <strong>54.41%</strong> outside it &mdash; reflecting the interdisciplinary realities of Korean middle-school science instruction.</p>
+    </div>
+
+    <div class="section">
+        <h2>Dual-Expertise Coding Framework</h2>
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div>
+                    <div class="step-title">Predicate-Level Chunking</div>
+                    <div class="step-desc">After comparing sentence-level and paragraph-level units, the team adopted <em>predicate-level</em> chunking as the analytic unit because it best supports fine-grained, LLM-friendly modeling and accommodates the variability in teacher speech (extended utterances vs. brief phrases) and STT segmentation noise. Science-education faculty perform segmentation; coders take responsibility for coding the chunked utterances.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div>
+                    <div class="step-title">137-Term Glossary, 20 Thematic Categories</div>
+                    <div class="step-desc">A bottom-up glossary was developed from 678 initial terms and consolidated to <strong>137 instructional terms</strong> through multiple rounds of refinement involving four science-education professors and one professor of educational evaluation. <strong>Theme 1 (Teaching Practices)</strong> contains 123 terms across 17 categories (e.g., <em>tentativeness of scientific knowledge</em>, <em>explanation of the development of science and technology</em>); <strong>Theme 2 (Classroom Management)</strong> contains 14 terms across 3 categories (e.g., <em>task presentation</em>, <em>reading textbooks</em>, <em>lesson summary</em>). Development was informed by RTOP and ISIOP observation protocols.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div>
+                    <div class="step-title">1&ndash;5 Quality Rating</div>
+                    <div class="step-desc">Each chunked utterance receives a 1&ndash;5 rating: 1&nbsp;= serious content/management errors leading to misconception, 2&nbsp;= minor errors, 3&nbsp;= ordinary, 4&nbsp;= effective, 5&nbsp;= exemplary. Ratings are heavily mid-scale (<strong>86.7%</strong> are 3; 1 and 5 each &lt;0.5%), reflecting the high baseline of practice in Korean classrooms but also creating meaningful class imbalance for modeling.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div>
+                    <div class="step-title">Dual-Expertise Coding Process</div>
+                    <div class="step-desc">Each subject team consists of one science-education faculty member plus two experienced teacher-coders. Faculty segment the transcripts; two coders independently rate and code each utterance with reference to the latest glossary, then reconcile via discussion. <strong>8 teacher-raters</strong> (6&ndash;22 years of teaching experience) and <strong>4 science-education faculty</strong> participated. Where consensus could not be reached, the faculty member's vote carried equal weight to the coders' &mdash; ensuring experiential expertise is duly respected.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">5</div>
+                <div>
+                    <div class="step-title">Rater Consistency</div>
+                    <div class="step-desc">For 1&ndash;5 ratings, weighted accuracy, precision, recall, and F1 all exceeded <strong>0.9</strong> across subjects. For the 20 thematic categories, agreement ranged from <strong>0.709&ndash;0.713</strong> (life science, the lowest) to <strong>0.808&ndash;0.973</strong> (physics); chemistry and earth science exceeded 0.90 &mdash; substantially stronger than the moderate-to-high range typical of prior NCTE studies (&kappa; &asymp; 0.3&ndash;0.4 to ICC &asymp; 0.8&ndash;0.9).</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>LLM Methodology</h2>
+        <p>Two tasks are evaluated: <strong>rating prediction</strong> (1&ndash;5 ordinal) and <strong>theme prediction</strong> (20-way classification).</p>
         <ul class="key-points">
-            <li>Develops an NLP-based tool for automatically analyzing teacher-student discourse in science classes</li>
-            <li>Systematically classifies classroom discourse patterns and presents an analysis framework applicable to real educational settings</li>
+            <li><strong>Prompting (GPT-5-mini).</strong> Five strategies: <em>Default</em>, <em>(a) Contextual Augmentation</em> (5 preceding utterances for rating, 10 for theme), <em>(b) Demonstration Selection</em> (retrieval-augmented few-shot via <em>Qwen3-Embedding-8B</em>; K=7 ratings, K=12 themes), <em>(c) Chain-of-Thought</em>, <em>(d) Subcategory Prompting</em> (definitions + lower-level labels for each theme), and combinations.</li>
+            <li><strong>Encoder Fine-Tuning.</strong> <em>klue/roberta-large</em> with a 2-layer MLP head over [CLS], trained end-to-end with AdamW (<em>lr</em>=2e&minus;5, batch=256, &le;30 epochs). Loss is <em>KL divergence</em> against soft-label distributions: ordinal smoothing (mass at gold &plusmn;1) for ratings, label-smoothed one-hot for themes.</li>
+            <li><strong>Decoder Fine-Tuning.</strong> <em>google/gemma-3-12b-it</em>, all parameters tuned for &le;6 epochs (batch=8&ndash;16, lr&isin;{1e&minus;5, 1e&minus;6, 1e&minus;7}). Four imbalance strategies compared: <em>cross-entropy</em>, <em>weighted CE</em>, <em>focal loss</em>, and <em>undersampling</em> the majority class to 500 (rating) / 700 (theme) samples.</li>
+            <li><strong>Bidirectional Decoder.</strong> <em>gte-Qwen2-7B-instruct</em> &mdash; an encoder-converted decoder &mdash; with the same four loss configurations (batch=128, weight decay=0.01, &le;30 epochs).</li>
+            <li><strong>Hardware.</strong> Two NVIDIA H200 GPUs (141 GB VRAM each).</li>
         </ul>
     </div>
+
+    <div class="section">
+        <h2>Results: Rating Prediction</h2>
+        <p>Fine-tuning clearly outperforms prompting on the ordinal 1&ndash;5 rating task. Bidirectional Decoders with cross-entropy attain the strongest weighted F1, while Encoders with KL divergence achieve the highest accuracy.</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Paradigm</th><th>Method</th><th>Acc (%)</th><th>W. Prec</th><th>W. Recall</th><th>W. F1</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Prompting</td><td>Default</td><td>60.06</td><td>81.36</td><td>60.06</td><td>68.34</td></tr>
+                <tr><td>Prompting</td><td>Demonstration Selection (b)</td><td>69.28</td><td>81.98</td><td>69.28</td><td>74.54</td></tr>
+                <tr><td>Prompting</td><td>Chain-of-Thought (c)</td><td>64.62</td><td>83.75</td><td>64.62</td><td>71.15</td></tr>
+                <tr><td>Prompting</td><td>a + b + c</td><td>47.78</td><td><strong>84.20</strong></td><td>47.78</td><td>57.49</td></tr>
+                <tr><td>Fine-tuning</td><td>Encoder (KL-div)</td><td class="highlight-cell"><strong>88.24</strong></td><td>77.95</td><td class="highlight-cell"><strong>88.24</strong></td><td>82.78</td></tr>
+                <tr><td>Fine-tuning</td><td>Decoder (CE)</td><td>88.12</td><td>77.83</td><td>88.12</td><td>82.66</td></tr>
+                <tr><td>Fine-tuning</td><td class="highlight-cell">Bidirectional Decoder (CE)</td><td>87.92</td><td class="highlight-cell">83.50</td><td>87.92</td><td class="highlight-cell"><strong>84.59</strong></td></tr>
+            </tbody>
+        </table>
+        <ul class="key-points">
+            <li><strong>Demonstration Selection is the single most useful prompting move</strong>, lifting rating accuracy from 60.06% to 69.28% &mdash; semantically similar few-shot exemplars help more than CoT or contextual history.</li>
+            <li><strong>Naive context hurts:</strong> raw preceding turns (Contextual Augmentation alone) drop accuracy to 36.86%, suggesting unguided history adds noise rather than signal.</li>
+            <li><strong>Cross-entropy beats imbalance-aware losses</strong> for fine-tuning here: weighted CE, focal, and undersampling all underperform plain CE on Decoders and Bidirectional Decoders, because the dominant rating&nbsp;3 class genuinely reflects authentic instructional quality.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Results: Theme Prediction</h2>
+        <p>Theme prediction across 20 expert-defined categories is harder, and the prompting&ndash;fine-tuning gap narrows: the best prompting configuration (a&nbsp;+&nbsp;b&nbsp;+&nbsp;c&nbsp;+&nbsp;d) reaches a weighted F1 of <strong>52.01%</strong>, comparable to the best fine-tuned models.</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Paradigm</th><th>Method</th><th>Acc (%)</th><th>W. Prec</th><th>W. Recall</th><th>W. F1</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Prompting</td><td>Default</td><td>27.22</td><td>33.42</td><td>27.22</td><td>28.92</td></tr>
+                <tr><td>Prompting</td><td>Chain-of-Thought (c)</td><td>47.99</td><td>50.64</td><td>47.99</td><td>48.00</td></tr>
+                <tr><td>Prompting</td><td>a + b + c + d</td><td>52.22</td><td>54.65</td><td>52.22</td><td><strong>52.01</strong></td></tr>
+                <tr><td>Fine-tuning</td><td>Encoder (KL-div)</td><td>53.18</td><td>51.58</td><td>53.18</td><td>51.63</td></tr>
+                <tr><td>Fine-tuning</td><td>Decoder (Undersampling)</td><td>49.79</td><td><strong>55.66</strong></td><td>49.79</td><td>50.37</td></tr>
+                <tr><td>Fine-tuning</td><td class="highlight-cell">Bidirectional Decoder (Weighted CE)</td><td class="highlight-cell"><strong>53.92</strong></td><td>52.47</td><td class="highlight-cell"><strong>53.92</strong></td><td><strong>51.93</strong></td></tr>
+            </tbody>
+        </table>
+        <ul class="key-points">
+            <li><strong>Each prompting strategy adds value cumulatively</strong> (a + b + c + d &gt; b + c + d &gt; b + d &gt; CoT alone), unlike rating prediction where naive stacking hurt.</li>
+            <li><strong>Subcategory prompting helps</strong>: feeding the model lower-level labels per theme sharpens decision boundaries on the 20-way space.</li>
+            <li><strong>Best-prompted GPT-5-mini ties fine-tuned models on weighted F1</strong> (52.01% vs. 51.63% encoder, 51.93% bidirectional decoder), but fine-tuning yields more stable performance overall &mdash; especially on minority themes.</li>
+            <li><strong>Five categories</strong> &mdash; problem identification, drawing conclusions, use of media, instructional strategies, and student communication &mdash; each account for &lt;1% of inputs, exposing where additional teacher annotation is most valuable.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>The study contributes the first utterance-level LLM coding framework purpose-built for science classroom discourse, grounded in established observation protocols (RTOP, ISIOP) yet aligned with the predicate-level granularity that LLMs handle best. Methodologically, it shows that LLMs can engage meaningfully with fine-grained, expert-curated instructional categories when supported by a theoretically informed glossary &mdash; and that integrating science-education faculty with experienced teachers strengthens both interpretability and pedagogical relevance.</p>
+        <ul class="key-points">
+            <li><strong>Domain coverage:</strong> the first framework spanning <em>all four</em> middle-school science domains (physics, chemistry, life, earth) with a unified 20-category, 137-term scheme.</li>
+            <li><strong>Fine-tuning still wins for ordinal ratings</strong> (Bidirectional Decoder CE: 84.59% W-F1), but well-designed prompting can <em>match</em> fine-tuning on theme classification (52.01% vs. 51.93%) &mdash; a practical option when labeled data is scarce.</li>
+            <li><strong>Toward formative feedback for teacher PD:</strong> the utterance-level focus aligns with how RTOP/ISIOP-style instructional moves are operationalized, enabling actionable, theory-grounded feedback for teacher self-reflection.</li>
+            <li><strong>Open release:</strong> the 137-term glossary is available upon request, supporting replication and cross-context validation in other languages and educational systems.</li>
+        </ul>
+    </div>
+
     <div class="section">
         <h2>Links</h2>
         <div class="links-section">
-            <a href="https://nlp.hanyang.ac.kr/home/publications" target="_blank" class="paper-link">Lab Page</a>
+            <a href="https://dl.acm.org/doi/10.1145/3785022.3785122" target="_blank" class="paper-link">ACM DL</a>
+            <a href="https://doi.org/10.1145/3785022.3785122" target="_blank" class="paper-link">DOI</a>
         </div>
     </div>
+
     <div class="paper-tags" style="margin-top:24px;">
         <span class="tag tag-domain">Domain LLM</span>
+        <span class="tag tag-benchmark">Benchmark</span>
+        <span class="tag tag-dialogue">Dialogue</span>
     </div>
 </div>
+
 <div class="footer">
     <p><a href="../index.html">&#8592; Back to All Publications</a></p>
     <p style="margin-top:8px;">Hanyang University NLP Lab | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
