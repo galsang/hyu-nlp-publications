@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Representation Units for LLM Knowledge Analysis: Neurons vs. SAEs - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="../papers/neurons-vs-saes.html" class="active">EN</a>
+        <a href="../ko/papers/neurons-vs-saes.html">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; All Publications</a>
+        <h1>Representation Units for LLM Knowledge Analysis: Neurons vs. SAEs</h1>
+        <div class="meta"><span class="venue-badge">KCC 2026</span></div>
+        <div class="authors">Hyelim Lim, Ingyu Bang, Hwiyeong Lee, Taeuk Kim</div>
+    </div>
+</div>
+<div class="detail-content">
+    <div class="section">
+        <h2>One-Line Summary</h2>
+        <p>A comparative study of the basic <strong>representation units</strong> used to analyze knowledge stored inside large language models &mdash; individual <strong>neurons</strong> versus <strong>features extracted by Sparse Autoencoders (SAEs)</strong> &mdash; examining which unit provides more interpretable, disentangled, and faithful access to how factual and linguistic knowledge is encoded within the model.</p>
+    </div>
+
+    <div class="section">
+        <h2>Background & Motivation</h2>
+        <p>Understanding <em>where</em> and <em>how</em> knowledge lives inside a large language model is a central goal of mechanistic interpretability. To probe, localize, or edit the knowledge a model has memorized, researchers must first choose an atomic <strong>unit of analysis</strong>: the smallest component whose activation is inspected, attributed to a piece of knowledge, and potentially intervened upon. The two dominant candidates today are the model's own <strong>individual neurons</strong> (dimensions of hidden activations) and the <strong>features recovered by Sparse Autoencoders (SAEs)</strong> trained on those activations.</p>
+        <p>Neurons are the native, readily available unit &mdash; no extra training is required, and prior work on "knowledge neurons" has attributed specific facts and linguistic categories to small groups of them. However, neurons are widely observed to be <strong>polysemantic</strong>: a single neuron often fires for many unrelated concepts because the model packs more features into its representation space than it has dimensions (superposition). This entanglement makes neuron-level attribution ambiguous and can produce a misleading picture of how knowledge is organized.</p>
+        <p>SAEs were introduced to address exactly this problem. By reconstructing hidden activations as a sparse linear combination of an over-complete dictionary of features, SAEs aim to <strong>disentangle superposed concepts into monosemantic units</strong>, each ideally corresponding to a single, human-interpretable concept. Yet SAE features come at a cost: they require additional training, introduce reconstruction error, and their faithfulness to the model's actual computation is itself under scrutiny.</p>
+        <div class="highlight-box">
+            <p><strong>Key Tension &mdash; Polysemantic Neurons vs. Sparse Features:</strong></p>
+            <ul>
+                <li><strong>Neurons are native but entangled:</strong> They are directly part of the model's computation, but polysemanticity and superposition mean one neuron mixes many concepts, blurring knowledge attribution.</li>
+                <li><strong>SAE features are disentangled but derived:</strong> They promise clean, monosemantic units that separate distinct pieces of knowledge, but they are learned approximations layered on top of the model, raising questions of faithfulness and reconstruction fidelity.</li>
+                <li><strong>The open question:</strong> When the goal is to analyze knowledge stored in an LLM, which unit yields more interpretable, disentangled, and faithful conclusions &mdash; and under what conditions?</li>
+            </ul>
+        </div>
+        <p>This work situates itself within the lab's broader interpretability line, which asks how internal representations mediate knowledge access and retrieval in LLMs (e.g., <em>Query Lens</em>, ICML 2026). Rather than assuming a single "right" unit, it treats the choice of representation unit as an empirical question and systematically compares neurons and SAE features on the same knowledge-analysis tasks.</p>
+
+        <h3>Two Views of the Same Representation</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Aspect</th><th>Neurons</th><th>SAE Features</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Origin</td><td>Native hidden dimensions of the model</td><td>Learned dictionary trained on activations</td></tr>
+                <tr><td>Extra training?</td><td>None required</td><td>SAE must be trained per layer/site</td></tr>
+                <tr><td>Interpretability</td><td>Often polysemantic (mixed concepts)</td><td>Aims for monosemantic (single concept)</td></tr>
+                <tr><td>Disentanglement</td><td>Limited by superposition</td><td>Explicitly encourages sparse separation</td></tr>
+                <tr><td>Faithfulness concern</td><td>Directly on the computation path</td><td>Reconstruction error may distort signal</td></tr>
+                <tr><td>Cost / convenience</td><td>Low cost, immediately available</td><td>Higher cost, dictionary size to tune</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method</h2>
+        <p>The study frames a controlled, head-to-head comparison in which neurons and SAE features are evaluated as interchangeable <strong>analysis units</strong> for the same knowledge-probing questions. The design isolates the effect of the unit choice from the underlying knowledge being studied.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Define a Common Knowledge-Analysis Setting</div>
+                <div class="step-desc">A shared set of knowledge probes is fixed &mdash; factual associations and linguistic properties that the model has plausibly memorized &mdash; so that both candidate units are tested against identical targets. Fixing the knowledge under study ensures that any difference in the resulting analysis is attributable to the representation unit rather than to a change in the task.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Extract Both Candidate Units from the Same Activations</div>
+                <div class="step-desc">For a chosen model site (e.g., hidden activations at a given layer), the <strong>neuron</strong> view uses the raw activation dimensions directly, while the <strong>SAE feature</strong> view passes the same activations through a trained Sparse Autoencoder to obtain a sparse, over-complete feature basis. Both views therefore describe the <em>same</em> underlying representation, differing only in how it is decomposed into units.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Localize Knowledge to Units</div>
+                <div class="step-desc">For each piece of knowledge, the most responsible units are identified in both spaces &mdash; the neurons most strongly associated with the target, and the SAE features most strongly associated with the target. This yields, for every probe, a neuron-based localization and an SAE-based localization that can be directly compared for how concentrated, clean, and consistent the attribution is.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Assess Interpretability and Disentanglement</div>
+                <div class="step-desc">Each identified unit is examined for what concepts it responds to. The analysis asks whether a unit corresponds to a single coherent concept (monosemantic) or mixes several unrelated ones (polysemantic), and whether distinct pieces of knowledge map to distinct units rather than collapsing onto shared, overloaded units. This captures the practical interpretability and disentanglement of each representation unit.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">5</div>
+                <div class="step-title">Test Faithfulness via Intervention</div>
+                <div class="step-desc">To move beyond correlation, the identified units are perturbed &mdash; suppressing or amplifying the neurons versus the SAE features associated with a given target &mdash; and the effect on the model's expression of that knowledge is observed. A unit is deemed <strong>faithful</strong> to the extent that intervening on it selectively changes the intended knowledge without broadly disrupting unrelated behavior, providing a causal rather than merely descriptive comparison.</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <p><strong>Controlled Comparison Principle:</strong></p>
+            <p>Because both unit types are derived from the same activations and evaluated on the same probes, differences in interpretability, disentanglement, and faithfulness can be attributed to the choice of representation unit itself &mdash; making the comparison a clean test of "neurons vs. SAEs" rather than a confound of different tasks or models.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Key Points</h2>
+        <ul class="key-points">
+            <li><strong>Unit choice is consequential:</strong> The conclusions one draws about how knowledge is stored in an LLM depend substantially on whether neurons or SAE features are used as the unit of analysis; the two views are not interchangeable.</li>
+            <li><strong>Neurons are convenient but entangled:</strong> Individual neurons are immediately available and require no extra training, but their polysemantic nature and superposition make knowledge attribution ambiguous and harder to interpret cleanly.</li>
+            <li><strong>SAE features favor disentanglement:</strong> Sparse Autoencoder features tend to separate superposed concepts into more monosemantic units, offering cleaner and more human-interpretable localization of individual pieces of knowledge.</li>
+            <li><strong>Faithfulness is the crucial test:</strong> Interpretability alone is not enough &mdash; a unit is only useful for knowledge analysis if intervening on it selectively and reliably alters the targeted knowledge, so faithfulness (via intervention) is treated as a first-class criterion.</li>
+            <li><strong>Trade-offs, not a clear winner:</strong> The comparison surfaces a trade-off &mdash; SAE features gain interpretability and disentanglement at the cost of extra training and reconstruction error, while neurons offer directness and lower cost at the cost of entanglement.</li>
+            <li><strong>Guidance for interpretability practice:</strong> The findings inform which representation unit to reach for depending on the goal, whether the priority is clean interpretation, causal editing, or low-overhead analysis.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>The choice of representation unit is a foundational, often unexamined assumption underlying much of interpretability research. By making that choice the explicit object of study, this work clarifies what is gained and lost when analyzing LLM knowledge through neurons versus SAE features.</p>
+        <ul>
+            <li><strong>Puts a methodological decision under the microscope:</strong> Many interpretability findings implicitly depend on the unit of analysis; this study makes that dependence visible and testable, encouraging more careful reporting of how knowledge localization is performed.</li>
+            <li><strong>Bridges convenience and interpretability:</strong> It weighs the practical appeal of native neurons against the disentanglement benefits of SAEs, giving practitioners a principled basis for choosing between them rather than defaulting to whichever is easier.</li>
+            <li><strong>Strengthens knowledge editing and control:</strong> By emphasizing faithfulness via intervention, the work connects representation analysis to downstream goals such as knowledge editing, unlearning, and steering &mdash; where the unit chosen directly determines how precisely a model's behavior can be modified.</li>
+            <li><strong>Extends the lab's interpretability agenda:</strong> The study complements the lab's work on how internal representations mediate knowledge access and retrieval (e.g., <em>Query Lens</em>, ICML 2026), contributing to a coherent line of research on making the internal knowledge of LLMs legible and controllable.</li>
+        </ul>
+
+        <div class="highlight-box">
+            <p><strong>Broader Insight:</strong> Before we can answer "how does an LLM store this knowledge?", we must decide <em>in terms of what</em> we describe that storage. Neurons and SAE features offer two different lenses on the same representation, and each shapes the conclusions we can draw. Treating the representation unit as an empirical choice &mdash; rather than a given &mdash; is a prerequisite for trustworthy, reproducible interpretability of knowledge in large language models.</p>
+        </div>
+    </div>
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-interpretability">Interpretability</span>
+        <span class="tag tag-repr">Representation Learning</span>
+    </div>
+</div>
+<div class="footer">
+    <p><a href="../index.html">&#8592; Back to All Publications</a></p>
+    <p style="margin-top:8px;">Hanyang University NLP Lab | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

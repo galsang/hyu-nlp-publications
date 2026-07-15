@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hybrid Document Retrieval with VLM-Generated Descriptions - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="../papers/vlm-hybrid-retrieval.html" class="active">EN</a>
+        <a href="../ko/papers/vlm-hybrid-retrieval.html">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; All Publications</a>
+        <h1>Hybrid Document Retrieval with VLM-Generated Descriptions</h1>
+        <div class="meta"><span class="venue-badge">KCC 2026 &#127942;</span></div>
+        <div class="authors">Ho Seob Ahn, Mingyu Kim, Taeuk Kim</div>
+    </div>
+</div>
+<div class="detail-content">
+    <div class="section">
+        <h2>One-Line Summary</h2>
+        <p>A hybrid document retrieval framework that leverages a vision-language model (VLM) to generate rich textual descriptions of visually complex documents &mdash; capturing information carried by figures, tables, and layout that plain text extraction misses &mdash; and fuses these descriptions with conventional text and dense-vector retrieval signals to improve retrieval quality. This work received an <strong>Outstanding Paper Award</strong> at the Korea Computer Congress 2026 (KCC 2026).</p>
+    </div>
+
+    <div class="section">
+        <h2>Background & Motivation</h2>
+        <p>Modern document collections are rarely plain text. Reports, scientific papers, manuals, and financial filings routinely convey essential information through figures, charts, tables, and spatial layout. Conventional retrieval pipelines, however, operate over text extracted by OCR or parsers &mdash; a process that flattens or discards precisely the visual signals that make these documents informative. As a result, a query whose answer lives inside a chart or a table can fail to retrieve the page that actually contains it.</p>
+        <div class="highlight-box">
+            <p><strong>Key Challenge:</strong> Visually rich documents encode meaning not only in their words but in figures, tables, and layout. Text-only retrieval systems &mdash; whether sparse lexical (e.g., BM25) or dense-vector &mdash; index a degraded, text-only view of each page and therefore systematically miss content that is expressed visually. The core question is how to inject the missing visual semantics into a retrieval pipeline without abandoning the efficiency and maturity of existing text-based methods.</p>
+        </div>
+        <p>One line of prior work tackles this with fully vision-based retrieval, embedding rendered page images directly. Such approaches capture visual content but discard the strengths of established text retrieval &mdash; exact lexical matching, interpretability, and low-cost indexing &mdash; and can struggle with fine-grained textual queries. This paper instead pursues a <strong>hybrid</strong> route: keep the proven text and dense-vector retrieval machinery, and augment it with a compact, searchable textual surrogate of each document's visual content produced by a VLM.</p>
+
+        <h3>Text-Only vs. VLM-Augmented Retrieval</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Aspect</th><th>Text-Only Retrieval</th><th>VLM-Augmented Hybrid (This Work)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Indexed content</td><td>OCR / parsed text only</td><td>Text + VLM description of figures, tables, layout</td></tr>
+                <tr><td>Visual information</td><td>Lost or degraded</td><td>Recovered as natural-language description</td></tr>
+                <tr><td>Retrieval signals</td><td>Lexical and/or dense-vector</td><td>Lexical + dense-vector + description-based</td></tr>
+                <tr><td>Compatibility</td><td>Standard index</td><td>Reuses existing text/vector infrastructure</td></tr>
+                <tr><td>Queries about charts/tables</td><td>Often unanswerable</td><td>Made retrievable via generated descriptions</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method</h2>
+        <p>The approach adds a description-generation stage in front of an otherwise standard retrieval pipeline, then fuses the resulting signals at scoring time. It has two conceptual pillars: (1) turning visual content into searchable text with a VLM, and (2) combining that new signal with existing text and dense-vector retrieval.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">VLM-Based Description Generation</div>
+                <div class="step-desc">Each document (or page) is rendered as an image and passed to a vision-language model, which produces a natural-language description of its visual content &mdash; summarizing what figures depict, transcribing and paraphrasing tables, and noting layout cues such as headings, captions, and the relationships between visual elements. The VLM effectively translates non-textual information into a form that text-based retrievers can index and match against, recovering semantics that OCR or parsers would otherwise drop.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Enriched Document Representation</div>
+                <div class="step-desc">The generated descriptions are combined with the document's originally extracted text to form an enriched representation of each page. This unified representation carries both the literal textual content and a verbalized account of the visual content, so that a single document entry can be matched by queries targeting either modality. The enrichment is applied at indexing time, keeping query-time behavior lightweight.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Hybrid Retrieval Fusion</div>
+                <div class="step-desc">Retrieval combines complementary signals over the enriched representation: sparse lexical matching for exact terms and dense-vector similarity for semantic matching, together with the description-derived evidence. By fusing these scores, the system benefits from the precision of lexical matching, the generalization of dense retrieval, and the newly added visual coverage from the VLM descriptions &mdash; rather than relying on any single signal alone.</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <p><strong>Design Principles:</strong></p>
+            <ul>
+                <li><strong>Augment, don't replace:</strong> The VLM description is added on top of existing text and dense-vector retrieval, preserving their efficiency, interpretability, and mature tooling.</li>
+                <li><strong>Verbalize the visual:</strong> Rather than embedding raw page images, visual content is converted into searchable natural language, making it directly compatible with standard text retrievers.</li>
+                <li><strong>Complementary fusion:</strong> Lexical, dense, and description-based signals cover different failure modes, so combining them is more robust than optimizing any one in isolation.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Key Points</h2>
+        <ul class="key-points">
+            <li><strong>Recovers visual semantics for retrieval:</strong> By having a VLM verbalize figures, tables, and layout, the method makes information that is otherwise invisible to text retrievers searchable.</li>
+            <li><strong>Hybrid over single-signal:</strong> Fusing sparse lexical, dense-vector, and VLM-description evidence combines the strengths of each and mitigates the blind spots of any individual retrieval method.</li>
+            <li><strong>Reuses existing infrastructure:</strong> Because visual content is expressed as text, the approach plugs into standard text and dense-vector indexes without requiring a specialized image-based retrieval stack.</li>
+            <li><strong>Targets visually rich documents:</strong> The method is aimed squarely at documents where meaning is carried by charts, tables, and layout &mdash; the setting where conventional pipelines most often fail.</li>
+            <li><strong>Indexing-time enrichment:</strong> Descriptions are generated when documents are indexed, so the added VLM cost is paid up front and does not burden every query.</li>
+            <li><strong>Recognized contribution:</strong> The work was selected for an Outstanding Paper Award at KCC 2026, reflecting the practical relevance of bridging visual document understanding and information retrieval.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>Retrieval quality is the foundation of many downstream applications, from search interfaces to retrieval-augmented generation (RAG). When the underlying documents are visually rich, text-only retrieval imposes a hidden ceiling: no matter how strong the reader or generator, it cannot use evidence that was never retrieved because it lived inside a figure or table. By recovering that evidence as searchable text, this work raises the ceiling on what downstream systems can access.</p>
+        <ul>
+            <li><strong>Bridges vision and retrieval pragmatically:</strong> Instead of replacing mature text retrieval with heavy image-based systems, it verbalizes visual content and folds it into existing pipelines &mdash; a route that is both effective and easy to deploy.</li>
+            <li><strong>Strengthens RAG on real documents:</strong> Enterprise, scientific, and financial corpora are dominated by visually rich formats; improving retrieval over them directly improves the quality of the answers RAG systems can produce.</li>
+            <li><strong>Complementary, not competitive, signals:</strong> The hybrid design shows that VLM-generated descriptions are most valuable as an additional signal alongside lexical and dense retrieval, offering a principled way to integrate multimodal understanding into IR.</li>
+        </ul>
+
+        <div class="highlight-box">
+            <p><strong>Broader Insight:</strong> The bottleneck for retrieval over visually rich documents is not the retriever's algorithm but the impoverished, text-only view it is given. By using a vision-language model to translate figures, tables, and layout into natural language, the visual and textual worlds are unified within a single, familiar retrieval framework &mdash; delivering the coverage of multimodal understanding while retaining the efficiency and reliability of established text-based information retrieval.</p>
+        </div>
+    </div>
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-ir">Information Retrieval</span>
+        <span class="tag tag-multimodal">Multimodal</span>
+    </div>
+</div>
+<div class="footer">
+    <p><a href="../index.html">&#8592; Back to All Publications</a></p>
+    <p style="margin-top:8px;">Hanyang University NLP Lab | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

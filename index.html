@@ -48,6 +48,7 @@
         <button class="filter-btn" data-filter="detection">Detection</button>
         <button class="filter-btn" data-filter="multilingual">Multilingual</button>
         <button class="filter-btn" data-filter="abstention">Abstention</button>
+        <button class="filter-btn" data-filter="interpretability">Interpretability</button>
     </div>
 
     <!-- ===== Preprints ===== -->
@@ -125,6 +126,23 @@
     <!-- ===== 2026 ===== -->
     <div class="year-section">
         <div class="year-heading">2026</div>
+
+        <div class="paper-card" data-tags="interpretability repr">
+            <a href="papers/query-lens.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Query Lens: Interpreting Sparse Key-Value Features with Indirect Effects</div>
+                        <div class="paper-authors">Hwiyeong Lee, Ingyu Bang, Uiji Hwang, Hyelim Lim, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">ICML 2026</span>
+                </div>
+                <div class="paper-oneliner">Extends Logit Lens by jointly reading key/value features and indirect module-mediated effects to faithfully interpret sparse autoencoder features</div>
+                <div class="paper-tags">
+                    <span class="tag tag-interpretability">Interpretability</span>
+                    <span class="tag tag-repr">Representation Learning</span>
+                </div>
+            </a>
+        </div>
 
         <div class="paper-card" data-tags="confidence reasoning abstention">
             <a href="papers/advice.html" class="card-link">
@@ -227,6 +245,23 @@
                     <span class="tag tag-domain">Domain LLM</span>
                     <span class="tag tag-benchmark">Benchmark</span>
                     <span class="tag tag-dialogue">Dialogue</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="benchmark domain">
+            <a href="papers/aied-assessment.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Uncertainty-Aware Multi-Metric Evaluation of Human&ndash;Machine Agreement for LLM-Based Educational Assessment</div>
+                        <div class="paper-authors">Jin Eun Yoo, Hyeong Gwan Kim, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">AIED 2026</span>
+                </div>
+                <div class="paper-oneliner">Uncertainty-aware, multi-metric framework for assessing human&ndash;machine agreement in LLM-based educational assessment</div>
+                <div class="paper-tags">
+                    <span class="tag tag-benchmark">Benchmark</span>
+                    <span class="tag tag-domain">Domain LLM</span>
                 </div>
             </a>
         </div>
@@ -761,6 +796,23 @@
     <div class="year-section">
         <div class="year-heading">Journals</div>
 
+        <div class="paper-card" data-tags="domain efficiency">
+            <a href="papers/da-bioner.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">DA-BioNER: data augmentation based on few-shot learning and distant supervision for biomedical named entity recognition</div>
+                        <div class="paper-authors">Yesol Park, Gyujin Son, Taeuk Kim, Mina Rho</div>
+                    </div>
+                    <span class="paper-venue">Bioinformatics 2026</span>
+                </div>
+                <div class="paper-oneliner">Data augmentation for biomedical NER combining few-shot learning and distant supervision to reduce reliance on manually labeled corpora</div>
+                <div class="paper-tags">
+                    <span class="tag tag-domain">Domain LLM</span>
+                    <span class="tag tag-efficiency">Efficiency</span>
+                </div>
+            </a>
+        </div>
+
         <div class="paper-card" data-tags="domain reasoning">
             <a href="papers/admin-decision-ai.html" class="card-link">
                 <div class="paper-header">
@@ -817,6 +869,76 @@
     <!-- ===== Domestic Conferences ===== -->
     <div class="year-section">
         <div class="year-heading">Domestic Conferences</div>
+
+        <div class="paper-card" data-tags="ir multimodal">
+            <a href="papers/vlm-hybrid-retrieval.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Hybrid Document Retrieval with VLM-Generated Descriptions</div>
+                        <div class="paper-authors">Ho Seob Ahn, Mingyu Kim, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">KCC 2026 &#127942;</span>
+                </div>
+                <div class="paper-oneliner">Vision-language model descriptions fused with text retrieval for visually rich documents (Outstanding Paper Award)</div>
+                <div class="paper-tags"><span class="tag tag-ir">Information Retrieval</span> <span class="tag tag-multimodal">Multimodal</span></div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="unlearning interpretability">
+            <a href="papers/unlearning-internal-repr.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Evaluating LLM Unlearning via Comparison of Internal Representations</div>
+                        <div class="paper-authors">Ingyu Bang, Hwiyeong Lee, Hyelim Lim, Hoki Kim, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">KCC 2026</span>
+                </div>
+                <div class="paper-oneliner">Assessing whether knowledge unlearning is genuine by comparing internal representations before and after unlearning</div>
+                <div class="paper-tags"><span class="tag tag-unlearning">Unlearning</span> <span class="tag tag-interpretability">Interpretability</span></div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="benchmark multilingual">
+            <a href="papers/korean-llm-judge-rubric.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Comparison of Rubric Strategies for LLM-as-a-Judge in Korean</div>
+                        <div class="paper-authors">Minseo Kim, Yukyung Lee, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">KCC 2026</span>
+                </div>
+                <div class="paper-oneliner">Comparing rubric design strategies for reliable, human-aligned LLM-as-a-Judge evaluation in Korean</div>
+                <div class="paper-tags"><span class="tag tag-benchmark">Benchmark</span> <span class="tag tag-multilingual">Multilingual</span></div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="interpretability repr">
+            <a href="papers/neurons-vs-saes.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Representation Units for LLM Knowledge Analysis: Neurons vs. SAEs</div>
+                        <div class="paper-authors">Hyelim Lim, Ingyu Bang, Hwiyeong Lee, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">KCC 2026</span>
+                </div>
+                <div class="paper-oneliner">Comparing neurons and sparse autoencoder features as units for analyzing knowledge inside LLMs</div>
+                <div class="paper-tags"><span class="tag tag-interpretability">Interpretability</span> <span class="tag tag-repr">Representation Learning</span></div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="confidence reasoning">
+            <a href="papers/epistemic-confidence.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Confidence Estimation from Epistemic Signals in LLM Reasoning Traces</div>
+                        <div class="paper-authors">Ki Jung Seo, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">KIIS 2026</span>
+                </div>
+                <div class="paper-oneliner">Estimating answer confidence by mining epistemic signals within LLM reasoning traces</div>
+                <div class="paper-tags"><span class="tag tag-confidence">Confidence</span> <span class="tag tag-reasoning">Reasoning</span></div>
+            </a>
+        </div>
 
         <div class="paper-card" data-tags="reasoning multilingual">
             <a href="papers/reversal-curse-idiom.html" class="card-link">

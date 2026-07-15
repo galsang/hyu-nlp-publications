@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uncertainty-Aware Multi-Metric Human-Machine Agreement - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="../papers/aied-assessment.html" class="active">EN</a>
+        <a href="../ko/papers/aied-assessment.html">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; All Publications</a>
+        <h1>Uncertainty-Aware Multi-Metric Evaluation of Human&ndash;Machine Agreement for LLM-Based Educational Assessment</h1>
+        <div class="meta">
+            <span class="venue-badge">AIED 2026</span>
+        </div>
+        <div class="authors">Jin Eun Yoo, Hyeong Gwan Kim, Taeuk Kim</div>
+    </div>
+</div>
+
+<div class="detail-content">
+    <div class="section">
+        <h2>One-Line Summary</h2>
+        <p>This work asks how faithfully LLM-based educational assessment agrees with human raters, and argues that a single agreement number is misleading. It proposes an <strong>uncertainty-aware, multi-metric framework</strong> that reports human&ndash;machine agreement across several complementary metric families&mdash;together with the uncertainty around each estimate&mdash;so that the reliability of LLM scoring can be judged honestly rather than optimistically.</p>
+    </div>
+
+    <div class="section">
+        <h2>Background &amp; Motivation</h2>
+        <p>Large language models are increasingly used to grade and evaluate student work in educational settings, from scoring short answers and essays to rating rubric dimensions. Because human expert grading is expensive and slow, LLM-based assessment is attractive as a scalable alternative. But before an LLM can replace or assist a human rater, we must know how much its judgments actually <em>agree</em> with human judgments&mdash;and how much we can trust that agreement estimate itself.</p>
+        <p>Much prior work reports human&ndash;machine agreement using a single headline statistic, often raw percentage agreement or a single correlation. This is problematic for two reasons. First, raw agreement does not account for the agreement expected by chance, which can make weak models look deceptively strong. Second, a point estimate hides the <strong>uncertainty</strong> in the measurement: with limited samples, ordinal rating scales, and imbalanced grade distributions, an agreement score can swing substantially, and reporting it without confidence bounds gives a false sense of precision.</p>
+        <div class="highlight-box">
+            <p><strong>Key Challenge:</strong> A single agreement score is a fragile summary of a complex phenomenon. Different metric families capture different aspects of agreement:</p>
+            <ul>
+                <li><strong>Chance correction matters:</strong> Raw percentage agreement inflates results because some agreement occurs by chance; chance-adjusted measures such as Cohen's/Fleiss' kappa correct for this.</li>
+                <li><strong>Ordinal structure matters:</strong> Educational grades are typically ordered, so a disagreement of one level should be penalized less than a large disagreement&mdash;motivating weighted kappa (e.g., quadratic weighted kappa).</li>
+                <li><strong>Uncertainty matters:</strong> Any agreement estimate carries sampling and rater-related uncertainty, which must be quantified and reported rather than assumed away.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method</h2>
+        <p>The paper frames the evaluation of LLM-based assessment as a measurement problem and builds an evaluation protocol that is deliberately <strong>multi-metric</strong> and <strong>uncertainty-aware</strong>. Rather than optimizing a model to hit one target number, it treats human&ndash;machine agreement as something to be characterized carefully from several complementary angles.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Collect Paired Human and Machine Ratings</div>
+                <div class="step-desc">For an educational assessment task, gather ratings from human experts and from an LLM-based scorer over the same items, producing paired judgments that can be compared directly. This pairing is the basis for every agreement statistic that follows.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Report Multiple Agreement Metric Families</div>
+                <div class="step-desc">Instead of a single score, compute agreement across several metric families that capture distinct properties: raw/percentage agreement as a baseline, chance-adjusted agreement (kappa-type coefficients) to remove agreement expected by chance, and weighted agreement (e.g., weighted kappa) to respect the ordinal structure of educational grades so that near-misses are penalized less than gross disagreements.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Quantify Uncertainty Around Each Estimate</div>
+                <div class="step-desc">Attach a measure of uncertainty to every agreement estimate&mdash;for example, confidence intervals&mdash;so that the stability of each number is visible. This turns a single point estimate into an interval that reflects how much the result could vary given the data, guarding against over-interpreting a lucky or unlucky sample.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Interpret Agreement Jointly, Not in Isolation</div>
+                <div class="step-desc">Read the metrics together as a profile rather than cherry-picking the most favorable one. When chance-adjusted and weighted metrics agree and their uncertainty is small, confidence in the LLM scorer is warranted; when they diverge or their intervals are wide, the framework flags that the LLM's agreement with humans is not yet trustworthy for that assessment context.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Key Points</h2>
+        <ul class="key-points">
+            <li><strong>Single scores mislead:</strong> Judging LLM-based educational assessment by one agreement number&mdash;especially raw percentage agreement&mdash;can substantially overstate how well the model tracks human raters.</li>
+            <li><strong>Chance-adjusted measures are essential:</strong> Kappa-type coefficients remove the agreement expected by chance and give a more honest picture of genuine human&ndash;machine concordance.</li>
+            <li><strong>Ordinal structure should be respected:</strong> Weighted agreement measures acknowledge that educational grades are ordered, so being off by one level is not the same as being off by many.</li>
+            <li><strong>Uncertainty must be reported:</strong> Every agreement estimate should come with an uncertainty range; a wide interval signals that the result should not be trusted as a precise measurement.</li>
+            <li><strong>Multi-metric profiles enable honest decisions:</strong> Reporting several metric families together, each with its uncertainty, lets practitioners decide when an LLM scorer is reliable enough to deploy and when it is not.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>As LLMs move into real classrooms and testing pipelines, the stakes of getting evaluation right are high. If we overstate how well an LLM agrees with human graders, we risk deploying automated assessment that quietly misgrades students, with consequences for feedback, placement, and fairness. An uncertainty-aware, multi-metric view makes the limits of LLM scoring explicit instead of hiding them behind a single flattering number.</p>
+        <p>By treating human&ndash;machine agreement as a measurement to be characterized&mdash;chance-corrected, ordinally weighted, and reported with its uncertainty&mdash;this work offers educators and researchers a more trustworthy basis for deciding where LLM-based assessment can responsibly support or substitute for human raters, and where human oversight remains necessary.</p>
+    </div>
+
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://www.aied-conference.org/2026/" target="_blank" class="paper-link">AIED 2026 Conference</a>
+        </div>
+    </div>
+
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-benchmark">Benchmark</span>
+        <span class="tag tag-domain">Domain LLM</span>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="../index.html">&#8592; Back to All Publications</a></p>
+    <p style="margin-top:8px;">Hanyang University NLP Lab | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Query Lens - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="../papers/query-lens.html" class="active">EN</a>
+        <a href="../ko/papers/query-lens.html">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; All Publications</a>
+        <h1>Query Lens: Interpreting Sparse Key-Value Features with Indirect Effects</h1>
+        <div class="meta">
+            <span class="venue-badge">ICML 2026</span>
+        </div>
+        <div class="authors">Hwiyeong Lee, Ingyu Bang, Uiji Hwang, Hyelim Lim, Taeuk Kim</div>
+    </div>
+</div>
+
+<div class="detail-content">
+    <div class="section">
+        <h2>One-Line Summary</h2>
+        <p>We propose <strong>Query Lens</strong>, an extension of Logit Lens that jointly interprets encoder-side <em>key</em> features and decoder-side <em>value</em> features of a sparse autoencoder and additionally accounts for <em>indirect, module-mediated effects</em>. This yields coherent token signatures for sparse features that remain uninterpretable under Logit Lens, and motivates the <strong>Subspace Channel Hypothesis</strong>: downstream modules read features through layer-specific subspaces.</p>
+    </div>
+
+    <figure class="paper-figure">
+        <img src="../images/query-lens/figure1.png" alt="Query Lens overview">
+        <figcaption><strong>Figure 1.</strong> Overview of Query Lens. (a) A feature written into the residual stream is read as a query by downstream modules, producing indirect effects. (b) Logit Lens projects features directly into vocabulary space and misses these indirect effects; Query Lens accounts for them and provides a more faithful interpretation.</figcaption>
+    </figure>
+
+    <div class="section">
+        <h2>Background & Motivation</h2>
+        <p>Sparse autoencoders (SAEs) have become a central tool in mechanistic interpretability because they decompose model activations into features that are far more monosemantic and human-interpretable than individual neurons. Yet obtaining an SAE feature is only the first step: reliably <strong>characterizing</strong> what each feature actually means -- which inputs excite it and which behaviors it drives -- remains a stubborn, open challenge.</p>
+        <p>A widely used technique for this characterization is the <strong>Logit Lens</strong>, which projects a feature vector directly into the model's vocabulary space via the unembedding matrix to reveal the tokens it appears to promote. Logit Lens is attractive for its simplicity and its training-free nature, but it captures only the <em>direct</em> path from a feature to the output logits. Many features written into the residual stream are not consumed directly by the unembedding; instead, they are re-read and transformed by downstream attention and MLP modules before ever influencing the output.</p>
+        <p>Because Logit Lens ignores this downstream processing, a large fraction of SAE features project onto incoherent or meaningless token sets, leaving them effectively uninterpretable. This motivates a lens that follows features through the modules that actually read them, rather than assuming a straight shot to the vocabulary.</p>
+        <div class="highlight-box">
+            <p><strong>Key Challenge:</strong> Logit Lens fails to interpret many SAE features because it only captures the <strong>direct effect</strong> -- the immediate projection of a feature into vocabulary space. A feature written into the residual stream is frequently read as a <em>query</em> by downstream modules, producing <strong>indirect, module-mediated effects</strong> that Logit Lens is blind to. Any interpretation that ignores these indirect effects can therefore be both incomplete and unfaithful.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method: Query Lens</h2>
+        <p>Query Lens generalizes the Logit Lens by treating an SAE feature not as a single quantity that only promotes output tokens, but as a <strong>key-value object</strong> whose encoder side and decoder side carry complementary meaning, and by explicitly propagating the feature through the downstream modules that consume it.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Jointly Model Key and Value Features</div>
+                <div class="step-desc">Instead of inspecting a feature from a single vantage point, Query Lens jointly considers the <strong>encoder-side key features</strong> and the <strong>decoder-side value features</strong> of the SAE. The key side reveals which <em>inputs activate</em> the feature, while the value side reveals which <em>outputs the feature promotes</em>. Reading both sides together gives a two-sided, input-to-output characterization that a value-only view (as in Logit Lens) cannot provide.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Account for Indirect, Module-Mediated Effects</div>
+                <div class="step-desc">A feature written into the residual stream is re-read as a query by downstream attention and MLP modules, which transform it before it reaches the output. Query Lens propagates the feature through these modules to capture the resulting <strong>indirect effects</strong>, going beyond the single <strong>direct effect</strong> that Logit Lens measures. This makes the interpretation faithful to how the feature is actually used by the network.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Produce Coherent Token Signatures</div>
+                <div class="step-desc">Combining the key/value view with the indirect effects, Query Lens assigns each feature a coherent set of tokens -- a <strong>token signature</strong> -- describing what it responds to and what it drives. Crucially, this recovers meaningful signatures for features whose Logit Lens projections were incoherent, expanding the set of features that can be interpreted at all.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Subspace Channel Hypothesis</div>
+                <div class="step-desc">The analysis leads to the <strong>Subspace Channel Hypothesis</strong>: downstream modules do not read features from the full residual stream uniformly, but through <strong>layer-specific subspaces</strong>. Under this view, a feature's downstream influence depends on how it projects onto the particular subspace that each reading module attends to, offering a structured explanation for why indirect effects matter and why they are layer-dependent.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <p>The evaluation compares Query Lens against the standard Logit Lens on the task of characterizing SAE features. The central, faithful finding from the paper is qualitative: <strong>Query Lens yields coherent token signatures for features that remain uninterpretable under Logit Lens</strong>, precisely because it incorporates the key/value structure and the indirect, module-mediated effects that Logit Lens omits. The table below summarizes the conceptual comparison rather than any single benchmark score.</p>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>Interpretation Method</th><th>Feature Sides Used</th><th>Effects Captured</th><th>Interpretability Coverage</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Logit Lens</td><td>Value only (output projection)</td><td>Direct effect only</td><td>Limited &mdash; many features incoherent</td></tr>
+                <tr><td class="highlight-cell">Query Lens (ours)</td><td class="highlight-cell">Key + Value (input &amp; output)</td><td class="highlight-cell">Direct + indirect (module-mediated)</td><td class="highlight-cell">Broader &mdash; coherent signatures recovered</td></tr>
+            </tbody>
+        </table>
+
+        <ul class="key-points">
+            <li><strong>Recovered interpretability:</strong> Features that project onto incoherent token sets under Logit Lens receive coherent token signatures under Query Lens, showing that the missing structure was in the indirect, module-mediated effects.</li>
+            <li><strong>Two-sided characterization:</strong> Jointly reading encoder-side key features and decoder-side value features identifies both the inputs that <em>activate</em> a feature and the outputs it <em>promotes</em>, a description that value-only Logit Lens cannot produce.</li>
+            <li><strong>Faithfulness over directness:</strong> By following features through the downstream modules that actually read them, Query Lens produces interpretations aligned with how the network uses each feature, rather than assuming a direct path to the vocabulary.</li>
+            <li><strong>Structural hypothesis:</strong> The results support the Subspace Channel Hypothesis -- that downstream modules read features through layer-specific subspaces -- providing a principled account of why indirect effects are layer-dependent.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>Reliable interpretation of sparse features is a prerequisite for trusting mechanistic explanations of large language models. If a widely used lens systematically mislabels or fails to characterize a large fraction of features, downstream claims about what a model "knows" or "does" inherit that blind spot. Query Lens directly addresses this by making the interpretation faithful to how features are actually consumed inside the network.</p>
+        <ul class="key-points">
+            <li><strong>More features become interpretable:</strong> By recovering coherent signatures for previously uninterpretable features, Query Lens expands the effective coverage of SAE-based interpretability.</li>
+            <li><strong>Faithful, two-sided view:</strong> Jointly considering key and value features and accounting for indirect effects yields characterizations that respect the model's real computation, reducing the risk of misleading, direct-path-only conclusions.</li>
+            <li><strong>New structural understanding:</strong> The Subspace Channel Hypothesis reframes how downstream modules read residual-stream features, opening a concrete direction for studying feature communication through layer-specific subspaces.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://arxiv.org/abs/2606.07617" target="_blank" class="paper-link">arXiv Paper</a>
+        </div>
+    </div>
+
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-interpretability">Interpretability</span>
+        <span class="tag tag-repr">Representation Learning</span>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="../index.html">&#8592; Back to All Publications</a></p>
+    <p style="margin-top:8px;">Hanyang University NLP Lab | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

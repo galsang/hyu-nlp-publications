@@ -113,6 +113,7 @@ a:hover { text-decoration: underline; }
 .tag-efficiency { background: #ddd6fe; color: #5b21b6; }
 .tag-multilingual { background: #cffafe; color: #155e75; }
 .tag-abstention { background: #fecdd3; color: #9f1239; }
+.tag-interpretability { background: #e0e7ff; color: #3730a3; }
 
 .paper-oneliner { font-size: 0.9rem; color: var(--text-light); margin-top: 10px; }
 

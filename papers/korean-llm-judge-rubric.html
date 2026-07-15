@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comparison of Rubric Strategies for LLM-as-a-Judge in Korean - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="../papers/korean-llm-judge-rubric.html" class="active">EN</a>
+        <a href="../ko/papers/korean-llm-judge-rubric.html">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; All Publications</a>
+        <h1>Comparison of Rubric Strategies for LLM-as-a-Judge in Korean</h1>
+        <div class="meta"><span class="venue-badge">KCC 2026</span></div>
+        <div class="authors">Minseo Kim, Yukyung Lee, Taeuk Kim</div>
+    </div>
+</div>
+<div class="detail-content">
+    <div class="section">
+        <h2>One-Line Summary</h2>
+        <p>A comparative study of rubric design strategies for using a large language model as an automatic judge (LLM-as-a-Judge) of Korean-language responses &mdash; examining how choices such as holistic versus analytic rubrics, coarse versus fine-grained criteria, and different scoring scales affect the reliability and human alignment of automatic judgments in Korean.</p>
+    </div>
+
+    <div class="section">
+        <h2>Background & Motivation</h2>
+        <p>LLM-as-a-Judge has become a widely adopted paradigm for evaluating open-ended text generation, replacing costly and slow human evaluation with an LLM that scores or ranks candidate responses. Because a judge LLM is prompted with an evaluation <strong>rubric</strong> that defines what constitutes a good response, the quality of its judgments depends heavily on how that rubric is designed.</p>
+        <p>Most existing rubric-design practices and empirical findings originate from English-centric evaluation, where the relationship between rubric strategy and judgment reliability has been studied more extensively. It remains unclear whether the same design choices transfer to <strong>Korean</strong>, a language with different morphological structure, honorific and politeness conventions, and stylistic norms that a judge must account for when assessing fluency, appropriateness, and helpfulness.</p>
+        <div class="highlight-box">
+            <p><strong>Key Challenge:</strong> The reliability of LLM-as-a-Judge depends heavily on rubric design, yet how rubric strategies affect the quality and human alignment of automatic judgments in <em>Korean</em> is understudied. Practitioners building Korean evaluation pipelines have little empirical guidance on which rubric strategy to choose.</p>
+        </div>
+        <p>This paper directly compares alternative rubric strategies under a controlled setting in order to identify which choices yield more reliable, consistent, and human-aligned judgments when an LLM evaluates Korean responses.</p>
+
+        <h3>Dimensions of Rubric Design</h3>
+        <p>A rubric strategy is not a single knob but a combination of several design dimensions, each of which may interact with the characteristics of Korean:</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Dimension</th><th>Option A</th><th>Option B</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Structure</td><td>Holistic (single overall judgment)</td><td>Analytic (per-criterion scores)</td></tr>
+                <tr><td>Granularity of criteria</td><td>Coarse (few broad criteria)</td><td>Fine-grained (many specific criteria)</td></tr>
+                <tr><td>Scoring scale</td><td>Narrow (e.g., binary or 3-point)</td><td>Wide (e.g., 5- or 10-point)</td></tr>
+                <tr><td>Reasoning</td><td>Score directly</td><td>Explain rationale before scoring</td></tr>
+                <tr><td>Criterion specification</td><td>Generic descriptions</td><td>Detailed, language-aware descriptions</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method</h2>
+        <p>The study frames rubric design as a controlled comparison, systematically varying rubric strategies while holding the judge model, prompts, and evaluated responses fixed, so that any change in judgment quality can be attributed to the rubric strategy itself.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Holistic vs. Analytic Rubrics</div>
+                <div class="step-desc">The first axis contrasts a <strong>holistic</strong> rubric, in which the judge produces a single overall quality judgment for a Korean response, against an <strong>analytic</strong> rubric, in which the judge scores several distinct sub-criteria (such as fluency, factual/contextual appropriateness, and helpfulness) that are then aggregated. This comparison tests whether decomposing evaluation into explicit criteria makes the judge more consistent and better aligned with human evaluators, or whether it introduces additional noise for Korean.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Coarse vs. Fine-Grained Criteria</div>
+                <div class="step-desc">The second axis varies the <strong>granularity</strong> of the evaluation criteria &mdash; from a small number of broad criteria to a larger set of narrowly defined ones. Finer criteria can capture subtle aspects of Korean quality (e.g., appropriate honorific usage or natural phrasing) but may also overwhelm the judge or dilute its focus. The study examines the trade-off between descriptive coverage and judgment stability.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Scoring Scale Design</div>
+                <div class="step-desc">The third axis compares different <strong>score scales</strong>, ranging from coarse binary or few-point scales to wider multi-point scales. Wider scales offer more resolution but can reduce inter-judgment consistency and human agreement if the judge cannot reliably distinguish adjacent levels. The comparison identifies which scale granularity best balances discriminative power against reliability for Korean responses.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Criterion Specification and Rationale</div>
+                <div class="step-desc">Beyond structure and scale, the study varies how explicitly each criterion is <strong>described</strong> in the rubric &mdash; from generic instructions to detailed, language-aware descriptions &mdash; and whether the judge is asked to <strong>explain its reasoning before scoring</strong>. These prompt-level choices are evaluated for their effect on the stability and human alignment of Korean judgments.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">5</div>
+                <div class="step-title">Reliability and Alignment Analysis</div>
+                <div class="step-desc">For each rubric strategy, the resulting judgments are assessed for <strong>reliability</strong> (consistency of scores across repeated or parallel judgments) and <strong>human alignment</strong> (agreement with human preferences on Korean responses). Comparing strategies along these two axes reveals which rubric designs produce trustworthy automatic evaluation in Korean.</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <p><strong>Controlled Comparison:</strong></p>
+            <ul>
+                <li><strong>Fixed judge and inputs:</strong> The same judge model and the same set of Korean responses are used across all rubric conditions, isolating the effect of rubric design.</li>
+                <li><strong>Parallel prompts:</strong> Rubric variants share a common prompt scaffold so that differences reflect the rubric strategy rather than incidental prompt wording.</li>
+                <li><strong>Human reference:</strong> Human judgments on Korean responses serve as the reference against which each rubric strategy's alignment is measured.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Key Points</h2>
+        <ul class="key-points">
+            <li><strong>Rubric strategy matters:</strong> The choice of rubric structure, criterion granularity, and scoring scale meaningfully changes how reliable and human-aligned an LLM judge is when evaluating Korean responses &mdash; it is not a neutral implementation detail.</li>
+            <li><strong>Holistic vs. analytic trade-off:</strong> Decomposing evaluation into explicit sub-criteria (analytic) can improve interpretability and alignment, but a holistic judgment can be simpler and more stable in some settings; the study characterizes when each is preferable for Korean.</li>
+            <li><strong>Granularity has a sweet spot:</strong> Overly fine-grained criteria risk overwhelming the judge, while overly coarse criteria miss important aspects of Korean quality &mdash; suggesting an intermediate granularity is often most reliable.</li>
+            <li><strong>Scale granularity affects consistency:</strong> Wider scoring scales provide more resolution but can lower consistency and human agreement when the judge cannot reliably separate adjacent levels.</li>
+            <li><strong>Language-aware rubrics help:</strong> Rubrics that explicitly account for Korean-specific properties (such as honorifics and natural phrasing) and that elicit rationale before scoring tend to yield more stable, human-aligned judgments.</li>
+            <li><strong>Practical guidance for Korean:</strong> The comparison offers concrete, empirically grounded guidance for practitioners designing LLM-as-a-Judge evaluation pipelines for Korean-language systems.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>As LLM-based systems for Korean proliferate, reliable automatic evaluation becomes essential for development, benchmarking, and deployment. LLM-as-a-Judge offers a scalable alternative to human evaluation, but its trustworthiness hinges on rubric design &mdash; a factor that has been studied primarily in English.</p>
+        <p>By systematically comparing rubric strategies specifically for Korean, this work fills an important gap: it provides evidence about which design choices lead to judgments that are both consistent and aligned with human preferences in Korean. This helps practitioners avoid brittle evaluation setups and build more trustworthy Korean evaluation pipelines.</p>
+        <div class="highlight-box">
+            <p><strong>Broader Implication:</strong> Automatic evaluation is only as reliable as the rubric that drives it. Establishing rubric strategies tailored to Korean is a necessary step toward fair, reproducible, and human-aligned benchmarking of Korean language technologies, and toward extending best practices in LLM-as-a-Judge beyond English-centric settings.</p>
+        </div>
+    </div>
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-benchmark">Benchmark</span>
+        <span class="tag tag-multilingual">Multilingual</span>
+    </div>
+</div>
+<div class="footer">
+    <p><a href="../index.html">&#8592; Back to All Publications</a></p>
+    <p style="margin-top:8px;">Hanyang University NLP Lab | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

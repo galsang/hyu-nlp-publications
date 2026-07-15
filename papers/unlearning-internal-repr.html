@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluating LLM Unlearning via Comparison of Internal Representations - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="../papers/unlearning-internal-repr.html" class="active">EN</a>
+        <a href="../ko/papers/unlearning-internal-repr.html">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; All Publications</a>
+        <h1>Evaluating LLM Unlearning via Comparison of Internal Representations</h1>
+        <div class="meta"><span class="venue-badge">KCC 2026</span></div>
+        <div class="authors">Ingyu Bang, Hwiyeong Lee, Hyelim Lim, Hoki Kim, Taeuk Kim</div>
+    </div>
+</div>
+<div class="detail-content">
+    <div class="section">
+        <h2>One-Line Summary</h2>
+        <p>A study on how to tell whether knowledge unlearning in large language models is genuine by comparing the model's <strong>internal representations</strong> &mdash; hidden states and activations &mdash; before and after unlearning, rather than trusting output-level behavior alone, thereby probing whether "forgotten" knowledge has truly disappeared from within the model.</p>
+    </div>
+
+    <div class="section">
+        <h2>Background & Motivation</h2>
+        <p>Machine unlearning for large language models aims to remove specific knowledge &mdash; such as private data, copyrighted content, or harmful information &mdash; from a trained model without retraining it from scratch. The dominant way to judge whether unlearning has succeeded is to inspect the model's <strong>outputs</strong>: if the model no longer answers questions about the target knowledge, or refuses to reproduce it, the knowledge is declared "forgotten."</p>
+        <p>However, output-level evaluation is fragile. A model may simply <em>suppress</em> a memorized answer at the surface while still retaining the underlying information in its internal computation. In such cases the knowledge can resurface under paraphrased prompts, adversarial probing, relearning with a handful of examples, or quantization &mdash; showing that the forgetting was cosmetic rather than genuine.</p>
+        <div class="highlight-box">
+            <p><strong>Key Challenge:</strong> Output-level unlearning metrics can be misleading. A model that appears to have "forgotten" a fact at its output may still encode that fact in its hidden representations, so surface-level refusal or accuracy drops are not reliable evidence that the knowledge has actually been erased from the model.</p>
+        </div>
+        <p>This motivates evaluating unlearning at the level where knowledge actually resides &mdash; the model's internal representations. If unlearning is genuine, the way the model internally represents the forgotten knowledge should meaningfully differ from how it represented that knowledge before unlearning, and ideally should become indistinguishable from how the model treats knowledge it never possessed. This work investigates whether comparing internal representations offers a more faithful signal of true forgetting than behavioral metrics alone.</p>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method</h2>
+        <p>The study frames unlearning evaluation as a comparison problem over internal representations, contrasting the model's internal state across conditions to diagnose whether target knowledge has genuinely been removed.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Representation Extraction</div>
+                <div class="step-desc">For a given probe input relating to the target (forget) knowledge, hidden states and intermediate activations are extracted from the model across layers. The same extraction is performed for the model before and after unlearning, so that each condition yields a comparable internal fingerprint of how the model processes the relevant content. Extraction also covers <em>retained</em> knowledge inputs, so the analysis can distinguish changes specific to the forget target from incidental drift.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Comparison Across Conditions</div>
+                <div class="step-desc">The extracted representations are compared along two axes: (a) <strong>before vs. after unlearning</strong> for the forget knowledge, measuring how much the internal state actually shifted, and (b) <strong>forget vs. retained knowledge</strong> within the unlearned model, measuring whether the model now treats the supposedly forgotten content differently from knowledge it still holds. Similarity between representations is quantified so that genuine erasure and mere output suppression yield distinguishable patterns.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Diagnosing Genuine vs. Superficial Forgetting</div>
+                <div class="step-desc">By interpreting the comparison, the method assesses whether unlearning was internal or only surface-level. If the internal representation of the forget knowledge remains close to its pre-unlearning state &mdash; while the output merely refuses or errs &mdash; this indicates <em>superficial</em> forgetting where the knowledge is suppressed but still latent. If the representation has meaningfully changed and moved away from its original encoding, this is evidence of more <em>genuine</em> internal removal. This representation-level diagnosis serves as a complementary, more faithful evaluation signal alongside conventional output-based metrics.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Key Points</h2>
+        <ul class="key-points">
+            <li><strong>Beyond output behavior:</strong> Unlearning success should not be judged solely from whether the model stops producing target answers, since suppression at the output can mask retained internal knowledge.</li>
+            <li><strong>Representations as the evaluation target:</strong> Comparing hidden states and activations before and after unlearning provides a window into whether knowledge was actually removed from the model's internal computation.</li>
+            <li><strong>Two-way comparison:</strong> Contrasting the forget target both against its own pre-unlearning representation and against retained knowledge helps separate genuine erasure from incidental changes or cosmetic suppression.</li>
+            <li><strong>Detecting latent knowledge:</strong> Representation-level analysis can flag cases where "forgotten" knowledge remains latent and could resurface under paraphrasing, adversarial prompting, or relearning &mdash; scenarios that output metrics may miss.</li>
+            <li><strong>Complement to behavioral metrics:</strong> The approach is meant to augment, not replace, conventional evaluation, offering a more faithful and harder-to-game signal of true forgetting.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>As unlearning is increasingly proposed as a mechanism for privacy compliance, copyright removal, and safety, the way we <em>measure</em> its success becomes critically important. If evaluation relies only on output behavior, unlearning methods risk being credited for forgetting that is merely hidden &mdash; a false sense of safety that can break down under real-world probing.</p>
+        <p>By anchoring evaluation in internal representations, this work pushes toward a more trustworthy standard for verifying that sensitive knowledge has genuinely been removed rather than concealed. This is especially valuable for auditing and certifying unlearned models, where superficial forgetting could otherwise pass undetected.</p>
+        <p>The study also connects to a broader interpretability agenda: understanding <em>where</em> and <em>how</em> knowledge is stored in a model is a prerequisite for reliably removing it. It builds on the lab's prior work on knowledge unlearning in LLMs (EMNLP 2025), extending the focus from producing better forgetting toward faithfully evaluating whether forgetting has actually occurred.</p>
+    </div>
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-unlearning">Unlearning</span>
+        <span class="tag tag-interpretability">Interpretability</span>
+    </div>
+</div>
+<div class="footer">
+    <p><a href="../index.html">&#8592; Back to All Publications</a></p>
+    <p style="margin-top:8px;">Hanyang University NLP Lab | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>한국어 LLM-as-a-Judge를 위한 루브릭 전략 비교 - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="../../papers/korean-llm-judge-rubric.html">EN</a>
+        <a href="korean-llm-judge-rubric.html" class="active">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; 전체 논문 목록</a>
+        <h1>한국어 LLM-as-a-Judge를 위한 루브릭 전략 비교</h1>
+        <div class="meta"><span class="venue-badge">KCC 2026</span></div>
+        <div class="authors">Minseo Kim, Yukyung Lee, Taeuk Kim</div>
+    </div>
+</div>
+<div class="detail-content">
+    <div class="section">
+        <h2>한줄 요약</h2>
+        <p>거대 언어 모델을 한국어 응답의 자동 평가자(LLM-as-a-Judge)로 활용할 때의 루브릭 설계 전략을 비교한 연구 &mdash; 총체적(holistic) 루브릭과 분석적(analytic) 루브릭, 거친 기준과 세분화된 기준, 서로 다른 점수 척도 등의 선택이 한국어 자동 평가의 신뢰성과 인간 판단과의 정합성에 어떤 영향을 미치는지를 살펴봅니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>배경 및 동기</h2>
+        <p>LLM-as-a-Judge는 개방형 텍스트 생성 평가에서 널리 채택된 패러다임으로, 비용이 크고 느린 인간 평가를 대신하여 LLM이 후보 응답에 점수를 매기거나 순위를 정하도록 합니다. 평가자 LLM은 좋은 응답이 무엇인지를 정의하는 평가 <strong>루브릭</strong>을 프롬프트로 받기 때문에, 그 판단의 품질은 루브릭이 어떻게 설계되었는지에 크게 좌우됩니다.</p>
+        <p>기존의 루브릭 설계 관행과 실증적 발견은 대부분 영어 중심 평가에서 비롯되었으며, 그 환경에서는 루브릭 전략과 판단 신뢰성 사이의 관계가 비교적 폭넓게 연구되어 왔습니다. 그러나 이러한 설계 선택이 <strong>한국어</strong>에도 동일하게 적용되는지는 불분명합니다. 한국어는 형태론적 구조가 다르고, 존댓말 및 공손성 관습, 그리고 평가자가 유창성·적절성·유용성을 판단할 때 고려해야 하는 문체적 규범이 다르기 때문입니다.</p>
+        <div class="highlight-box">
+            <p><strong>핵심 도전 과제:</strong> LLM-as-a-Judge의 신뢰성은 루브릭 설계에 크게 의존하지만, 루브릭 전략이 <em>한국어</em> 자동 평가의 품질과 인간 판단과의 정합성에 어떤 영향을 미치는지는 충분히 연구되지 않았습니다. 한국어 평가 파이프라인을 구축하는 실무자들은 어떤 루브릭 전략을 선택해야 하는지에 대한 실증적 지침을 거의 갖고 있지 못합니다.</p>
+        </div>
+        <p>본 논문은 통제된 환경에서 대안적인 루브릭 전략들을 직접 비교하여, LLM이 한국어 응답을 평가할 때 더 신뢰할 수 있고 일관되며 인간 판단에 정합적인 판단을 산출하는 선택이 무엇인지를 규명합니다.</p>
+
+        <h3>루브릭 설계의 차원</h3>
+        <p>루브릭 전략은 하나의 조절 변수가 아니라 여러 설계 차원의 조합이며, 각 차원은 한국어의 특성과 상호작용할 수 있습니다:</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>차원</th><th>선택지 A</th><th>선택지 B</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>구조</td><td>총체적 (단일 종합 판단)</td><td>분석적 (기준별 점수)</td></tr>
+                <tr><td>기준의 세분성</td><td>거침 (소수의 넓은 기준)</td><td>세분화 (다수의 구체적 기준)</td></tr>
+                <tr><td>점수 척도</td><td>좁음 (예: 이분법 또는 3점)</td><td>넓음 (예: 5점 또는 10점)</td></tr>
+                <tr><td>추론</td><td>직접 채점</td><td>채점 전 근거 설명</td></tr>
+                <tr><td>기준 명세</td><td>일반적 서술</td><td>상세하고 언어를 고려한 서술</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>제안 방법</h2>
+        <p>본 연구는 루브릭 설계를 통제된 비교의 문제로 설정하여, 평가자 모델·프롬프트·평가 대상 응답을 고정한 채 루브릭 전략만을 체계적으로 변화시킵니다. 이를 통해 판단 품질의 변화를 루브릭 전략 자체에 귀속시킬 수 있습니다.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">총체적 vs. 분석적 루브릭</div>
+                <div class="step-desc">첫 번째 축은 평가자가 한국어 응답에 대해 단일한 종합 품질 판단을 산출하는 <strong>총체적</strong> 루브릭과, 유창성·사실적/맥락적 적절성·유용성 등 여러 개별 하위 기준에 점수를 매긴 뒤 이를 종합하는 <strong>분석적</strong> 루브릭을 대비시킵니다. 이 비교는 평가를 명시적 기준으로 분해하는 것이 평가자를 더 일관되고 인간 평가자와 정합적으로 만드는지, 아니면 한국어에서 오히려 추가적 잡음을 유발하는지를 검증합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">거친 기준 vs. 세분화된 기준</div>
+                <div class="step-desc">두 번째 축은 평가 기준의 <strong>세분성</strong>을 변화시킵니다 &mdash; 소수의 넓은 기준에서부터 좁게 정의된 다수의 기준까지 다양하게 설정합니다. 세분화된 기준은 한국어 품질의 미묘한 측면(예: 적절한 존댓말 사용이나 자연스러운 표현)을 포착할 수 있지만, 동시에 평가자를 압도하거나 초점을 흐릴 수도 있습니다. 본 연구는 서술적 포괄성과 판단 안정성 사이의 상충 관계를 분석합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">점수 척도 설계</div>
+                <div class="step-desc">세 번째 축은 서로 다른 <strong>점수 척도</strong>를 비교합니다. 거친 이분법 또는 소수 점수 척도에서부터 더 넓은 다점 척도에 이르기까지 다양합니다. 넓은 척도는 더 높은 해상도를 제공하지만, 평가자가 인접한 수준을 안정적으로 구별하지 못하면 판단 간 일관성과 인간 일치도를 떨어뜨릴 수 있습니다. 이 비교는 한국어 응답에 대해 변별력과 신뢰성의 균형을 가장 잘 맞추는 척도 세분성을 규명합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">기준 명세와 근거 제시</div>
+                <div class="step-desc">구조와 척도를 넘어, 본 연구는 각 기준이 루브릭에서 얼마나 명시적으로 <strong>서술</strong>되는지를 &mdash; 일반적 지시에서 상세하고 언어를 고려한 서술까지 &mdash; 변화시키고, 평가자가 <strong>채점 전에 근거를 설명</strong>하도록 요구하는지 여부를 함께 변화시킵니다. 이러한 프롬프트 수준의 선택이 한국어 판단의 안정성과 인간 정합성에 미치는 영향을 평가합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">5</div>
+                <div class="step-title">신뢰성 및 정합성 분석</div>
+                <div class="step-desc">각 루브릭 전략에 대해 산출된 판단을 <strong>신뢰성</strong>(반복 또는 병렬 판단 간 점수의 일관성)과 <strong>인간 정합성</strong>(한국어 응답에 대한 인간 선호와의 일치도) 측면에서 평가합니다. 이 두 축을 따라 전략들을 비교함으로써, 어떤 루브릭 설계가 한국어에서 신뢰할 수 있는 자동 평가를 산출하는지를 밝힙니다.</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <p><strong>통제된 비교:</strong></p>
+            <ul>
+                <li><strong>고정된 평가자와 입력:</strong> 모든 루브릭 조건에서 동일한 평가자 모델과 동일한 한국어 응답 집합을 사용하여 루브릭 설계의 효과를 분리합니다.</li>
+                <li><strong>병렬적 프롬프트:</strong> 루브릭 변형들은 공통된 프롬프트 골격을 공유하여, 차이가 부수적인 프롬프트 표현이 아닌 루브릭 전략을 반영하도록 합니다.</li>
+                <li><strong>인간 기준:</strong> 한국어 응답에 대한 인간 판단이 각 루브릭 전략의 정합성을 측정하는 기준으로 사용됩니다.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>핵심 내용</h2>
+        <ul class="key-points">
+            <li><strong>루브릭 전략은 중요하다:</strong> 루브릭 구조, 기준 세분성, 점수 척도의 선택은 LLM 평가자가 한국어 응답을 평가할 때의 신뢰성과 인간 정합성을 유의미하게 바꾸며 &mdash; 이는 중립적인 구현 세부사항이 아닙니다.</li>
+            <li><strong>총체적 vs. 분석적의 상충:</strong> 평가를 명시적 하위 기준으로 분해하는 것(분석적)은 해석 가능성과 정합성을 높일 수 있지만, 총체적 판단이 더 단순하고 안정적일 수 있는 상황도 있습니다. 본 연구는 한국어에서 각각이 언제 더 바람직한지를 특성화합니다.</li>
+            <li><strong>세분성에는 적정 지점이 있다:</strong> 지나치게 세분화된 기준은 평가자를 압도할 위험이 있고, 지나치게 거친 기준은 한국어 품질의 중요한 측면을 놓쳐 &mdash; 중간 수준의 세분성이 흔히 가장 신뢰할 만함을 시사합니다.</li>
+            <li><strong>척도 세분성은 일관성에 영향을 준다:</strong> 넓은 점수 척도는 더 높은 해상도를 제공하지만, 평가자가 인접 수준을 안정적으로 구별하지 못할 때 일관성과 인간 일치도를 낮출 수 있습니다.</li>
+            <li><strong>언어를 고려한 루브릭이 도움된다:</strong> 존댓말이나 자연스러운 표현 등 한국어 고유의 특성을 명시적으로 반영하고, 채점 전에 근거를 유도하는 루브릭이 더 안정적이고 인간 정합적인 판단을 산출하는 경향이 있습니다.</li>
+            <li><strong>한국어를 위한 실무적 지침:</strong> 이 비교는 한국어 시스템을 위한 LLM-as-a-Judge 평가 파이프라인을 설계하는 실무자에게 구체적이고 실증에 기반한 지침을 제공합니다.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>의의</h2>
+        <p>한국어를 위한 LLM 기반 시스템이 확산됨에 따라, 신뢰할 수 있는 자동 평가는 개발·벤치마킹·배포에 필수적입니다. LLM-as-a-Judge는 인간 평가에 대한 확장 가능한 대안을 제공하지만, 그 신뢰성은 루브릭 설계에 달려 있으며 &mdash; 이는 주로 영어에서만 연구되어 온 요인입니다.</p>
+        <p>본 연구는 한국어를 위한 루브릭 전략을 체계적으로 비교함으로써 중요한 공백을 메웁니다: 어떤 설계 선택이 한국어에서 일관되면서도 인간 선호와 정합적인 판단으로 이어지는지에 대한 증거를 제공합니다. 이는 실무자가 취약한 평가 설정을 피하고 더 신뢰할 수 있는 한국어 평가 파이프라인을 구축하는 데 도움을 줍니다.</p>
+        <div class="highlight-box">
+            <p><strong>넓은 함의:</strong> 자동 평가는 그것을 이끄는 루브릭만큼만 신뢰할 수 있습니다. 한국어에 맞춘 루브릭 전략을 확립하는 것은 한국어 언어 기술에 대한 공정하고 재현 가능하며 인간 정합적인 벤치마킹을 향한 필수적인 단계이며, LLM-as-a-Judge의 모범 사례를 영어 중심 환경 너머로 확장하는 길이기도 합니다.</p>
+        </div>
+    </div>
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-benchmark">Benchmark</span>
+        <span class="tag tag-multilingual">Multilingual</span>
+    </div>
+</div>
+<div class="footer">
+    <p><a href="../index.html">&#8592; 전체 논문 목록으로 돌아가기</a></p>
+    <p style="margin-top:8px;">한양대학교 자연어처리 연구실 | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

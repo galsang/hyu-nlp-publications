@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM 내부 지식 분석을 위한 표현 단위 비교: Neurons vs. SAEs - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="../../papers/neurons-vs-saes.html">EN</a>
+        <a href="neurons-vs-saes.html" class="active">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; 전체 논문 목록</a>
+        <h1>LLM 내부 지식 분석을 위한 표현 단위 비교: Neurons vs. SAEs</h1>
+        <div class="meta"><span class="venue-badge">KCC 2026</span></div>
+        <div class="authors">Hyelim Lim, Ingyu Bang, Hwiyeong Lee, Taeuk Kim</div>
+    </div>
+</div>
+<div class="detail-content">
+    <div class="section">
+        <h2>한줄 요약</h2>
+        <p>거대 언어 모델 내부에 저장된 지식을 분석하는 데 사용되는 기본 <strong>표현 단위(representation unit)</strong> &mdash; 개별 <strong>뉴런(Neurons)</strong> vs. <strong>희소 오토인코더(Sparse Autoencoders, SAEs)가 추출한 특징(feature)</strong> &mdash; 을 비교 분석하여, 어느 단위가 모델 내부의 사실적·언어적 지식이 어떻게 부호화되는지에 대해 더 해석 가능하고, 분리되며, 충실한(faithful) 접근을 제공하는지 검토합니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>배경 및 동기</h2>
+        <p>거대 언어 모델 내부의 <em>어디에</em>, <em>어떻게</em> 지식이 존재하는지를 이해하는 것은 기계론적 해석 가능성(mechanistic interpretability) 연구의 핵심 목표입니다. 모델이 암기한 지식을 탐침(probe)하거나, 위치를 특정(localize)하거나, 편집(edit)하려면, 연구자는 먼저 분석의 <strong>기본 단위</strong> &mdash; 활성값을 관찰하고, 특정 지식에 귀인하며, 개입(intervention)의 대상이 되는 최소 구성 요소 &mdash; 를 선택해야 합니다. 오늘날 가장 유력한 두 후보는 모델 자체의 <strong>개별 뉴런</strong>(은닉 활성값의 차원)과, 그 활성값 위에서 학습된 <strong>희소 오토인코더(SAE)가 복원한 특징</strong>입니다.</p>
+        <p>뉴런은 별도의 학습 없이 곧바로 사용 가능한 고유(native) 단위로, "지식 뉴런(knowledge neuron)"에 관한 선행 연구는 특정 사실과 언어적 범주를 소수의 뉴런 집합에 귀인해 왔습니다. 그러나 뉴런은 <strong>다의적(polysemantic)</strong>이라는 점이 널리 관찰됩니다: 모델이 차원 수보다 더 많은 특징을 표현 공간에 압축(중첩, superposition)하기 때문에, 하나의 뉴런이 서로 무관한 여러 개념에 대해 발화하는 경우가 많습니다. 이러한 얽힘(entanglement)은 뉴런 단위의 귀인을 모호하게 만들고, 지식이 어떻게 조직화되어 있는지에 대해 오도된 그림을 낳을 수 있습니다.</p>
+        <p>SAE는 바로 이 문제를 해결하기 위해 제안되었습니다. 은닉 활성값을 과완비(over-complete) 특징 사전의 희소 선형 결합으로 재구성함으로써, SAE는 <strong>중첩된 개념을 단의적(monosemantic) 단위로 분리</strong>하여 각각이 이상적으로는 하나의 인간 해석 가능한 개념에 대응하도록 합니다. 다만 SAE 특징에는 대가가 따릅니다: 추가 학습이 필요하고, 재구성 오차가 발생하며, 모델의 실제 연산에 대한 충실성(faithfulness) 자체가 검증 대상입니다.</p>
+        <div class="highlight-box">
+            <p><strong>핵심 긴장 &mdash; 다의적 뉴런 vs. 희소 특징:</strong></p>
+            <ul>
+                <li><strong>뉴런은 고유하지만 얽혀 있음:</strong> 모델 연산의 직접적 일부이지만, 다의성과 중첩으로 인해 하나의 뉴런이 여러 개념을 혼합하여 지식 귀인을 흐립니다.</li>
+                <li><strong>SAE 특징은 분리되지만 파생적:</strong> 서로 다른 지식을 분리하는 깨끗한 단의적 단위를 약속하지만, 모델 위에 덧씌워 학습된 근사치이므로 충실성과 재구성 정확도의 문제가 제기됩니다.</li>
+                <li><strong>열린 질문:</strong> LLM에 저장된 지식을 분석하려 할 때, 어느 단위가 더 해석 가능하고 분리되며 충실한 결론을 제공하는가 &mdash; 그리고 어떤 조건에서 그러한가?</li>
+            </ul>
+        </div>
+        <p>본 연구는 LLM에서 내부 표현이 지식 접근과 검색을 어떻게 매개하는지를 묻는 연구실의 폭넓은 해석 가능성 연구 흐름(예: <em>Query Lens</em>, ICML 2026) 안에 위치합니다. 단일한 "정답" 단위를 가정하는 대신, 표현 단위의 선택을 경험적 질문으로 다루며 동일한 지식 분석 과제 위에서 뉴런과 SAE 특징을 체계적으로 비교합니다.</p>
+
+        <h3>같은 표현에 대한 두 가지 관점</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>측면</th><th>뉴런 (Neurons)</th><th>SAE 특징 (SAE Features)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>기원</td><td>모델의 고유 은닉 차원</td><td>활성값 위에서 학습된 사전(dictionary)</td></tr>
+                <tr><td>추가 학습?</td><td>불필요</td><td>레이어/지점별 SAE 학습 필요</td></tr>
+                <tr><td>해석 가능성</td><td>다의적인 경우 많음 (개념 혼합)</td><td>단의적 지향 (단일 개념)</td></tr>
+                <tr><td>분리 정도</td><td>중첩으로 인해 제한적</td><td>희소 분리를 명시적으로 유도</td></tr>
+                <tr><td>충실성 우려</td><td>연산 경로 상에 직접 존재</td><td>재구성 오차가 신호를 왜곡할 수 있음</td></tr>
+                <tr><td>비용 / 편의성</td><td>저비용, 즉시 사용 가능</td><td>고비용, 사전 크기 조정 필요</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>제안 방법</h2>
+        <p>본 연구는 뉴런과 SAE 특징을 동일한 지식 탐침 질문에 대해 교체 가능한 <strong>분석 단위</strong>로 평가하는 통제된 정면 비교를 설계합니다. 이 설계는 단위 선택의 효과를 연구 대상 지식으로부터 분리합니다.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">공통 지식 분석 환경 정의</div>
+                <div class="step-desc">모델이 암기했을 법한 사실적 연상과 언어적 속성으로 이루어진 공유 지식 탐침 집합을 고정하여, 두 후보 단위가 동일한 대상에 대해 평가되도록 합니다. 연구 대상 지식을 고정하면 이후 분석에서 나타나는 차이가 과제 변화가 아닌 표현 단위에 기인함을 보장할 수 있습니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">동일 활성값에서 두 후보 단위 추출</div>
+                <div class="step-desc">선택된 모델 지점(예: 특정 레이어의 은닉 활성값)에서, <strong>뉴런</strong> 관점은 원시 활성값 차원을 그대로 사용하고, <strong>SAE 특징</strong> 관점은 동일한 활성값을 학습된 희소 오토인코더에 통과시켜 희소·과완비 특징 기저를 얻습니다. 따라서 두 관점은 <em>같은</em> 기저 표현을 서술하며, 그것을 어떻게 단위로 분해하는지에서만 차이가 납니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">지식을 단위에 위치 특정</div>
+                <div class="step-desc">각 지식 조각에 대해, 두 공간에서 가장 책임 있는 단위를 식별합니다 &mdash; 대상과 가장 강하게 연관된 뉴런과, 대상과 가장 강하게 연관된 SAE 특징입니다. 이로써 모든 탐침에 대해 뉴런 기반 위치 특정과 SAE 기반 위치 특정을 얻고, 귀인이 얼마나 집중적이고 깨끗하며 일관적인지를 직접 비교할 수 있습니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">해석 가능성 및 분리 정도 평가</div>
+                <div class="step-desc">식별된 각 단위가 어떤 개념에 반응하는지 검토합니다. 단위가 하나의 일관된 개념에 대응하는지(단의적), 아니면 서로 무관한 여러 개념을 혼합하는지(다의적), 그리고 서로 다른 지식 조각이 공유·과부하된 단위로 붕괴되지 않고 서로 다른 단위에 매핑되는지를 분석합니다. 이는 각 표현 단위의 실질적 해석 가능성과 분리 정도를 포착합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">5</div>
+                <div class="step-title">개입을 통한 충실성 검증</div>
+                <div class="step-desc">상관을 넘어서기 위해, 식별된 단위를 교란합니다 &mdash; 특정 대상과 연관된 뉴런 대 SAE 특징을 억제하거나 증폭하고 &mdash; 해당 지식의 모델 표현에 미치는 영향을 관찰합니다. 어떤 단위에 개입했을 때 무관한 행동을 광범위하게 훼손하지 않으면서 의도한 지식만 선택적으로 변화시키는 정도만큼 그 단위는 <strong>충실하다</strong>고 판단하며, 이는 단순한 서술이 아닌 인과적 비교를 제공합니다.</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <p><strong>통제된 비교 원칙:</strong></p>
+            <p>두 단위 유형 모두 동일한 활성값에서 파생되고 동일한 탐침 위에서 평가되므로, 해석 가능성·분리 정도·충실성의 차이는 표현 단위의 선택 자체에 귀인될 수 있습니다 &mdash; 이로써 서로 다른 과제나 모델의 교란이 아닌 순수한 "뉴런 vs. SAE" 검증이 가능해집니다.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>핵심 내용</h2>
+        <ul class="key-points">
+            <li><strong>단위 선택은 결과를 좌우함:</strong> LLM에 지식이 어떻게 저장되는지에 대한 결론은 분석 단위로 뉴런을 쓰는지 SAE 특징을 쓰는지에 상당히 좌우되며, 두 관점은 서로 교체 가능하지 않습니다.</li>
+            <li><strong>뉴런은 편리하나 얽혀 있음:</strong> 개별 뉴런은 추가 학습 없이 즉시 사용 가능하지만, 다의적 성질과 중첩 때문에 지식 귀인이 모호하고 깨끗하게 해석하기 어렵습니다.</li>
+            <li><strong>SAE 특징은 분리에 유리함:</strong> 희소 오토인코더 특징은 중첩된 개념을 더 단의적인 단위로 분리하는 경향이 있어, 개별 지식 조각을 더 깨끗하고 인간이 해석하기 쉽게 위치 특정할 수 있습니다.</li>
+            <li><strong>충실성이 결정적 시험대:</strong> 해석 가능성만으로는 충분하지 않습니다 &mdash; 어떤 단위가 지식 분석에 유용하려면 그것에 개입했을 때 대상 지식을 선택적이고 신뢰성 있게 바꿔야 하므로, (개입을 통한) 충실성을 일급 기준으로 다룹니다.</li>
+            <li><strong>명확한 승자가 아닌 절충:</strong> 이 비교는 절충 관계를 드러냅니다 &mdash; SAE 특징은 추가 학습과 재구성 오차를 대가로 해석 가능성과 분리를 얻고, 뉴런은 얽힘을 대가로 직접성과 낮은 비용을 제공합니다.</li>
+            <li><strong>해석 가능성 실무에 대한 지침:</strong> 깨끗한 해석, 인과적 편집, 저부담 분석 중 무엇이 우선순위인지에 따라 어떤 표현 단위를 선택할지에 대한 근거를 제공합니다.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>의의</h2>
+        <p>표현 단위의 선택은 해석 가능성 연구의 상당 부분을 떠받치면서도 흔히 검토되지 않는 기초적 가정입니다. 본 연구는 그 선택 자체를 연구 대상으로 삼아, 뉴런과 SAE 특징을 통해 LLM 지식을 분석할 때 무엇을 얻고 잃는지를 명확히 합니다.</p>
+        <ul>
+            <li><strong>방법론적 결정을 정밀 검토:</strong> 많은 해석 가능성 발견이 암묵적으로 분석 단위에 의존합니다. 본 연구는 그 의존성을 가시화하고 검증 가능하게 만들어, 지식 위치 특정이 어떻게 수행되었는지 더 주의 깊게 보고하도록 장려합니다.</li>
+            <li><strong>편의성과 해석 가능성의 가교:</strong> 고유 뉴런의 실용적 매력과 SAE의 분리 이점을 저울질하여, 더 쉬운 쪽으로 기본 선택하는 대신 둘 중 하나를 고르는 원칙적 근거를 실무자에게 제공합니다.</li>
+            <li><strong>지식 편집·제어 강화:</strong> 개입을 통한 충실성을 강조함으로써, 표현 분석을 지식 편집, 언러닝, 조향(steering) 등 하류 목표와 연결합니다 &mdash; 이때 선택한 단위가 모델 행동을 얼마나 정밀하게 수정할 수 있는지를 직접 결정합니다.</li>
+            <li><strong>연구실 해석 가능성 어젠다 확장:</strong> 내부 표현이 지식 접근과 검색을 어떻게 매개하는지에 관한 연구실 연구(예: <em>Query Lens</em>, ICML 2026)를 보완하여, LLM의 내부 지식을 가독적이고 제어 가능하게 만드는 일관된 연구 흐름에 기여합니다.</li>
+        </ul>
+
+        <div class="highlight-box">
+            <p><strong>폭넓은 통찰:</strong> "LLM이 이 지식을 어떻게 저장하는가?"에 답하기 전에, 우리는 그 저장을 <em>무엇을 기준으로</em> 서술할지를 먼저 결정해야 합니다. 뉴런과 SAE 특징은 같은 표현에 대한 서로 다른 두 렌즈이며, 각각이 우리가 도출할 수 있는 결론을 형성합니다. 표현 단위를 주어진 것이 아닌 &mdash; 경험적 선택으로 다루는 것은, 거대 언어 모델의 지식에 대한 신뢰할 수 있고 재현 가능한 해석 가능성을 위한 전제 조건입니다.</p>
+        </div>
+    </div>
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-interpretability">Interpretability</span>
+        <span class="tag tag-repr">Representation Learning</span>
+    </div>
+</div>
+<div class="footer">
+    <p><a href="../index.html">&#8592; 전체 논문 목록으로 돌아가기</a></p>
+    <p style="margin-top:8px;">한양대학교 자연어처리 연구실 | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

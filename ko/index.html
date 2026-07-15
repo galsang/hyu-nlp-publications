@@ -49,6 +49,7 @@
         <button class="filter-btn" data-filter="detection">Detection</button>
         <button class="filter-btn" data-filter="multilingual">Multilingual</button>
         <button class="filter-btn" data-filter="abstention">Abstention</button>
+        <button class="filter-btn" data-filter="interpretability">Interpretability</button>
     </div>
 
     <!-- ===== Preprints ===== -->
@@ -126,6 +127,23 @@
     <!-- ===== 2026 ===== -->
     <div class="year-section">
         <div class="year-heading">2026</div>
+
+        <div class="paper-card" data-tags="interpretability repr">
+            <a href="papers/query-lens.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Query Lens: Interpreting Sparse Key-Value Features with Indirect Effects</div>
+                        <div class="paper-authors">Hwiyeong Lee, Ingyu Bang, Uiji Hwang, Hyelim Lim, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">ICML 2026</span>
+                </div>
+                <div class="paper-oneliner">Logit Lens를 확장하여 키/값 특징과 모듈 매개 간접 효과를 함께 읽어 희소 오토인코더 특징을 충실하게 해석</div>
+                <div class="paper-tags">
+                    <span class="tag tag-interpretability">Interpretability</span>
+                    <span class="tag tag-repr">Representation Learning</span>
+                </div>
+            </a>
+        </div>
 
         <div class="paper-card" data-tags="confidence reasoning abstention">
             <a href="papers/advice.html" class="card-link">
@@ -228,6 +246,23 @@
                     <span class="tag tag-domain">Domain LLM</span>
                     <span class="tag tag-benchmark">Benchmark</span>
                     <span class="tag tag-dialogue">Dialogue</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="benchmark domain">
+            <a href="papers/aied-assessment.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">Uncertainty-Aware Multi-Metric Evaluation of Human&ndash;Machine Agreement for LLM-Based Educational Assessment</div>
+                        <div class="paper-authors">Jin Eun Yoo, Hyeong Gwan Kim, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">AIED 2026</span>
+                </div>
+                <div class="paper-oneliner">LLM 기반 교육 평가에서 인간-기계 일치도를 불확실성 인식 다중 지표로 평가하는 프레임워크</div>
+                <div class="paper-tags">
+                    <span class="tag tag-benchmark">Benchmark</span>
+                    <span class="tag tag-domain">Domain LLM</span>
                 </div>
             </a>
         </div>
@@ -762,6 +797,23 @@
     <div class="year-section">
         <div class="year-heading">학술지</div>
 
+        <div class="paper-card" data-tags="domain efficiency">
+            <a href="papers/da-bioner.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">DA-BioNER: data augmentation based on few-shot learning and distant supervision for biomedical named entity recognition</div>
+                        <div class="paper-authors">Yesol Park, Gyujin Son, Taeuk Kim, Mina Rho</div>
+                    </div>
+                    <span class="paper-venue">Bioinformatics 2026</span>
+                </div>
+                <div class="paper-oneliner">소수샷 학습과 원거리 지도를 결합한 데이터 증강으로 수작업 라벨링 의존도를 줄인 생의학 개체명 인식</div>
+                <div class="paper-tags">
+                    <span class="tag tag-domain">Domain LLM</span>
+                    <span class="tag tag-efficiency">Efficiency</span>
+                </div>
+            </a>
+        </div>
+
         <div class="paper-card" data-tags="domain reasoning">
             <a href="papers/admin-decision-ai.html" class="card-link">
                 <div class="paper-header">
@@ -818,6 +870,76 @@
     <!-- ===== Domestic Conferences ===== -->
     <div class="year-section">
         <div class="year-heading">국내 학술대회</div>
+
+        <div class="paper-card" data-tags="ir multimodal">
+            <a href="papers/vlm-hybrid-retrieval.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">시각-언어 모델 생성 설명문을 활용한 하이브리드 문서 검색</div>
+                        <div class="paper-authors">Ho Seob Ahn, Mingyu Kim, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">KCC 2026 &#127942;</span>
+                </div>
+                <div class="paper-oneliner">시각-언어 모델이 생성한 설명문을 텍스트 검색과 결합해 시각적으로 복잡한 문서 검색 성능 향상 (우수논문상)</div>
+                <div class="paper-tags"><span class="tag tag-ir">Information Retrieval</span> <span class="tag tag-multimodal">Multimodal</span></div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="unlearning interpretability">
+            <a href="papers/unlearning-internal-repr.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">내부 표현 비교를 통한 LLM 언러닝 평가</div>
+                        <div class="paper-authors">Ingyu Bang, Hwiyeong Lee, Hyelim Lim, Hoki Kim, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">KCC 2026</span>
+                </div>
+                <div class="paper-oneliner">출력이 아닌 내부 표현의 언러닝 전후 비교를 통해 지식 삭제가 실제로 이루어졌는지 평가</div>
+                <div class="paper-tags"><span class="tag tag-unlearning">Unlearning</span> <span class="tag tag-interpretability">Interpretability</span></div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="benchmark multilingual">
+            <a href="papers/korean-llm-judge-rubric.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">한국어 LLM-as-a-Judge를 위한 루브릭 전략 비교</div>
+                        <div class="paper-authors">Minseo Kim, Yukyung Lee, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">KCC 2026</span>
+                </div>
+                <div class="paper-oneliner">한국어 응답 평가에서 신뢰도 높고 인간 판단과 정렬된 LLM-as-a-Judge를 위한 루브릭 설계 전략 비교</div>
+                <div class="paper-tags"><span class="tag tag-benchmark">Benchmark</span> <span class="tag tag-multilingual">Multilingual</span></div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="interpretability repr">
+            <a href="papers/neurons-vs-saes.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">LLM 내부 지식 분석을 위한 표현 단위 비교: Neurons vs. SAEs</div>
+                        <div class="paper-authors">Hyelim Lim, Ingyu Bang, Hwiyeong Lee, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">KCC 2026</span>
+                </div>
+                <div class="paper-oneliner">LLM 내부 지식 분석 단위로서 뉴런과 희소 오토인코더(SAE) 특징을 비교</div>
+                <div class="paper-tags"><span class="tag tag-interpretability">Interpretability</span> <span class="tag tag-repr">Representation Learning</span></div>
+            </a>
+        </div>
+
+        <div class="paper-card" data-tags="confidence reasoning">
+            <a href="papers/epistemic-confidence.html" class="card-link">
+                <div class="paper-header">
+                    <div>
+                        <div class="paper-title">LLM 추론 과정의 인식적 신호를 활용한 신뢰도 추정</div>
+                        <div class="paper-authors">Ki Jung Seo, Taeuk Kim</div>
+                    </div>
+                    <span class="paper-venue">KIIS 2026</span>
+                </div>
+                <div class="paper-oneliner">LLM 추론 과정에 나타나는 인식적 신호를 활용해 답변 신뢰도를 추정</div>
+                <div class="paper-tags"><span class="tag tag-confidence">Confidence</span> <span class="tag tag-reasoning">Reasoning</span></div>
+            </a>
+        </div>
 
         <div class="paper-card" data-tags="reasoning multilingual">
             <a href="papers/reversal-curse-idiom.html" class="card-link">

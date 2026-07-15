@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>시각-언어 모델 생성 설명문을 활용한 하이브리드 문서 검색 - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="../../papers/vlm-hybrid-retrieval.html">EN</a>
+        <a href="vlm-hybrid-retrieval.html" class="active">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; 전체 논문 목록</a>
+        <h1>시각-언어 모델 생성 설명문을 활용한 하이브리드 문서 검색</h1>
+        <div class="meta"><span class="venue-badge">KCC 2026 &#127942;</span></div>
+        <div class="authors">Ho Seob Ahn, Mingyu Kim, Taeuk Kim</div>
+    </div>
+</div>
+<div class="detail-content">
+    <div class="section">
+        <h2>한줄 요약</h2>
+        <p>시각-언어 모델(VLM)을 활용해 시각적으로 복잡한 문서에 대한 풍부한 텍스트 설명문을 생성하고 &mdash; 일반적인 텍스트 추출로는 놓치는 그림, 표, 레이아웃이 담고 있는 정보를 포착하여 &mdash; 이를 기존 텍스트 및 밀집 벡터 검색 신호와 융합해 검색 품질을 향상시키는 하이브리드 문서 검색 프레임워크입니다. 본 연구는 한국컴퓨터종합학술대회 2026(KCC 2026)에서 <strong>우수 논문상</strong>을 수상했습니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>배경 및 동기</h2>
+        <p>현대의 문서 컬렉션은 순수 텍스트로만 이루어진 경우가 드뭅니다. 보고서, 학술 논문, 매뉴얼, 재무 공시 자료는 그림, 차트, 표, 그리고 공간적 레이아웃을 통해 핵심 정보를 전달하는 경우가 많습니다. 그러나 기존 검색 파이프라인은 OCR이나 파서로 추출한 텍스트를 대상으로 동작하며 &mdash; 이 과정은 이러한 문서를 정보력 있게 만드는 시각적 신호를 평탄화하거나 폐기해 버립니다. 그 결과, 답이 차트나 표 안에 들어 있는 질의는 실제로 답을 담고 있는 페이지를 검색해내지 못할 수 있습니다.</p>
+        <div class="highlight-box">
+            <p><strong>핵심 과제:</strong> 시각적으로 풍부한 문서는 의미를 단어뿐 아니라 그림, 표, 레이아웃에 담아 부호화합니다. 희소 어휘 기반(예: BM25)이든 밀집 벡터 기반이든, 텍스트 전용 검색 시스템은 각 페이지의 저하된 텍스트 전용 관점만을 색인하므로 시각적으로 표현된 콘텐츠를 체계적으로 놓칩니다. 핵심 질문은 기존 텍스트 기반 방법의 효율성과 성숙도를 포기하지 않으면서 어떻게 누락된 시각적 의미를 검색 파이프라인에 주입할 것인가입니다.</p>
+        </div>
+        <p>기존 연구의 한 갈래는 렌더링된 페이지 이미지를 직접 임베딩하는 완전 시각 기반 검색으로 이 문제에 접근합니다. 이러한 방식은 시각적 콘텐츠를 포착하지만, 정확한 어휘 매칭, 해석 가능성, 저비용 색인 등 확립된 텍스트 검색의 강점을 버리게 되며 세밀한 텍스트 질의에서 어려움을 겪을 수 있습니다. 본 논문은 대신 <strong>하이브리드</strong> 경로를 추구합니다: 검증된 텍스트 및 밀집 벡터 검색 기술을 유지하면서, VLM이 생성한 각 문서의 시각적 콘텐츠에 대한 간결하고 검색 가능한 텍스트 대체물로 이를 보강합니다.</p>
+
+        <h3>텍스트 전용 검색 vs. VLM 보강 검색</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>측면</th><th>텍스트 전용 검색</th><th>VLM 보강 하이브리드 (본 연구)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>색인 대상 콘텐츠</td><td>OCR / 파싱된 텍스트만</td><td>텍스트 + 그림·표·레이아웃의 VLM 설명문</td></tr>
+                <tr><td>시각 정보</td><td>손실 또는 저하</td><td>자연어 설명문으로 복원</td></tr>
+                <tr><td>검색 신호</td><td>어휘 및/또는 밀집 벡터</td><td>어휘 + 밀집 벡터 + 설명문 기반</td></tr>
+                <tr><td>호환성</td><td>표준 색인</td><td>기존 텍스트/벡터 인프라 재사용</td></tr>
+                <tr><td>차트/표에 대한 질의</td><td>답변 불가한 경우 많음</td><td>생성된 설명문으로 검색 가능해짐</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>제안 방법</h2>
+        <p>제안 방법은 표준 검색 파이프라인 앞단에 설명문 생성 단계를 추가한 뒤, 점수 산정 시점에 결과 신호들을 융합합니다. 두 가지 개념적 축으로 이루어집니다: (1) VLM으로 시각적 콘텐츠를 검색 가능한 텍스트로 변환하고, (2) 그 신호를 기존 텍스트 및 밀집 벡터 검색과 결합합니다.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">VLM 기반 설명문 생성</div>
+                <div class="step-desc">각 문서(또는 페이지)를 이미지로 렌더링하여 시각-언어 모델에 입력하면, 모델은 시각적 콘텐츠에 대한 자연어 설명문을 생성합니다 &mdash; 그림이 무엇을 나타내는지 요약하고, 표를 전사·부연하며, 제목·캡션 및 시각 요소 간 관계와 같은 레이아웃 단서를 기술합니다. VLM은 사실상 비텍스트 정보를 텍스트 기반 검색기가 색인하고 매칭할 수 있는 형태로 번역하여, OCR이나 파서가 폐기했을 의미를 복원합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">보강된 문서 표현</div>
+                <div class="step-desc">생성된 설명문은 문서에서 원래 추출한 텍스트와 결합되어 각 페이지의 보강된 표현을 형성합니다. 이 통합 표현은 문자 그대로의 텍스트 콘텐츠와 시각적 콘텐츠를 언어화한 기술을 모두 담고 있어, 하나의 문서 항목이 어느 양식을 겨냥한 질의로든 매칭될 수 있습니다. 이 보강은 색인 시점에 적용되어 질의 시점의 동작을 가볍게 유지합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">하이브리드 검색 융합</div>
+                <div class="step-desc">검색은 보강된 표현에 대해 상보적인 신호들을 결합합니다: 정확한 용어에 대한 희소 어휘 매칭과 의미적 매칭을 위한 밀집 벡터 유사도, 그리고 설명문에서 도출된 근거를 함께 활용합니다. 이 점수들을 융합함으로써 시스템은 어휘 매칭의 정밀도, 밀집 검색의 일반화, 그리고 VLM 설명문으로 새롭게 추가된 시각적 커버리지의 이점을 &mdash; 단일 신호에만 의존하지 않고 &mdash; 모두 누립니다.</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <p><strong>설계 원칙:</strong></p>
+            <ul>
+                <li><strong>대체가 아닌 보강:</strong> VLM 설명문은 기존 텍스트 및 밀집 벡터 검색 위에 추가되어 그 효율성, 해석 가능성, 성숙한 도구 체계를 보존합니다.</li>
+                <li><strong>시각적 요소의 언어화:</strong> 원본 페이지 이미지를 임베딩하는 대신 시각적 콘텐츠를 검색 가능한 자연어로 변환하여 표준 텍스트 검색기와 직접 호환되게 합니다.</li>
+                <li><strong>상보적 융합:</strong> 어휘, 밀집, 설명문 기반 신호는 서로 다른 실패 유형을 포괄하므로, 이들을 결합하는 것이 어느 하나만 최적화하는 것보다 견고합니다.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>핵심 내용</h2>
+        <ul class="key-points">
+            <li><strong>검색을 위한 시각적 의미 복원:</strong> VLM이 그림, 표, 레이아웃을 언어화하도록 함으로써, 텍스트 검색기에게는 보이지 않던 정보를 검색 가능하게 만듭니다.</li>
+            <li><strong>단일 신호를 넘어선 하이브리드:</strong> 희소 어휘, 밀집 벡터, VLM 설명문 근거를 융합함으로써 각각의 강점을 결합하고 개별 검색 방법의 사각지대를 완화합니다.</li>
+            <li><strong>기존 인프라 재사용:</strong> 시각적 콘텐츠를 텍스트로 표현하므로, 특화된 이미지 기반 검색 스택 없이도 표준 텍스트 및 밀집 벡터 색인에 그대로 연결됩니다.</li>
+            <li><strong>시각적으로 풍부한 문서 대상:</strong> 이 방법은 의미가 차트, 표, 레이아웃에 담긴 문서 &mdash; 기존 파이프라인이 가장 자주 실패하는 상황 &mdash; 를 정면으로 겨냥합니다.</li>
+            <li><strong>색인 시점 보강:</strong> 설명문은 문서를 색인할 때 생성되므로, 추가되는 VLM 비용은 선행 지불되며 모든 질의에 부담을 주지 않습니다.</li>
+            <li><strong>공로 인정:</strong> 본 연구는 KCC 2026에서 우수 논문상으로 선정되어, 시각적 문서 이해와 정보 검색을 잇는 실용적 의의를 인정받았습니다.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>의의</h2>
+        <p>검색 품질은 검색 인터페이스부터 검색 증강 생성(RAG)에 이르기까지 많은 하류 응용의 토대입니다. 대상 문서가 시각적으로 풍부할 때 텍스트 전용 검색은 숨겨진 한계를 부과합니다: 아무리 강력한 독해기나 생성기라도 그림이나 표 안에 있어 애초에 검색되지 않은 근거는 활용할 수 없습니다. 본 연구는 그 근거를 검색 가능한 텍스트로 복원함으로써 하류 시스템이 접근할 수 있는 한계를 끌어올립니다.</p>
+        <ul>
+            <li><strong>시각과 검색을 실용적으로 연결:</strong> 성숙한 텍스트 검색을 무거운 이미지 기반 시스템으로 대체하는 대신, 시각적 콘텐츠를 언어화하여 기존 파이프라인에 접목하는 &mdash; 효과적이면서도 배포가 용이한 &mdash; 경로를 택합니다.</li>
+            <li><strong>실제 문서에 대한 RAG 강화:</strong> 기업, 학술, 금융 코퍼스는 시각적으로 풍부한 형식이 지배적이며, 이들에 대한 검색을 개선하는 것은 RAG 시스템이 생성하는 답변의 품질을 직접적으로 향상시킵니다.</li>
+            <li><strong>경쟁이 아닌 상보적 신호:</strong> 하이브리드 설계는 VLM 생성 설명문이 어휘 및 밀집 검색과 나란히 놓이는 추가 신호로서 가장 가치 있음을 보여주어, 멀티모달 이해를 정보 검색에 통합하는 원칙적 방법을 제시합니다.</li>
+        </ul>
+
+        <div class="highlight-box">
+            <p><strong>더 넓은 통찰:</strong> 시각적으로 풍부한 문서에 대한 검색의 병목은 검색기의 알고리즘이 아니라 그것에 주어지는 빈약한 텍스트 전용 관점입니다. 시각-언어 모델을 사용해 그림, 표, 레이아웃을 자연어로 번역함으로써, 시각과 텍스트 세계가 하나의 익숙한 검색 프레임워크 안에서 통합됩니다 &mdash; 확립된 텍스트 기반 정보 검색의 효율성과 신뢰성을 유지하면서 멀티모달 이해의 커버리지를 제공합니다.</p>
+        </div>
+    </div>
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-ir">Information Retrieval</span>
+        <span class="tag tag-multimodal">Multimodal</span>
+    </div>
+</div>
+<div class="footer">
+    <p><a href="../index.html">&#8592; 전체 논문 목록으로 돌아가기</a></p>
+    <p style="margin-top:8px;">한양대학교 자연어처리 연구실 | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confidence Estimation from Epistemic Signals in LLM Reasoning Traces - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="../papers/epistemic-confidence.html" class="active">EN</a>
+        <a href="../ko/papers/epistemic-confidence.html">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; All Publications</a>
+        <h1>Confidence Estimation from Epistemic Signals in LLM Reasoning Traces</h1>
+        <div class="meta"><span class="venue-badge">KIIS 2026</span></div>
+        <div class="authors">Ki Jung Seo, Taeuk Kim</div>
+    </div>
+</div>
+<div class="detail-content">
+    <div class="section">
+        <h2>One-Line Summary</h2>
+        <p>A confidence estimation approach that reads an LLM's own step-by-step reasoning trace &mdash; mining epistemic signals such as hedging cues, uncertainty expressions, self-assessment, and internal consistency &mdash; to infer how confident the model really is in its answer, rather than relying solely on final-answer logits or a single verbalized confidence number.</p>
+    </div>
+
+    <div class="section">
+        <h2>Background & Motivation</h2>
+        <p>Knowing <em>when</em> a large language model is likely to be right is essential for deploying LLMs in high-stakes settings, for deciding when to abstain, and for routing hard cases to humans or stronger models. Two families of confidence signals dominate current practice: <strong>token-level probabilities</strong> (softmax logits over the final answer) and <strong>verbalized confidence</strong> (asking the model to state a percentage or a phrase such as "I'm fairly sure"). Both are convenient, but both are known to be poorly calibrated &mdash; logits are distorted by surface form and length, while verbalized numbers tend to be systematically overconfident and coarse.</p>
+        <p>With the rise of reasoning-oriented LLMs, answers are increasingly produced <em>through</em> an explicit chain of intermediate steps. This reasoning trace is far richer than the final token distribution: as the model works through a problem it naturally leaves behind traces of doubt and commitment &mdash; hedging ("this might be", "I'm not certain"), self-corrections and backtracking, competing hypotheses that are raised and discarded, and moments where multiple steps converge on the same conclusion. These <strong>epistemic signals</strong> reflect the model's evolving internal state about the problem, yet standard confidence methods that look only at the final answer discard them entirely.</p>
+        <div class="highlight-box">
+            <p><strong>Key Insight:</strong> A model's reasoning trace carries abundant epistemic signals &mdash; hedging language, self-corrections, hypothesis switches, and convergence of intermediate conclusions &mdash; that are strongly predictive of answer correctness. Standard confidence methods, which read only final-answer logits or a single verbalized number, throw this evidence away. Treating the reasoning trace itself as a source of confidence evidence offers a more faithful and interpretable estimate of how sure the model actually is.</p>
+        </div>
+        <p>This work builds on the lab's line of research on trustworthy confidence estimation, including <strong>ADVICE</strong> (Answer-Dependent Verbalized Confidence Estimation, ACL 2026), which improves calibration by grounding verbalized confidence in the specific answer produced. Where ADVICE conditions confidence on the final answer, this study looks one level deeper &mdash; at the reasoning process that generated that answer &mdash; and asks whether the epistemic texture of the trace itself is a usable, and better calibrated, confidence signal.</p>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method</h2>
+        <p>The core idea is to treat confidence estimation as a two-stage pipeline over the reasoning trace: first surface the epistemic signals that the model emits while reasoning, then aggregate them into a single confidence estimate for the final answer.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Elicit an Explicit Reasoning Trace</div>
+                <div class="step-desc">The model is prompted to solve each problem by producing a step-by-step reasoning trace before committing to a final answer. This makes the model's intermediate deliberation observable, exposing where it is confident, where it hedges, and where it revises &mdash; the raw material from which epistemic signals are extracted. Because the answer and its supporting reasoning are generated together, the confidence estimate can be tied directly to the path that produced the answer.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Extract Epistemic Signals from the Trace</div>
+                <div class="step-desc">The reasoning trace is analyzed for markers of epistemic state along several complementary dimensions: <strong>hedging and uncertainty cues</strong> (expressions such as "maybe", "I'm not sure", "possibly", "it could be"), <strong>self-assessment and self-correction</strong> (moments where the model checks, doubts, or revises its own steps), and <strong>internal consistency</strong> (whether intermediate steps and any alternative lines of reasoning converge on the same conclusion or diverge). Each dimension yields a signal that is qualitatively different from a raw logit and directly reflects how the model reasoned toward its answer.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Aggregate Signals into a Confidence Estimate</div>
+                <div class="step-desc">The extracted epistemic signals are combined into a single scalar confidence for the final answer. Abundant hedging, frequent self-correction, or divergence among intermediate conclusions push the estimate down, while decisive, consistent, and mutually reinforcing reasoning pushes it up. Because the estimate is derived from interpretable trace-level evidence, a low-confidence prediction can be traced back to the specific points of doubt or inconsistency in the reasoning &mdash; making the confidence not just a number but an explanation.</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <p><strong>Design Principles:</strong></p>
+            <ul>
+                <li><strong>Trace as evidence, not just output:</strong> The reasoning trace is treated as a first-class source of confidence evidence rather than a byproduct to be discarded once the answer is read off.</li>
+                <li><strong>Complementary to logits and verbalization:</strong> Epistemic-signal confidence captures information that final-answer logits and single verbalized numbers miss, and can be combined with them rather than replacing them outright.</li>
+                <li><strong>Interpretability by construction:</strong> Because signals are grounded in observable phrases and consistency patterns, the resulting confidence is auditable &mdash; one can point to where the model expressed doubt.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Key Points</h2>
+        <ul class="key-points">
+            <li><strong>Reasoning traces are an untapped confidence source:</strong> The epistemic texture of a step-by-step trace &mdash; hedging, self-correction, and convergence of intermediate steps &mdash; carries information about answer correctness that final-answer logits and verbalized numbers do not expose.</li>
+            <li><strong>Epistemic signals over three dimensions:</strong> Confidence is inferred from uncertainty/hedging cues, self-assessment and revision behavior, and internal consistency across the reasoning path, each capturing a distinct facet of the model's epistemic state.</li>
+            <li><strong>Two-stage estimation:</strong> A simple, model-agnostic pipeline &mdash; extract epistemic signals, then aggregate into a scalar &mdash; turns raw reasoning traces into a usable confidence estimate.</li>
+            <li><strong>Interpretable by design:</strong> Unlike an opaque logit, a trace-derived confidence can be explained by pointing to the specific hedges, corrections, or inconsistencies that lowered it.</li>
+            <li><strong>Complementary, not competing:</strong> The approach is orthogonal to logit-based and verbalized confidence and can be layered on top of them, including answer-dependent methods such as ADVICE.</li>
+            <li><strong>Actionable for abstention and routing:</strong> Better-grounded confidence supports deciding when a model should abstain, defer to a human, or escalate to a stronger model.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>As LLMs increasingly answer questions by reasoning out loud, the reasoning trace becomes one of the most information-rich artifacts a model produces &mdash; yet confidence estimation has largely ignored it. This work reframes the trace as evidence: the way a model hedges, second-guesses, and converges while thinking is itself a window into how sure it is. Reading confidence from these epistemic signals yields estimates that are more faithful to the model's actual reasoning and, crucially, interpretable &mdash; a low-confidence flag can be explained rather than merely reported.</p>
+        <p>Practically, well-grounded confidence is the foundation of safe LLM deployment: it determines when to trust an answer, when to abstain, and when to route a case to a human or a stronger model. By extracting confidence from the reasoning process rather than from final-answer probabilities alone, the approach targets exactly the failure mode that plagues conventional methods &mdash; confident-sounding but wrong answers whose doubt was visible in the reasoning but discarded at the output.</p>
+        <p>The study also extends the lab's broader agenda on trustworthy confidence estimation. Alongside ADVICE's answer-dependent verbalized confidence, it pushes the estimation target inward &mdash; from the final answer to the epistemic content of the reasoning that produced it &mdash; suggesting that the richest confidence signals may live inside the trace, not at its end.</p>
+    </div>
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-confidence">Confidence Estimation</span>
+        <span class="tag tag-reasoning">Reasoning</span>
+    </div>
+</div>
+<div class="footer">
+    <p><a href="../index.html">&#8592; Back to All Publications</a></p>
+    <p style="margin-top:8px;">Hanyang University NLP Lab | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

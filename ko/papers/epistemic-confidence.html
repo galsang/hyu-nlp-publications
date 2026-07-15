@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM 추론 과정의 인식적 신호를 활용한 신뢰도 추정 - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="../../papers/epistemic-confidence.html">EN</a>
+        <a href="epistemic-confidence.html" class="active">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; 전체 논문 목록</a>
+        <h1>LLM 추론 과정의 인식적 신호를 활용한 신뢰도 추정</h1>
+        <div class="meta"><span class="venue-badge">KIIS 2026</span></div>
+        <div class="authors">Ki Jung Seo, Taeuk Kim</div>
+    </div>
+</div>
+<div class="detail-content">
+    <div class="section">
+        <h2>한줄 요약</h2>
+        <p>LLM이 스스로 생성한 단계별 추론 과정을 읽어 &mdash; 완곡 표현(hedging), 불확실성 표현, 자기 평가, 내부 일관성 등의 인식적 신호(epistemic signal)를 추출하여 &mdash; 모델이 자신의 답변에 대해 실제로 얼마나 확신하는지를 추정하는 신뢰도 추정 방법. 최종 답변의 로짓이나 하나의 언어화된 신뢰도 수치에만 의존하지 않습니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>배경 및 동기</h2>
+        <p>거대 언어 모델이 <em>언제</em> 정답을 낼 가능성이 높은지를 아는 것은, 고위험 환경에 LLM을 배포하고, 답변을 보류(abstain)할 시점을 결정하며, 어려운 사례를 사람이나 더 강력한 모델로 넘길지를 판단하는 데 필수적입니다. 현재 널리 쓰이는 신뢰도 신호는 크게 두 가지입니다: <strong>토큰 수준 확률</strong>(최종 답변에 대한 소프트맥스 로짓)과 <strong>언어화된 신뢰도</strong>(모델에게 백분율이나 "꽤 확신합니다" 같은 표현을 직접 말하게 하는 방식)입니다. 두 방식 모두 편리하지만 보정(calibration)이 잘 되지 않는 것으로 알려져 있습니다 &mdash; 로짓은 표면 형태나 길이에 왜곡되고, 언어화된 수치는 체계적으로 과신하는 경향이 있으며 세밀함이 떨어집니다.</p>
+        <p>추론 중심 LLM이 부상하면서, 답변은 점점 더 명시적인 중간 단계들의 연쇄를 <em>거쳐</em> 생성됩니다. 이 추론 과정은 최종 토큰 분포보다 훨씬 풍부합니다: 모델이 문제를 풀어나가는 동안 의심과 확신의 흔적을 자연스럽게 남기기 때문입니다 &mdash; 완곡 표현("아마 ~일 것이다", "확실하지 않다"), 자기 수정과 되돌리기, 제기되었다가 버려지는 경쟁 가설들, 그리고 여러 단계가 같은 결론으로 수렴하는 순간들. 이러한 <strong>인식적 신호</strong>는 문제에 대한 모델의 변화하는 내부 상태를 반영하지만, 최종 답변만 바라보는 표준 신뢰도 방법은 이를 완전히 버립니다.</p>
+        <div class="highlight-box">
+            <p><strong>핵심 통찰:</strong> 모델의 추론 과정에는 풍부한 인식적 신호 &mdash; 완곡 표현, 자기 수정, 가설 전환, 중간 결론의 수렴 &mdash; 가 담겨 있으며, 이는 답변의 정오(correctness)를 강하게 예측합니다. 최종 답변 로짓이나 단일 언어화 수치만 읽는 표준 신뢰도 방법은 이 증거를 버립니다. 추론 과정 자체를 신뢰도 증거의 원천으로 다루면, 모델이 실제로 얼마나 확신하는지에 대해 더 충실하고 해석 가능한 추정이 가능합니다.</p>
+        </div>
+        <p>본 연구는 신뢰할 수 있는 신뢰도 추정에 관한 본 연구실의 연구 흐름 &mdash; 최종 답변에 신뢰도를 근거지어 보정을 개선하는 <strong>ADVICE</strong>(Answer-Dependent Verbalized Confidence Estimation, ACL 2026)를 포함 &mdash; 위에 서 있습니다. ADVICE가 신뢰도를 최종 답변에 조건화한다면, 본 연구는 한 단계 더 깊이 &mdash; 그 답변을 생성한 추론 과정으로 &mdash; 들어가, 추론 과정의 인식적 질감 자체가 사용 가능하고 더 잘 보정된 신뢰도 신호인지를 묻습니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>제안 방법</h2>
+        <p>핵심 아이디어는 신뢰도 추정을 추론 과정에 대한 2단계 파이프라인으로 다루는 것입니다: 먼저 모델이 추론하며 방출하는 인식적 신호를 드러내고, 그다음 이를 최종 답변에 대한 하나의 신뢰도 추정치로 집계합니다.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">명시적 추론 과정 도출</div>
+                <div class="step-desc">모델이 최종 답변을 확정하기 전에 각 문제를 단계별 추론 과정을 생성하며 풀도록 유도합니다. 이는 모델의 중간 숙고를 관찰 가능하게 만들어, 어디서 확신하고, 어디서 완곡하게 말하며, 어디서 수정하는지를 드러냅니다 &mdash; 인식적 신호를 추출할 원자재입니다. 답변과 이를 뒷받침하는 추론이 함께 생성되므로, 신뢰도 추정치를 답변을 만들어낸 경로에 직접 연결할 수 있습니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">추론 과정에서 인식적 신호 추출</div>
+                <div class="step-desc">추론 과정을 여러 상보적 차원에서 인식적 상태의 표지에 대해 분석합니다: <strong>완곡 및 불확실성 단서</strong>("아마", "확실하지 않다", "가능하다", "~일 수도 있다" 등의 표현), <strong>자기 평가 및 자기 수정</strong>(모델이 자신의 단계를 점검·의심·수정하는 순간), 그리고 <strong>내부 일관성</strong>(중간 단계들과 대안적 추론 노선들이 같은 결론으로 수렴하는지 아니면 발산하는지). 각 차원은 원시 로짓과는 질적으로 다르며 모델이 답변에 이르기까지 어떻게 추론했는지를 직접 반영하는 신호를 산출합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">신호를 신뢰도 추정치로 집계</div>
+                <div class="step-desc">추출된 인식적 신호들을 최종 답변에 대한 하나의 스칼라 신뢰도로 결합합니다. 완곡 표현이 많거나, 자기 수정이 잦거나, 중간 결론이 발산하면 추정치를 낮추고, 단호하고 일관되며 상호 강화적인 추론은 추정치를 높입니다. 추정치가 해석 가능한 과정 수준의 증거에서 도출되므로, 낮은 신뢰도 예측은 추론상의 구체적인 의심 지점이나 불일치로 거슬러 올라가 설명할 수 있습니다 &mdash; 신뢰도를 단순한 숫자가 아니라 하나의 설명으로 만듭니다.</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <p><strong>설계 원칙:</strong></p>
+            <ul>
+                <li><strong>과정을 증거로:</strong> 추론 과정을 답변을 읽어낸 뒤 버려지는 부산물이 아니라, 신뢰도 증거의 일급 원천으로 다룹니다.</li>
+                <li><strong>로짓·언어화와 상보적:</strong> 인식적 신호 기반 신뢰도는 최종 답변 로짓과 단일 언어화 수치가 놓치는 정보를 포착하며, 이들을 완전히 대체하기보다 함께 결합할 수 있습니다.</li>
+                <li><strong>구조적 해석 가능성:</strong> 신호가 관찰 가능한 표현과 일관성 패턴에 근거하므로, 도출된 신뢰도는 감사 가능(auditable)합니다 &mdash; 모델이 어디서 의심을 표했는지 짚어낼 수 있습니다.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>핵심 내용</h2>
+        <ul class="key-points">
+            <li><strong>추론 과정은 활용되지 않은 신뢰도 원천:</strong> 단계별 과정의 인식적 질감 &mdash; 완곡 표현, 자기 수정, 중간 단계의 수렴 &mdash; 은 최종 답변 로짓이나 언어화 수치가 드러내지 못하는 답변 정오에 관한 정보를 담고 있습니다.</li>
+            <li><strong>세 차원에 걸친 인식적 신호:</strong> 신뢰도는 불확실성/완곡 단서, 자기 평가 및 수정 행동, 추론 경로 전반의 내부 일관성으로부터 추론되며, 각각 모델의 인식적 상태의 서로 다른 측면을 포착합니다.</li>
+            <li><strong>2단계 추정:</strong> 인식적 신호를 추출한 뒤 스칼라로 집계하는 간단하고 모델 비의존적인 파이프라인이, 원시 추론 과정을 사용 가능한 신뢰도 추정치로 변환합니다.</li>
+            <li><strong>구조적으로 해석 가능:</strong> 불투명한 로짓과 달리, 과정에서 도출된 신뢰도는 이를 낮춘 구체적인 완곡 표현·수정·불일치를 짚어 설명할 수 있습니다.</li>
+            <li><strong>경쟁이 아닌 상보:</strong> 이 접근은 로짓 기반 및 언어화 신뢰도와 직교적이며, ADVICE 같은 답변 의존적 방법을 포함해 그 위에 층층이 결합할 수 있습니다.</li>
+            <li><strong>보류·라우팅에 실행 가능:</strong> 더 잘 근거지어진 신뢰도는 모델이 언제 답변을 보류하고, 사람에게 넘기며, 더 강력한 모델로 확대할지를 결정하는 데 도움을 줍니다.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>의의</h2>
+        <p>LLM이 점점 더 소리 내어 추론하며 질문에 답하게 되면서, 추론 과정은 모델이 생성하는 가장 정보가 풍부한 산출물 중 하나가 되었습니다 &mdash; 그러나 신뢰도 추정은 이를 대체로 무시해 왔습니다. 본 연구는 그 과정을 증거로 재구성합니다: 모델이 생각하며 완곡하게 말하고, 재고하고, 수렴하는 방식 자체가 모델이 얼마나 확신하는지를 들여다보는 창입니다. 이러한 인식적 신호로부터 신뢰도를 읽으면, 모델의 실제 추론에 더 충실하고 결정적으로 해석 가능한 추정치가 나옵니다 &mdash; 낮은 신뢰도 표시가 단지 보고되는 것이 아니라 설명될 수 있습니다.</p>
+        <p>실용적으로, 잘 근거지어진 신뢰도는 안전한 LLM 배포의 토대입니다: 언제 답변을 신뢰할지, 언제 보류할지, 언제 사례를 사람이나 더 강력한 모델로 넘길지를 결정합니다. 최종 답변 확률만이 아니라 추론 과정에서 신뢰도를 추출함으로써, 본 접근은 기존 방법을 괴롭히는 바로 그 실패 양상 &mdash; 추론에서는 의심이 보였으나 출력에서 버려진, 자신감 있게 들리지만 틀린 답변 &mdash; 을 겨냥합니다.</p>
+        <p>본 연구는 또한 신뢰할 수 있는 신뢰도 추정에 관한 연구실의 더 넓은 의제를 확장합니다. ADVICE의 답변 의존적 언어화 신뢰도와 나란히, 추정 대상을 안쪽으로 &mdash; 최종 답변에서 그것을 생성한 추론의 인식적 내용으로 &mdash; 밀어넣으며, 가장 풍부한 신뢰도 신호가 과정의 끝이 아니라 그 안에 있을 수 있음을 시사합니다.</p>
+    </div>
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-confidence">Confidence Estimation</span>
+        <span class="tag tag-reasoning">Reasoning</span>
+    </div>
+</div>
+<div class="footer">
+    <p><a href="../index.html">&#8592; 전체 논문 목록으로 돌아가기</a></p>
+    <p style="margin-top:8px;">한양대학교 자연어처리 연구실 | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

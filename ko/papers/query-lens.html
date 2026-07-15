@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Query Lens - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="../../papers/query-lens.html">EN</a>
+        <a href="query-lens.html" class="active">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; 전체 논문 목록</a>
+        <h1>Query Lens: Interpreting Sparse Key-Value Features with Indirect Effects</h1>
+        <div class="meta">
+            <span class="venue-badge">ICML 2026</span>
+        </div>
+        <div class="authors">Hwiyeong Lee, Ingyu Bang, Uiji Hwang, Hyelim Lim, Taeuk Kim</div>
+    </div>
+</div>
+
+<div class="detail-content">
+    <div class="section">
+        <h2>한줄 요약</h2>
+        <p>희소 오토인코더(SAE)의 인코더 측 <em>키(key)</em> 특징과 디코더 측 <em>값(value)</em> 특징을 함께 해석하고, 나아가 <em>모듈을 매개로 하는 간접 효과</em>까지 반영하도록 Logit Lens를 확장한 <strong>Query Lens</strong>를 제안합니다. 이를 통해 Logit Lens로는 해석되지 않던 희소 특징들에 대해서도 일관된 토큰 시그니처를 얻을 수 있으며, "하위 모듈은 특징을 계층별(layer-specific) 부분공간을 통해 읽는다"는 <strong>부분공간 채널 가설(Subspace Channel Hypothesis)</strong>을 제시합니다.</p>
+    </div>
+
+    <figure class="paper-figure">
+        <img src="../../images/query-lens/figure1.png" alt="Query Lens 개요">
+        <figcaption><strong>Figure 1.</strong> Query Lens 개요. (a) 잔차 스트림(residual stream)에 기록된 특징은 하위 모듈에 의해 쿼리(query)로 읽혀 간접 효과를 발생시킵니다. (b) Logit Lens는 특징을 어휘 공간에 직접 투영하여 이러한 간접 효과를 놓치지만, Query Lens는 이를 반영하여 보다 충실한 해석을 제공합니다.</figcaption>
+    </figure>
+
+    <div class="section">
+        <h2>배경 및 동기</h2>
+        <p>희소 오토인코더(SAE)는 모델 활성값을 개별 뉴런보다 훨씬 단의미적(monosemantic)이고 사람이 해석하기 쉬운 특징들로 분해해 주기 때문에, 기계론적 해석(mechanistic interpretability) 연구의 핵심 도구로 자리 잡았습니다. 그러나 SAE 특징을 얻는 것은 시작에 불과합니다. 각 특징이 실제로 무엇을 의미하는지 -- 어떤 입력이 그 특징을 활성화하고 어떤 동작을 유발하는지 -- 를 안정적으로 <strong>규명하는 일</strong>은 여전히 어려운 미해결 과제입니다.</p>
+        <p>이러한 규명에 널리 쓰이는 기법이 <strong>Logit Lens</strong>입니다. Logit Lens는 특징 벡터를 언임베딩(unembedding) 행렬을 통해 모델의 어휘 공간에 직접 투영하여, 그 특징이 촉진하는 것으로 보이는 토큰들을 드러냅니다. 단순하고 별도의 학습이 필요 없다는 점에서 매력적이지만, Logit Lens는 특징에서 출력 로짓으로 이어지는 <em>직접적인</em> 경로만을 포착합니다. 잔차 스트림에 기록된 많은 특징들은 언임베딩에 곧바로 소비되지 않고, 출력에 영향을 주기 전에 하위의 어텐션 및 MLP 모듈에 의해 다시 읽히고 변형됩니다.</p>
+        <p>Logit Lens는 이러한 하위 처리 과정을 무시하기 때문에, 상당수의 SAE 특징이 일관성 없거나 무의미한 토큰 집합으로 투영되어 사실상 해석 불가능한 상태로 남습니다. 이는 특징이 어휘로 직진한다고 가정하는 대신, 그 특징을 실제로 읽는 모듈들을 따라 특징을 추적하는 새로운 렌즈의 필요성을 제기합니다.</p>
+        <div class="highlight-box">
+            <p><strong>핵심 과제:</strong> Logit Lens가 많은 SAE 특징을 해석하지 못하는 이유는 오직 <strong>직접 효과(direct effect)</strong> -- 특징을 어휘 공간에 즉시 투영하는 것 -- 만을 포착하기 때문입니다. 잔차 스트림에 기록된 특징은 하위 모듈에 의해 <em>쿼리</em>로 읽히는 경우가 많으며, 이때 Logit Lens가 볼 수 없는 <strong>모듈 매개 간접 효과(indirect, module-mediated effects)</strong>가 발생합니다. 따라서 이러한 간접 효과를 무시하는 해석은 불완전할 뿐만 아니라 충실하지 못한 해석이 될 수 있습니다.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>제안 방법: Query Lens</h2>
+        <p>Query Lens는 SAE 특징을 출력 토큰만을 촉진하는 단일한 값으로 보지 않고, 인코더 측과 디코더 측이 상호 보완적인 의미를 담는 <strong>키-값(key-value) 객체</strong>로 다루며, 특징을 소비하는 하위 모듈을 통해 명시적으로 전파함으로써 Logit Lens를 일반화합니다.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">키(Key)와 값(Value) 특징의 결합 모델링</div>
+                <div class="step-desc">단일 관점에서 특징을 관찰하는 대신, Query Lens는 SAE의 <strong>인코더 측 키 특징</strong>과 <strong>디코더 측 값 특징</strong>을 함께 고려합니다. 키 측은 어떤 <em>입력이 특징을 활성화</em>하는지를 드러내고, 값 측은 특징이 어떤 <em>출력을 촉진</em>하는지를 드러냅니다. 두 측면을 함께 읽음으로써, 값만 보는 관점(Logit Lens)으로는 얻을 수 없는 입력-출력 양면의 규명이 가능해집니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">모듈 매개 간접 효과의 반영</div>
+                <div class="step-desc">잔차 스트림에 기록된 특징은 하위의 어텐션 및 MLP 모듈에 의해 쿼리로 다시 읽히며, 출력에 도달하기 전에 변형됩니다. Query Lens는 특징을 이러한 모듈을 통해 전파하여 그로 인해 발생하는 <strong>간접 효과</strong>를 포착하며, Logit Lens가 측정하는 단일 <strong>직접 효과</strong>를 넘어섭니다. 이로써 해석이 특징이 실제로 네트워크에서 사용되는 방식에 충실해집니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">일관된 토큰 시그니처 생성</div>
+                <div class="step-desc">키/값 관점과 간접 효과를 결합함으로써, Query Lens는 각 특징에 대해 그것이 무엇에 반응하고 무엇을 유발하는지를 기술하는 일관된 토큰 집합 -- <strong>토큰 시그니처(token signature)</strong> -- 를 부여합니다. 특히, Logit Lens 투영이 일관성이 없던 특징들에 대해서도 의미 있는 시그니처를 복원하여, 해석 가능한 특징의 범위를 넓힙니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">부분공간 채널 가설(Subspace Channel Hypothesis)</div>
+                <div class="step-desc">이 분석은 <strong>부분공간 채널 가설</strong>로 이어집니다. 즉, 하위 모듈은 전체 잔차 스트림에서 특징을 균일하게 읽는 것이 아니라 <strong>계층별 부분공간(layer-specific subspaces)</strong>을 통해 읽는다는 것입니다. 이 관점에 따르면, 특징의 하위 영향력은 각 읽기 모듈이 주목하는 특정 부분공간에 그 특징이 어떻게 투영되는지에 달려 있으며, 이는 왜 간접 효과가 중요하고 왜 계층에 따라 달라지는지에 대한 구조적 설명을 제공합니다.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>실험 결과</h2>
+        <p>평가는 SAE 특징을 규명하는 과제에서 Query Lens를 표준 Logit Lens와 비교합니다. 논문의 핵심적이고 충실한 발견은 정성적입니다. 즉, <strong>Query Lens는 Logit Lens로는 해석되지 않던 특징들에 대해 일관된 토큰 시그니처를 산출</strong>하는데, 이는 바로 Logit Lens가 놓치는 키/값 구조와 모듈 매개 간접 효과를 반영하기 때문입니다. 아래 표는 특정 벤치마크 점수가 아니라 개념적 비교를 요약한 것입니다.</p>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>해석 방법</th><th>사용하는 특징 측면</th><th>포착하는 효과</th><th>해석 가능성 범위</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Logit Lens</td><td>값(value)만 (출력 투영)</td><td>직접 효과만</td><td>제한적 &mdash; 다수 특징이 비일관적</td></tr>
+                <tr><td class="highlight-cell">Query Lens (제안)</td><td class="highlight-cell">키 + 값 (입력 &amp; 출력)</td><td class="highlight-cell">직접 + 간접(모듈 매개)</td><td class="highlight-cell">더 넓음 &mdash; 일관된 시그니처 복원</td></tr>
+            </tbody>
+        </table>
+
+        <ul class="key-points">
+            <li><strong>해석 가능성 복원:</strong> Logit Lens에서 비일관적인 토큰 집합으로 투영되던 특징들이 Query Lens에서는 일관된 토큰 시그니처를 얻으며, 이는 누락되어 있던 구조가 모듈 매개 간접 효과에 있었음을 보여줍니다.</li>
+            <li><strong>양면적 규명:</strong> 인코더 측 키 특징과 디코더 측 값 특징을 함께 읽음으로써, 특징을 <em>활성화</em>하는 입력과 특징이 <em>촉진</em>하는 출력을 모두 식별합니다. 이는 값만 보는 Logit Lens로는 만들 수 없는 기술입니다.</li>
+            <li><strong>직접성보다 충실성:</strong> 특징을 실제로 읽는 하위 모듈을 따라 추적함으로써, Query Lens는 어휘로의 직접 경로를 가정하는 대신 네트워크가 각 특징을 사용하는 방식에 부합하는 해석을 산출합니다.</li>
+            <li><strong>구조적 가설:</strong> 실험 결과는 하위 모듈이 특징을 계층별 부분공간을 통해 읽는다는 부분공간 채널 가설을 뒷받침하며, 간접 효과가 왜 계층에 따라 달라지는지에 대한 원리적 설명을 제공합니다.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>의의</h2>
+        <p>희소 특징에 대한 신뢰할 수 있는 해석은 대규모 언어 모델의 기계론적 설명을 신뢰하기 위한 전제 조건입니다. 널리 쓰이는 렌즈가 상당수의 특징을 체계적으로 잘못 규정하거나 규명하지 못한다면, 모델이 무엇을 "알고" 무엇을 "하는지"에 관한 하위 주장들이 그 맹점을 그대로 물려받게 됩니다. Query Lens는 특징이 네트워크 내부에서 실제로 소비되는 방식에 해석을 충실하게 맞춤으로써 이 문제를 직접적으로 다룹니다.</p>
+        <ul class="key-points">
+            <li><strong>더 많은 특징의 해석 가능화:</strong> 기존에 해석 불가능하던 특징들에 대해 일관된 시그니처를 복원함으로써, Query Lens는 SAE 기반 해석의 실효적 범위를 넓힙니다.</li>
+            <li><strong>충실한 양면적 관점:</strong> 키와 값 특징을 함께 고려하고 간접 효과를 반영하여, 모델의 실제 연산을 존중하는 규명을 산출하고 직접 경로만 보는 오도된 결론의 위험을 줄입니다.</li>
+            <li><strong>새로운 구조적 이해:</strong> 부분공간 채널 가설은 하위 모듈이 잔차 스트림 특징을 읽는 방식을 재구성하여, 계층별 부분공간을 통한 특징 소통을 연구하는 구체적인 방향을 제시합니다.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>링크</h2>
+        <div class="links-section">
+            <a href="https://arxiv.org/abs/2606.07617" target="_blank" class="paper-link">arXiv 논문</a>
+        </div>
+    </div>
+
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-interpretability">Interpretability</span>
+        <span class="tag tag-repr">Representation Learning</span>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="../index.html">&#8592; 전체 논문 목록으로 돌아가기</a></p>
+    <p style="margin-top:8px;">한양대학교 자연어처리 연구실 | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

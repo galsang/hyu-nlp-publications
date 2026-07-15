@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DA-BioNER - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="../papers/da-bioner.html" class="active">EN</a>
+        <a href="../ko/papers/da-bioner.html">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; All Publications</a>
+        <h1>DA-BioNER: data augmentation based on few-shot learning and distant supervision for biomedical named entity recognition</h1>
+        <div class="meta">
+            <span class="venue-badge">Bioinformatics 2026, Vol. 42, Issue 6</span>
+        </div>
+        <div class="authors">Yesol Park, Gyujin Son, Taeuk Kim, Mina Rho</div>
+    </div>
+</div>
+
+<div class="detail-content">
+    <div class="section">
+        <h2>One-Line Summary</h2>
+        <p>DA-BioNER is a context-preserving data augmentation framework for biomedical named entity recognition that couples few-shot learning with distant supervision: multiple base NER models trained on only a handful of examples produce coarse annotations, which are then refined by a knowledge-guided large language model within the original sentences -- boosting entity diversity and label quality without collecting new manual annotations.</p>
+    </div>
+
+    <div class="section">
+        <h2>Background & Motivation</h2>
+        <p>Named entity recognition is a foundational step for structured knowledge extraction in biomedicine, feeding downstream tasks such as relation extraction, literature mining, and knowledge base construction. Yet its effectiveness in emerging or specialized domains is repeatedly bottlenecked by the same problem: high-quality, domain-specific annotated corpora are expensive and slow to build, requiring expert curators to label entities such as diseases, chemicals, and genes.</p>
+        <p>To sidestep costly manual annotation, prior work has turned to data augmentation and distant supervision. However, these strategies come with well-known trade-offs. Generation-based augmentation can introduce limited entity diversity or hallucinate implausible text, distant supervision from external resources tends to inject noisy labels, and sentence-rewriting approaches often disrupt the syntactic and semantic integrity of the original context -- all of which limit generalization precisely in the low-resource settings where they are needed most.</p>
+        <div class="highlight-box">
+            <p><strong>Key Challenge:</strong> Biomedical NER models must be trained under severe annotation scarcity, but the usual remedies each degrade the training signal in a different way -- too little entity diversity, too much label noise, or broken context. DA-BioNER is designed to enrich the training data <strong>and</strong> preserve contextual integrity at the same time, so that few-shot models can generalize instead of overfitting to a tiny seed set.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method</h2>
+        <p>DA-BioNER treats data augmentation not as a text-generation problem but as an <strong>annotation-refinement</strong> problem over existing, unlabeled biomedical sentences. It combines few-shot learning to bootstrap initial annotators, distant supervision to expand coverage, and a carefully constrained LLM refinement stage to clean up the result.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Few-Shot Base Annotators</div>
+                <div class="step-desc">Multiple base NER models are trained on the available few-shot data. Because each model captures somewhat different decision boundaries, ensembling their predictions provides broader, more robust coarse annotations over unlabeled sentences than any single low-resource model could produce on its own.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Distantly-Supervised Coarse Annotation</div>
+                <div class="step-desc">The few-shot annotators are applied to a large pool of unlabeled biomedical text to generate distant, automatically-produced entity labels. This step dramatically expands the set of candidate entities and contexts beyond the small seed corpus, but -- as with any distant supervision -- the resulting labels are inevitably noisy and incomplete.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Knowledge-Guided LLM Refinement (In-Context, Not Generative)</div>
+                <div class="step-desc">A large language model, guided by global biomedical knowledge, refines the coarse annotations directly within the original sentences. Crucially, the LLM's role is constrained to correcting and completing entity labels rather than rewriting or generating new text, which preserves the syntactic structure and semantic context of each sentence while reducing hallucination.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Augmented Training and Diversity Enrichment</div>
+                <div class="step-desc">The refined, context-preserving annotations are added back to the training pool, substantially enriching entity diversity while keeping the original sentence semantics intact. A downstream NER model is then trained on this augmented corpus, benefiting from the enlarged and cleaned label set under otherwise low-resource conditions.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Key Points</h2>
+        <ul class="key-points">
+            <li><strong>Refinement over generation:</strong> By refining annotations inside existing sentences rather than generating new ones, DA-BioNER avoids the context disruption and hallucination typical of generation-based augmentation.</li>
+            <li><strong>Few-shot + distant supervision synergy:</strong> Few-shot base models bootstrap the pipeline, while distant supervision scales it up over large unlabeled corpora -- combining the strengths of both paradigms.</li>
+            <li><strong>Constrained LLM role:</strong> Limiting the LLM to knowledge-guided label refinement (not free-form text generation) is what keeps semantic and syntactic integrity intact while still injecting external biomedical knowledge.</li>
+            <li><strong>Richer entity diversity:</strong> The augmentation pipeline is designed to introduce many additional unique entities into training, directly targeting the limited-diversity weakness of prior augmentation methods.</li>
+            <li><strong>Built for low-resource biomedicine:</strong> The framework is explicitly aimed at extreme few-shot settings, where the payoff from enriched, high-quality training data is greatest.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>Manual annotation is the single most expensive ingredient in building biomedical NER systems, and it becomes a hard blocker whenever a new entity type, disease area, or emerging domain appears faster than curators can label it. By recycling abundant unlabeled text into high-quality supervision, DA-BioNER reduces the reliance on hand-labeled corpora and makes it feasible to stand up competent NER models from only a few examples.</p>
+        <p>Just as importantly, the framework demonstrates a disciplined way to use large language models in a scientific pipeline: as a knowledge-guided refiner operating within real sentences, rather than a free-running generator. This design keeps the augmented data faithful to the source text and mitigates hallucination -- a practical template for trustworthy LLM-assisted data augmentation in high-stakes domains like biomedicine.</p>
+    </div>
+
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://doi.org/10.1093/bioinformatics/btag332" target="_blank" class="paper-link">Bioinformatics (Oxford Academic)</a>
+            <a href="https://github.com/DMnBI/DA-BioNER" target="_blank" class="paper-link">GitHub Code</a>
+        </div>
+    </div>
+
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-domain">Domain LLM</span>
+        <span class="tag tag-efficiency">Efficiency</span>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="../index.html">&#8592; Back to All Publications</a></p>
+    <p style="margin-top:8px;">Hanyang University NLP Lab | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>
