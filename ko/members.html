@@ -36,6 +36,9 @@
         .professor-card .member-pub-count { color: rgba(255,255,255,0.7); }
         .professor-card .member-pub-count strong { color: white; }
         .view-arrow { float: right; font-size: 1.2rem; opacity: 0.5; }
+        .alumni-card { background: var(--bg, #f8f9fb); }
+        div.alumni-card:hover { box-shadow: none; transform: none; }
+        .alumni-subheading { font-size: 0.95rem; font-weight: 600; color: var(--text-light); margin: -8px 0 16px 0; }
     </style>
 </head>
 <body>
@@ -45,7 +48,7 @@
         <a href="members.html" class="active">KO</a>
     </div>
     <h1>연구실 구성원</h1>
-    <p>한양대학교 자연어처리 연구실 &mdash; 현재 구성원 및 논문 목록</p>
+    <p>한양대학교 자연어처리 연구실 &mdash; 현재 구성원, 졸업생 및 논문 목록</p>
     <p style="margin-top:12px;"><a href="index.html" style="color:var(--accent-light);">&#8592; 전체 논문 목록</a></p>
 </div>
 
@@ -55,7 +58,7 @@
     <a href="members/taeuk-kim.html" class="professor-card">
         <span class="view-arrow">&rarr;</span>
         <div class="member-name">김태욱 (Taeuk Kim)</div>
-        <div class="member-role">조교수</div>
+        <div class="member-role">부교수</div>
                 <div class="member-pub-count"><strong>73</strong>편 논문</div>
     </a>
 
@@ -191,26 +194,106 @@
                 <div class="member-research">검색</div>
             </a>
 
-            <a href="members/sangpil-yoon.html" class="member-card">
-                <div class="member-name">윤상필 <span class="view-arrow">&rarr;</span></div>
-                <div class="member-name-ko">Sangpil Yoon</div>
-                <div class="member-role">학부 인턴 (2026.01&ndash;)</div>
-                <div class="member-research">에이전트</div>
-            </a>
-
-            <a href="members/sangyoon-kwon.html" class="member-card">
-                <div class="member-name">권상윤 <span class="view-arrow">&rarr;</span></div>
-                <div class="member-name-ko">Sangyoon Kwon</div>
-                <div class="member-role">학부 인턴 (2026.03&ndash;)</div>
-                <div class="member-research">지식 충돌</div>
-            </a>
-
             <a href="members/alexis-malderez.html" class="member-card">
                 <div class="member-name">Alexis Malderez <span class="view-arrow">&rarr;</span></div>
                 <div class="member-name-ko">&nbsp;</div>
                 <div class="member-role">연구 인턴 (2026.03&ndash;)</div>
                 <div class="member-research">다국어, 기계번역</div>
             </a>
+
+            <a href="members/jisung-kim.html" class="member-card">
+                <div class="member-name">김지성 <span class="view-arrow">&rarr;</span></div>
+                <div class="member-name-ko">Jisung Kim</div>
+                <div class="member-role">학부 인턴 (2026.08&ndash;)</div>
+                <div class="member-research">미정</div>
+            </a>
+
+        </div>
+    </div>
+
+    <!-- Alumni -->
+    <div class="role-section">
+        <div class="role-heading">졸업생</div>
+        <div class="alumni-subheading">석사 졸업</div>
+        <div class="member-grid">
+
+            <div class="member-card alumni-card">
+                <div class="member-name">이휘영 <span class="member-name-ko" style="display:inline;margin-left:4px;">(Hwiyeong Lee)</span></div>
+                <div class="member-role">석사 (2024.09&ndash;2026.08)</div>
+                <div class="member-research">진로: 박사 과정</div>
+            </div>
+
+            <div class="member-card alumni-card">
+                <div class="member-name">손유리 <span class="member-name-ko" style="display:inline;margin-left:4px;">(Yuri Son)</span></div>
+                <div class="member-role">석사 (2024.09&ndash;2026.08)</div>
+                <div class="member-research">진로: 교보DTS</div>
+            </div>
+
+            <div class="member-card alumni-card">
+                <div class="member-name">서기정 <span class="member-name-ko" style="display:inline;margin-left:4px;">(Ki Jung Seo)</span></div>
+                <div class="member-role">석사 (2024.09&ndash;2026.08)</div>
+                <div class="member-research">진로: LG AI연구원</div>
+            </div>
+
+            <a href="members/jisu-kim.html" class="member-card alumni-card">
+                <div class="member-name">김지수 <span class="member-name-ko" style="display:inline;margin-left:4px;">(Jisu Kim)</span> <span class="view-arrow">&rarr;</span></div>
+                <div class="member-role">석사 (2024.03&ndash;2026.02)</div>
+                <div class="member-research">진로: 박사 과정 (HYU NLP Lab)</div>
+            </a>
+
+            <div class="member-card alumni-card">
+                <div class="member-name">김창현 <span class="member-name-ko" style="display:inline;margin-left:4px;">(Changhyeon Kim)</span></div>
+                <div class="member-role">석사 (2023.09&ndash;2025.08)</div>
+                <div class="member-research">진로: 로민</div>
+            </div>
+
+            <div class="member-card alumni-card">
+                <div class="member-name">이강민 <span class="member-name-ko" style="display:inline;margin-left:4px;">(Kang Min Lee)</span></div>
+                <div class="member-role">석사 (2023.03&ndash;2025.02)</div>
+                <div class="member-research">진로: KT</div>
+            </div>
+
+            <div class="member-card alumni-card">
+                <div class="member-name">강덕영 <span class="member-name-ko" style="display:inline;margin-left:4px;">(Deokyeong Kang)</span></div>
+                <div class="member-role">석사 (2023.03&ndash;2025.02)</div>
+                <div class="member-research">진로: KT</div>
+            </div>
+
+            <div class="member-card alumni-card">
+                <div class="member-name">차지이 <span class="member-name-ko" style="display:inline;margin-left:4px;">(Jii Cha)</span></div>
+                <div class="member-role">석사 (2022.03&ndash;2024.08)</div>
+                <div class="member-research">진로: KT</div>
+            </div>
+
+            <a href="members/yejin-yoon.html" class="member-card alumni-card">
+                <div class="member-name">윤예진 <span class="member-name-ko" style="display:inline;margin-left:4px;">(Yejin Yoon)</span> <span class="view-arrow">&rarr;</span></div>
+                <div class="member-role">석사 (2022.09&ndash;2024.08)</div>
+                <div class="member-research">진로: 박사 과정 (HYU NLP Lab)</div>
+            </a>
+
+            <div class="member-card alumni-card">
+                <div class="member-name">임성훈 <span class="member-name-ko" style="display:inline;margin-left:4px;">(Sung Hoon Lim)</span></div>
+                <div class="member-role">석사 (2022.03&ndash;2024.02)</div>
+                <div class="member-research">진로: KT</div>
+            </div>
+
+            <div class="member-card alumni-card">
+                <div class="member-name">윤태준 <span class="member-name-ko" style="display:inline;margin-left:4px;">(Taejun Yun)</span></div>
+                <div class="member-role">석사 (2022.03&ndash;2024.02)</div>
+                <div class="member-research">진로: 삼성전자</div>
+            </div>
+
+            <div class="member-card alumni-card">
+                <div class="member-name">유영현 <span class="member-name-ko" style="display:inline;margin-left:4px;">(Young Hyun Yoo)</span></div>
+                <div class="member-role">석사 (2022.03&ndash;2024.02)</div>
+                <div class="member-research">진로: 삼성전자</div>
+            </div>
+
+            <div class="member-card alumni-card">
+                <div class="member-name">김진현 <span class="member-name-ko" style="display:inline;margin-left:4px;">(Jinhyeon Kim)</span></div>
+                <div class="member-role">석사 (2022.03&ndash;2024.02)</div>
+                <div class="member-research">진로: KT</div>
+            </div>
 
         </div>
     </div>
