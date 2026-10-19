@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rethinking the Role of Tool Graph Memory in Multi-Turn Tool Use - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="tool-graph-memory.html" class="active">EN</a>
+        <a href="../ko/papers/tool-graph-memory.html">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; All Publications</a>
+        <h1>Rethinking the Role of Tool Graph Memory in Multi-Turn Tool Use</h1>
+        <div class="meta">
+            <span class="venue-badge">arXiv 2026</span>
+        </div>
+        <div class="authors">Uiji Hwang, Richeng Xuan, Taeuk Kim</div>
+    </div>
+</div>
+
+<div class="detail-content">
+    <div class="section">
+        <h2>One-Line Summary</h2>
+        <p>A systematic re-examination of <strong>tool graph memory</strong> (ToolNet, H-EPM) across <strong>nine open-weight models</strong> and <strong>two multi-turn tool-use benchmarks</strong> shows that it rarely improves significantly over a memory-free agent, that its occasional gains cost <strong>2.72&times;</strong> the LLM calls and arise from extra tool-calling attempts rather than the memory&apos;s (often incorrect) next-tool suggestions, and that storing the same experience as natural-language <strong>insight memory</strong> performs best in most settings with almost no additional LLM calls (<strong>1.03&times;</strong>).</p>
+    </div>
+
+    <figure class="paper-figure">
+        <img src="../images/tool-graph-memory/figure1.png" alt="Comparison of tool graph memory and insight memory on a holiday-date scenario">
+        <figcaption><strong>Figure 1.</strong> An example of tool graph memory and insight memory. The tool graph never suggests the prerequisite <code>search_holiday</code>, so the agent repeats <code>timestamp_diff</code> with an assumed date until the turn limit (58 LLM calls). Following the insight, the agent retrieves the holiday date first and succeeds in 4 LLM calls.</figcaption>
+    </figure>
+
+    <div class="section">
+        <h2>Background &amp; Motivation</h2>
+        <p>LLM agents increasingly solve complex tasks by calling external tools over multiple turns, and memory lets them retain and reuse experience from previous interactions. One prominent design is <strong>tool graph memory</strong>: successful trajectories are turned into a graph whose nodes are tools and whose weighted, directed edges are tool transitions. <strong>ToolNet</strong> shows the agent only the successors of the previously invoked tool, using edge weights as preference scores. <strong>H-EPM</strong> keeps the full tool set and treats the weighted transitions as procedural memory and the edge-attached context summaries as episodic memory; at each step the agent may summarize its state and then receives the two successor tools whose stored contexts best match that summary (or the two highest-weight successors otherwise).</p>
+        <p>Both methods provide step-level <em>next-tool suggestions</em>. Whether such guidance consistently helps agents across multi-turn interactions, however, had not been established with repeated runs, paired significance tests, or accounting of the extra computation it incurs.</p>
+        <div class="highlight-box">
+            <p><strong>Key questions:</strong> (1) Does tool graph memory consistently improve over memory-free baselines across model families, sizes, and benchmarks? (2) How much additional computation does it cost in LLM calls and tokens? (3) Where gains do exist, do they really come from the memory&apos;s suggestions? (4) Which failure modes remain even when the suggested tool is always correct, and what form of guidance would resolve them?</p>
+        </div>
+        <p>The answers turn out to be surprising: the gains are rare, expensive, and largely attributable to the agent simply attempting more tool calls, while even oracle-correct suggestions leave many failures untouched. This motivates rethinking memory as a <em>soft prior about what to do in a situation</em> rather than a prescription of the next tool.</p>
+    </div>
+
+    <div class="section">
+        <h2>Analysis &amp; Proposed Method</h2>
+        <p>The paper proceeds in four stages, moving from a broad empirical audit of tool graph memory to a lightweight alternative, <strong>insight memory</strong>, built from the very same experience.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div>
+                    <div class="step-title">Large-Scale Evaluation with Significance Testing</div>
+                    <div class="step-desc">Agents with ToolNet or H-EPM are compared against a memory-free agent (<strong>Base</strong>) on <strong>ToolSandbox</strong> (207 test scenarios) and the multi-turn subset of <strong>BFCL-v4</strong> (160 tasks), using nine open-weight models from the Qwen, Gemma, Mistral, and gpt-oss families (2B to 120B parameters) plus GPT-4.1 and GPT-5.1 on ToolSandbox. Every method is run three times with greedy decoding, and gains are checked with two-sided paired <em>t</em>-tests over scenarios. Cost is measured in LLM calls and tokens per scenario.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div>
+                    <div class="step-title">Manual Analysis of Decisive Turns</div>
+                    <div class="step-desc">On Mistral-Small-3.2-24B, every scenario that fails under Base but succeeds with H-EPM is inspected by hand. Each <em>decisive turn</em> (the turn that accounts for the outcome difference) is annotated for whether the suggestion was correct and whether the agent followed it. The same annotation is applied to scenarios that H-EPM degrades, revealing that 98% of suggestions at those decisive turns are incorrect.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div>
+                    <div class="step-title">Controlled Ablations of the Suggestions</div>
+                    <div class="step-desc">Keeping the rest of H-EPM fixed, the suggested tools are (a) replaced with random tools, (b) replaced with the correct tool as an <strong>oracle</strong> upper bound, or (c) removed entirely; the summarization step is also ablated. As a graph-free control, Base receives a single instruction: &ldquo;Do not give a final answer or give up until you have tried the available tools&rdquo; (<strong>Base + instruction</strong>). Tool calls are counted separately for scenarios each condition flips to success versus those that still fail.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div>
+                    <div class="step-title">Failure-Mode Taxonomy under the Oracle</div>
+                    <div class="step-desc">Remaining oracle failures are classified by the earliest wrong decision: <strong>call necessity</strong> (whether to call a tool at all), <strong>tool selection</strong> (which tool), <strong>dependency</strong> (when to call it, i.e., prerequisites), and <strong>argument</strong> (with what values). With the correct next tool always suggested, tool selection errors almost vanish (4% of failures), so the remaining failures concern <em>what to do in a situation</em>, which a graph of tool transitions cannot encode.</div>
+                </div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">5</div>
+                <div>
+                    <div class="step-title">Insight Memory</div>
+                    <div class="step-desc">H-EPM&apos;s episodic summaries, including those of <em>failed</em> trajectories, are embedded with all-MiniLM-L6-v2 and clustered with <em>k</em>-means (<em>k</em> chosen from 15 candidates between 5 and 150 by silhouette score). The agent model distills each cluster into insights about what to do and what to avoid. At every model call, the five most recent messages are embedded, matched against all summaries, and the insights of the clusters of the two most similar summaries are added to the system prompt. No training is required, retrieval needs no LLM call (median 15&ndash;17 ms per turn), and the graph itself is never used.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+
+        <h3 style="margin-top:16px;">Task Performance (mean of three runs; + / &minus; = significant gain / loss vs. Base)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>TS Base</th><th>TS ToolNet</th><th>TS H-EPM</th><th>TS Insight</th><th>BFCL Base</th><th>BFCL ToolNet</th><th>BFCL H-EPM</th><th>BFCL Insight</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Qwen3.5-2B</td><td>0.420</td><td>0.428</td><td>0.436</td><td class="highlight-cell">0.488+</td><td>0.133</td><td>0.044&minus;</td><td>0.138</td><td class="highlight-cell">0.165</td></tr>
+                <tr><td>Qwen3-8B</td><td>0.500</td><td>0.507</td><td>0.476</td><td class="highlight-cell">0.556+</td><td>0.171</td><td>0.129</td><td>0.179</td><td class="highlight-cell">0.242+</td></tr>
+                <tr><td>Qwen3.6-35B-A3B</td><td>0.626</td><td>0.608</td><td>0.670</td><td class="highlight-cell">0.674</td><td>0.181</td><td>0.108&minus;</td><td>0.156</td><td class="highlight-cell">0.206</td></tr>
+                <tr><td>gemma-4-E4B-it</td><td>0.588</td><td>0.547&minus;</td><td>0.554</td><td class="highlight-cell">0.620</td><td>0.221</td><td>0.094&minus;</td><td>0.252</td><td class="highlight-cell">0.285+</td></tr>
+                <tr><td>gemma-4-26B-A4B-it</td><td>0.690</td><td>0.655&minus;</td><td class="highlight-cell">0.705</td><td class="highlight-cell">0.705</td><td class="highlight-cell">0.566</td><td>0.369&minus;</td><td>0.519</td><td>0.531</td></tr>
+                <tr><td>Ministral-3-8B</td><td>0.631</td><td>0.588&minus;</td><td class="highlight-cell">0.672+</td><td>0.539&minus;</td><td>0.209</td><td>0.141&minus;</td><td class="highlight-cell">0.328+</td><td>0.306+</td></tr>
+                <tr><td>Mistral-Small-3.2-24B</td><td>0.545</td><td>0.557</td><td>0.603+</td><td class="highlight-cell">0.620+</td><td>0.231</td><td>0.127&minus;</td><td>0.250</td><td class="highlight-cell">0.338+</td></tr>
+                <tr><td>gpt-oss-20b</td><td>0.579</td><td>0.573</td><td>0.620</td><td class="highlight-cell">0.630+</td><td>0.325</td><td>0.152&minus;</td><td>0.369</td><td class="highlight-cell">0.427+</td></tr>
+                <tr><td>gpt-oss-120b</td><td>0.726</td><td>0.674&minus;</td><td>0.713</td><td class="highlight-cell">0.734</td><td>0.494</td><td>0.275&minus;</td><td class="highlight-cell">0.559+</td><td>0.454</td></tr>
+            </tbody>
+        </table>
+        <p style="margin-top:8px;"><em>TS = ToolSandbox (207 scenarios), BFCL = multi-turn subset of BFCL-v4 (160 tasks). Frontier models show the same pattern on ToolSandbox: GPT-4.1 scores 0.724 / 0.709 / 0.725 / 0.729 and GPT-5.1 scores 0.701 / 0.694 / 0.702 / 0.702 for Base / ToolNet / H-EPM / Insight.</em></p>
+
+        <h3 style="margin-top:16px;">Inference Cost on ToolSandbox (nine-model average per scenario; ratio to Base in parentheses)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Metric</th><th>Base</th><th>ToolNet</th><th>H-EPM</th><th>Insight</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>LLM calls</td><td>5.37</td><td>5.15 (0.96&times;)</td><td>14.62 (2.72&times;)</td><td class="highlight-cell">5.54 (1.03&times;)</td></tr>
+                <tr><td>Tokens</td><td>8,681</td><td>5,937 (0.68&times;)</td><td>19,225 (2.21&times;)</td><td class="highlight-cell">12,404 (1.43&times;)</td></tr>
+            </tbody>
+        </table>
+
+        <h3 style="margin-top:16px;">Ablations on ToolSandbox (tool calls relative to Base in flipped scenarios in parentheses)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Condition</th><th>Mistral-Small-3.2-24B</th><th>gpt-oss-20b</th><th>gemma-4-E4B-it</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Base (only LLMs)</td><td>0.545</td><td>0.579</td><td>0.588</td></tr>
+                <tr><td>Tool graph memory (H-EPM)</td><td>0.603+ (2.0)</td><td>0.620 (1.8)</td><td>0.554 (2.0)</td></tr>
+                <tr><td>H-EPM with random tools</td><td>0.571 (2.3)</td><td>0.663+ (2.7)</td><td>0.553 (2.0)</td></tr>
+                <tr><td>H-EPM with the correct tool (oracle)</td><td>0.682+ (1.6)</td><td>0.643+ (2.5)</td><td>0.666+ (2.0)</td></tr>
+                <tr><td>H-EPM w/o suggestions</td><td>0.602+ (1.7)</td><td>0.633+ (2.7)</td><td>0.598 (1.9)</td></tr>
+                <tr><td>H-EPM w/o summarization</td><td>0.595+ (1.8)</td><td>0.633+ (2.6)</td><td>0.604 (1.8)</td></tr>
+                <tr><td>Base + instruction</td><td>0.594 (1.9)</td><td>0.645+ (2.7)</td><td>0.621+ (2.0)</td></tr>
+                <tr><td>Insight memory + H-EPM</td><td>0.600+ (2.5)</td><td>0.585 (2.7)</td><td>0.617 (2.8)</td></tr>
+                <tr><td class="highlight-cell">Insight memory + instruction</td><td class="highlight-cell">0.671+ (2.2)</td><td class="highlight-cell">0.675+ (3.0)</td><td class="highlight-cell">0.640 (2.7)</td></tr>
+            </tbody>
+        </table>
+
+        <ul class="key-points">
+            <li><strong>Tool graph memory rarely helps:</strong> ToolNet underperforms Base in most cases, including all nine models on BFCL-v4, with a statistically significant drop in 12 settings. H-EPM is numerically above Base in most settings but its gain is significant in only four.</li>
+            <li><strong>Gains are expensive:</strong> H-EPM uses on average <strong>2.72&times;</strong> as many LLM calls and <strong>2.21&times;</strong> as many tokens as Base on ToolSandbox, with a similar increase in LLM calls on BFCL-v4. Neither method offers a better performance&ndash;cost trade-off than Base.</li>
+            <li><strong>Suggestions are mostly wrong:</strong> In scenarios that H-EPM fixes on Mistral-Small-3.2-24B, the suggestion is correct in only <strong>30%</strong> of decisive turns; in another 50% the agent calls the necessary tool on its own despite a wrong suggestion. In degraded scenarios, 98% of suggestions at decisive turns are incorrect.</li>
+            <li><strong>The benefit comes from more tool calls:</strong> Replacing suggestions with random tools or removing them entirely performs comparably to H-EPM (and w/o suggestions beats it on two of three models). Scenarios flipped to success make roughly twice as many tool calls as Base, and a single &ldquo;keep trying tools&rdquo; instruction matches or exceeds H-EPM with almost no extra LLM calls.</li>
+            <li><strong>Correct next tools are not enough:</strong> Even the oracle leaves many failures; with tool selection errors reduced to 4%, the rest stem from call necessity (e.g., giving up without a tool call), dependency, and argument errors.</li>
+            <li><strong>Insight memory is the best trade-off:</strong> Insight is best in most settings of Table 1, significant over Base in far more settings than either tool graph memory, attains the highest pass@3 in almost all settings, keeps LLM calls at 1.03&times; Base, and recovers most scenarios H-EPM degrades, including every dependency and argument failure. Combining it with H-EPM is worse on seven of nine models and needs 2.68&times; the LLM calls, while Insight + instruction is the best non-oracle condition on all three ablation models and even surpasses the oracle on gpt-oss-20b.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>Memory for tool-use agents has gravitated toward structured representations that prescribe the next action. This paper provides the first rigorous, significance-tested audit of that idea for tool graph memory and shows that the apparent benefit is largely an artifact of extra computation: the same boost is available from a one-line instruction, and the graph&apos;s guidance is more often misleading than helpful.</p>
+        <ul class="key-points">
+            <li><strong>Rigor for the memory literature.</strong> Repeated runs, paired tests, and cost accounting across nine open-weight and two frontier models expose how easily single-run gains can be mistaken for a real effect, setting a higher evidentiary bar for future agent-memory claims.</li>
+            <li><strong>A diagnosis, not just a negative result.</strong> The failure taxonomy (call necessity, tool selection, dependency, argument) explains why even perfect next-tool suggestions fall short: tool transitions do not tell an agent whether, when, or with what arguments to call a tool.</li>
+            <li><strong>A practical, generalizable alternative.</strong> Insight memory distills the same episodic experience into situation-level semantic knowledge, requires no training, adds negligible inference cost, and transfers across scenarios. Its advantage also holds for ExpeL-style insights and for insights built from successful trajectories only, supporting the broader conclusion that memory works better as a soft prior than as a prescription of the next tool.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://arxiv.org/abs/2610.21571" target="_blank" class="paper-link">arXiv Paper</a>
+        </div>
+    </div>
+
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-dialogue">Dialogue</span>
+        <span class="tag tag-efficiency">Efficiency</span>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="../index.html">&#8592; Back to All Publications</a></p>
+    <p style="margin-top:8px;">Hanyang University NLP Lab | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

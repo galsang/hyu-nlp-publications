@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modality Robustness under Knowledge Conflict - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="modality-robustness.html" class="active">EN</a>
+        <a href="../ko/papers/modality-robustness.html">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; All Publications</a>
+        <h1>Same Semantics, Different Outcome: On the Modality Robustness of Multimodal LLMs under Knowledge Conflict</h1>
+        <div class="meta">
+            <span class="venue-badge">EMNLP 2026 Findings</span>
+        </div>
+        <div class="authors">Jungyeon Lee, Yejin Yoon, Taeuk Kim</div>
+    </div>
+</div>
+
+<div class="detail-content">
+    <div class="section">
+        <h2>One-Line Summary</h2>
+        <p>A controlled study of 13 multimodal LLMs on two knowledge-conflict datasets showing that MLLMs are <strong>not modality-robust</strong>: the same evidence yields different answers depending on whether it arrives as text or as a rendered image. Contrary to the widely reported "text bias," models follow contradicting evidence <strong>more readily in image form</strong>, and when text and image conflict, the preferred modality flips arbitrarily with input order, model, and dataset (8/13 models flip sign on ConflictQA). This instability raises image-rendered attack success by <strong>+6.99 points</strong> on average, and among several remedies only conflict-aware SFT offers partial mitigation.</p>
+    </div>
+
+    <figure class="paper-figure">
+        <img src="../images/modality-robustness/figure1.png" alt="Same evidence delivered as text vs. image yields different answers">
+        <figcaption><strong>Figure 1.</strong> The same evidence, delivered differently, can yield different answers. (a) Single-evidence: the model follows visual external evidence but reverts to its parametric memory when the same content is delivered as text. (b) Multi-evidence: when text and image support different answers, the order in which they appear can flip which modality the model follows.</figcaption>
+    </figure>
+
+    <div class="section">
+        <h2>Background &amp; Motivation</h2>
+        <p>Multimodal LLMs (MLLMs) are increasingly deployed in retrieval-augmented and agentic workflows where evidence arrives in heterogeneous surface forms: plain text, webpages, PDFs, screenshots, or scanned documents. These pipelines implicitly assume that <strong>semantically identical content is processed consistently regardless of modality</strong>. That assumption is not guaranteed, because text and image inputs follow distinct internal pathways starting from modality-specific tokenization.</p>
+        <p>The risk is amplified under <em>knowledge conflict</em> (KC), where external evidence contradicts the model's parametric knowledge or multiple sources support competing answers. If which source the model trusts is governed by the <em>form</em> of the evidence rather than its <em>content</em>, reliability is severely compromised.</p>
+        <div class="highlight-box">
+            <p><strong>Gaps in Prior Work:</strong></p>
+            <ul>
+                <li><strong>Modality bias not tested under conflict:</strong> Studies reporting a "Blind Faith in Text" tendency in MLLMs never examined knowledge-conflict scenarios.</li>
+                <li><strong>Natural images, not documents:</strong> Existing multimodal KC work focuses on scenes or faces, even though knowledge is typically organized in document form.</li>
+                <li><strong>Uncontrolled parametric knowledge:</strong> Prior work either skipped verifying the model's internal belief or assumed parametric memory is always correct, leaving findings potentially confounded.</li>
+            </ul>
+        </div>
+        <p>This paper fills these gaps by formalizing <strong>modality robustness as an evidence-authority problem</strong>: holding the semantic content of evidence fixed, presenting it as text or as a rendered image of that text, and asking whether the model resolves the conflict the same way.</p>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method: Controlled Modality-Robustness Evaluation</h2>
+        <p>The framework evaluates two conflict configurations across <strong>13 MLLMs</strong> (Claude Sonnet 4.5, GPT-5.4, GPT-4o; Qwen3-Omni, Qwen2.5-Omni, MiniCPM-o2.6, OmniVinci; Qwen2.5-VL-7B/32B, InternVL3-8B/38B, LLaVA-v1.6-34B, LLaVA-vicuna-7B) and two datasets: <strong>ConflictQA</strong> (LLM-generated counter-memory passages) and <strong>NQ-Swap</strong> (entity-substituted Natural Questions passages).</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Verify Parametric Knowledge First</div>
+                <div class="step-desc">For each query, the model answers a closed-book multiple-choice question (choices from the KC dataset plus "none of the above") five times. A query is retained only if <strong>all five responses agree</strong>, and the common answer becomes the internal answer <em>a<sub>int</sub></em>. This stricter-than-majority criterion guarantees that parametric knowledge is distinct from every contextual answer, which prior multimodal KC work did not ensure. Factual/counterfactual contexts are then aligned so the external evidence always contradicts <em>a<sub>int</sub></em>.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Single-Evidence Conflict (Text vs. Rendered Image)</div>
+                <div class="step-desc">One piece of contradicting evidence is delivered either as text <em>e<sub>T</sub></em> or as an image <em>e<sub>I</sub></em> that is a pixel rendering of the identical passage, giving inputs <em>x<sub>T</sub></em> = (<em>e<sub>T</sub></em>, <em>q</em>) and <em>x<sub>I</sub></em> = (<em>e<sub>I</sub></em>, <em>q</em>). This is the most direct test of presentation invariance: only the surface form changes.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Multi-Evidence Conflict (Three-Way, Order-Controlled)</div>
+                <div class="step-desc">A second counterfactual source is added so that text and image support <em>different</em> answers, both contradicting parametric memory. Both orderings <em>x<sub>I&rarr;T</sub></em> = (<em>e<sub>I</sub></em>, <em>e<sub>T</sub></em>, <em>q</em>) and <em>x<sub>T&rarr;I</sub></em> = (<em>e<sub>T</sub></em>, <em>e<sub>I</sub></em>, <em>q</em>) are evaluated, and both text/image-to-source assignments are averaged, isolating the effect of modality from position and content.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Conservative Metrics: EFR and Normalized Gap G</div>
+                <div class="step-desc">Each prompt is answered three times open-endedly and scored by normalized span matching. The <strong>External-source Following Rate (EFR)</strong> credits an instance only if <em>all three</em> responses match the external answer. Modality reliance is the <strong>normalized image-over-text gap</strong> <em>G</em> = (EFR<sub>I</sub> &minus; EFR<sub>T</sub>) / (EFR<sub>I</sub> + EFR<sub>T</sub>) &times; 100, bounded in [&minus;100, 100]; positive means image preference, negative means text preference.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">5</div>
+                <div class="step-title">Downstream Impact and Mitigation</div>
+                <div class="step-desc">Practical consequences are tested in multimodal RAG (170 MS MARCO v2.1 instances; gold passage as text vs. image at First/Middle/Last position among nine distractors, ROUGE-L) and in safety (MM-SafetyBench, 13 scenarios, with full harmful instructions rendered as images; Attack Success Rate). Four mitigations are then compared on Qwen2.5-VL-7B: explicit prompting, conflict-aware LoRA SFT (NQ-Swap + MMM-Fact), DPO, and representation-level steering.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <p>The dominant pattern across models, datasets, and orders is <strong>instability</strong>: modality is not a passive container of evidence but a factor that changes how conflicts are resolved.</p>
+
+        <h3>Normalized Image-over-Text Gap G (%) on ConflictQA (selected models)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>Single</th><th>Multi <em>I&rarr;T</em></th><th>Multi <em>T&rarr;I</em></th></tr>
+            </thead>
+            <tbody>
+                <tr><td class="highlight-cell">Claude Sonnet 4.5</td><td class="highlight-cell">+42.86</td><td class="highlight-cell">+79.41</td><td class="highlight-cell">+84.62</td></tr>
+                <tr><td>GPT-5.4</td><td>+15.29</td><td>+1.80</td><td>+63.37</td></tr>
+                <tr><td>GPT-4o</td><td>+9.75</td><td>+4.40</td><td>&minus;19.05</td></tr>
+                <tr><td>Qwen3-Omni</td><td>+1.64</td><td>&minus;38.24</td><td>+79.25</td></tr>
+                <tr><td>OmniVinci</td><td>&minus;1.81</td><td>&minus;64.66</td><td>+86.58</td></tr>
+                <tr><td>Qwen2.5-VL-7B</td><td>+4.09</td><td>&minus;68.98</td><td>+73.82</td></tr>
+                <tr><td>InternVL3-8B</td><td>&minus;1.27</td><td>&minus;93.03</td><td>+58.77</td></tr>
+                <tr><td>LLaVA-v1.6-34B</td><td>&minus;5.34</td><td>&minus;81.64</td><td>&minus;85.65</td></tr>
+                <tr><td>LLaVA-vicuna-7B</td><td>&minus;9.17</td><td>&minus;95.45</td><td>&minus;94.86</td></tr>
+            </tbody>
+        </table>
+        <p style="font-size:0.9em;color:#555;">Positive = image preference, negative = text preference. On NQ-Swap, Claude Sonnet 4.5 shows +22.63 (single) and GPT-4o reverses to &minus;14.74; full results for all 13 models are in the paper's Table 1.</p>
+
+        <h3>Mitigation on Qwen2.5-VL-7B (ConflictQA, G in %)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Method</th><th>Multi <em>I&rarr;T</em></th><th>Multi <em>T&rarr;I</em></th><th>Single (misleading)</th><th>Single (reliable)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Original</td><td>&minus;68.97</td><td>+73.82</td><td>+2.54</td><td>+3.45</td></tr>
+                <tr><td>+ Explicit prompting</td><td>&minus;17.54</td><td>+45.69</td><td>&ndash;</td><td>&ndash;</td></tr>
+                <tr><td class="highlight-cell">+ Conflict-aware SFT</td><td class="highlight-cell">&minus;67.07</td><td class="highlight-cell">+52.04</td><td class="highlight-cell">+0.25</td><td class="highlight-cell">+1.08</td></tr>
+                <tr><td>+ DPO (vs. &minus;68.89 / +68.47 base)</td><td>&minus;88.08</td><td>+65.57</td><td>&ndash;</td><td>&ndash;</td></tr>
+                <tr><td>Steering, scale 5 (vs. &minus;38.64 / +77.77 base)</td><td>&minus;86.96</td><td>+60.00</td><td>&ndash;</td><td>&ndash;</td></tr>
+            </tbody>
+        </table>
+        <p style="font-size:0.9em;color:#555;">Only conflict-aware SFT moves every gap toward zero; DPO and steering reduce the image-dominant gap but inflate the text-dominant one. Prompting amplifies bias for GPT-5.4 (+1.80 &rarr; +71.26 under <em>I&rarr;T</em>).</p>
+
+        <ul class="key-points">
+            <li><strong>Image preference, not text bias, in single-evidence conflict:</strong> Proprietary models show the strongest positive gaps (Claude Sonnet 4.5: +42.86 on ConflictQA, +22.63 on NQ-Swap; GPT-5.4: +15.29 / +3.80), reversing the "Blind Faith in Text" consensus. Only the LLaVA family stays consistently text-dominant.</li>
+            <li><strong>Order flips the preferred modality:</strong> With image first (<em>I&rarr;T</em>), most open-source models lean on text; reversing the order shifts them to image. 8/13 models on ConflictQA and 6/13 on NQ-Swap change the sign of <em>G</em> across the two orders.</li>
+            <li><strong>Dataset matters:</strong> ConflictQA, whose counter-evidence diverges semantically, produces far larger gaps than NQ-Swap, which only swaps the answer entity (OmniVinci: +86.58 vs. near zero).</li>
+            <li><strong>RAG consequence:</strong> Rendering the gold passage as an image mitigates the lost-in-the-middle effect; Gemini 2.5 Pro gains +6.59 ROUGE-L when the image-rendered gold passage is in the middle of nine distractors.</li>
+            <li><strong>Safety consequence:</strong> Moving the full harmful instruction into the image raises Attack Success Rate by +6.99 points on average over 156 settings, positive in 126/156 (80.8%) comparisons, largest against the Text-only baseline (+11.60) and across Qwen (+3.74), InternVL (+7.93), and LLaVA (+9.30).</li>
+            <li><strong>Preprocessing shapes reliance:</strong> Applying LLaVA-style 336&times;336 preprocessing to Qwen2.5-VL moves its NQ-Swap single-evidence gap from +9.71 to &minus;37.23, within three points of LLaVA's native &minus;34.92; the reverse intervention shifts LLaVA only from &minus;34.92 to &minus;30.91.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>As MLLMs are wired into RAG and agentic pipelines that ingest PDFs, screenshots, and scanned documents alongside plain text, the system rarely controls <em>how</em> evidence arrives. This paper shows that this upstream representation choice silently changes which source a model treats as authoritative, so modality preference is better understood as an <strong>artifact of the evaluation setup</strong> than as a fixed property of the model.</p>
+        <ul>
+            <li><strong>Reassesses the consensus on modality bias:</strong> The widely reported text bias in MLLMs does not survive controlled knowledge-conflict evaluation; the direction often reverses, and dissolves into arbitrariness once both modalities conflict.</li>
+            <li><strong>Exposes an exploitable vulnerability and a usable lever:</strong> The same instability enables stronger image-rendered jailbreaks (+6.99 ASR) and, conversely, suggests rendering salient passages as images to steer attention in long RAG contexts.</li>
+            <li><strong>Distinguishes controlling preference from improving robustness:</strong> DPO and steering merely shift reliance toward text; only conflict-aware SFT reduces imbalance in both directions, and even then only partially, indicating the problem is fundamental and must be addressed at multiple training stages.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://arxiv.org/abs/2609.00550" target="_blank" class="paper-link">arXiv Paper</a>
+        </div>
+    </div>
+
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-multimodal">Multimodal</span>
+        <span class="tag tag-knowledge">Knowledge</span>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="../index.html">&#8592; Back to All Publications</a></p>
+    <p style="margin-top:8px;">Hanyang University NLP Lab | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>
