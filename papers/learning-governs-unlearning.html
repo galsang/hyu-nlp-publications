@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learning Governs Unlearning - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="learning-governs-unlearning.html" class="active">EN</a>
+        <a href="../ko/papers/learning-governs-unlearning.html">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; All Publications</a>
+        <h1>How Learning Governs Unlearning across the Memorization-Generalization Spectrum</h1>
+        <div class="meta">
+            <span class="venue-badge">arXiv 2026</span>
+        </div>
+        <div class="authors">Hwiyeong Lee*, Hyelim Lim*, Ingyu Bang, Hoki Kim, Taeuk Kim (*: equal contribution)</div>
+    </div>
+</div>
+
+<div class="detail-content">
+    <div class="section">
+        <h2>One-Line Summary</h2>
+        <p>We show that <strong>how a model learns governs how it unlearns</strong>: the more a model relies on generalization (a shared solution mechanism) rather than memorization (sample-specific information), the greater the <strong>retain damage</strong> that unlearning inflicts. In grokked modular addition, unlearning a memorizing model leaves 59.5% retain accuracy while a generalizing model keeps only 8.1%; in our new <strong>bucketed modular addition</strong> task the trend is nearly monotonic across the spectrum (Spearman &rho; between &minus;0.9 and &minus;1.0), and the same relationship holds for verbatim and factual recall in Hubble-8B LLMs.</p>
+
+        <figure class="paper-figure">
+            <img src="../images/learning-governs-unlearning/figure1.png" alt="Analysis of unlearning across the memorization-generalization spectrum: grokking, bucketed modular addition, and LLM unlearning">
+            <figcaption><strong>Figure 1.</strong> Analysis of unlearning across the memorization&ndash;generalization spectrum. Retain damage grows with a model's reliance on generalization over memorization. The study proceeds in three steps: contrasting memorizing and generalizing models separated by grokking (&sect;3), a fine-grained analysis across the spectrum quantified by the <em>memorization floor</em> (&sect;4), and confirmation in LLM unlearning (&sect;5).</figcaption>
+        </figure>
+    </div>
+
+    <div class="section">
+        <h2>Background &amp; Motivation</h2>
+        <p>Pre-trained networks such as LLMs absorb private information and copyrighted material that data owners may later ask to have removed. <strong>Machine unlearning</strong> aims to eliminate the knowledge learned from such a <em>forget set</em> while preserving performance on the <em>retain set</em>. In practice, however, existing methods rarely achieve this balance: forgetting usually comes with collateral loss of unrelated knowledge and skills, which the paper calls <strong>retain damage</strong>.</p>
+
+        <p style="margin-top: 12px;">Neural networks fit their data through two competing strategies. <strong>Memorization</strong> stores information tied to individual training examples, while <strong>generalization</strong> learns a shared solution mechanism that applies across examples. The authors regard the two as endpoints of a <em>memorization&ndash;generalization spectrum</em> and ask a question that prior unlearning research has largely overlooked: does a model's position on this spectrum determine how much damage unlearning causes?</p>
+
+        <div class="highlight-box">
+            <p><strong>Key Hypothesis:</strong> Since unlearning attempts to reverse training, the strategy a model used to fit its data should determine how readily it later yields to unlearning. If the forget set and the retain set are solved by the <em>same shared mechanism</em>, suppressing the forget set must disrupt that mechanism and thereby damage retained predictions. Memorized examples, by contrast, can be removed individually with little side effect.</p>
+        </div>
+
+        <p style="margin-top: 12px;">A practical obstacle is that a model's exact position on the spectrum cannot be directly observed. The paper therefore introduces a sequence of tractable proxies: the grokking transition in modular addition (a clean binary split), a controllable task that fixes the required amount of memorization by design, and an information-theoretic estimate of unintended memorization for real LLMs.</p>
+    </div>
+
+    <div class="section">
+        <h2>Analysis Framework</h2>
+        <p>The study is organized as three progressively more realistic settings, followed by two practical interventions derived from the findings.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Binary View via Grokking in Modular Addition</div>
+                <div class="step-desc">Following Nanda et al. (2023), a one-layer transformer is trained on 30% of all pairs for <em>y = (a + b) mod 113</em>. Training passes through memorization, circuit formation, cleanup, and a fully grokked regime; four checkpoints (epochs 1,000 / 3,800 / 10,000 / 25,300) all reach 100% training accuracy but differ in strategy. A random 10% of the training set is the forget set. Random labeling (RL) and gradient difference (GD) are applied until forget accuracy first drops to chance (1/113), and retain accuracy is compared across five forget-set seeds. This is the first work to interpret unlearning through the lens of grokking.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Mechanistic Tracing of the Fourier Circuit</div>
+                <div class="step-desc">In the grokked model, generalization is realized as a <strong>Fourier circuit</strong> operating at a few key frequencies. The authors track (i) <strong>FVE</strong>, the fraction of logit variance explained by key-frequency components, and (ii) <strong>restricted loss</strong>, the test loss computed from logits reconstructed solely from those components. A gradient-filtering intervention that removes updates along key-frequency directions tests whether circuit damage <em>causally</em> drives retain damage.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Bucketed Modular Addition (BMA) and the Memorization Floor</div>
+                <div class="step-desc">To study intermediate positions on the spectrum, the paper introduces BMA: <em>y(a, b) = M &middot; ((a + b) mod p) + u<sub>a,b</sub></em> with <em>pM = 256</em> fixed. The modular rule selects a <em>bucket</em> (generalizable), while the index <em>u<sub>a,b</sub></em> is drawn uniformly at random per pair and fixed (must be memorized). The <strong>memorization floor</strong>, log<sub>2</sub> M bits per example, is the minimum sample-specific information required even after the shared rule is learned. Bucket sizes <em>M &isin; {1, 4, 16, 64, 256}</em> span floors of 0, 2, 4, 6, 8 bits. Models are trained for 30,000 epochs; GD, RL, DPO and ME are applied with 1%, 5% or 10% forget sets, and retain damage is measured as <em>1 &minus; P<sub>r</sub></em> at a matched forget probability <em>P<sub>f</sub> = 0.1</em>.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">The Spectrum in LLMs: Estimating the Floor with Hubble</div>
+                <div class="step-desc">For language models the shared regularities are not specified by design, so the memorization floor is estimated via <em>unintended memorization</em> (Morris et al., 2026): the log-probability gain log<sub>2</sub> p<sub>pert</sub>(x) &minus; log<sub>2</sub> p<sub>std</sub>(x) between the Hubble <em>perturbed</em> model (pretrained with controlled text insertions) and the <em>standard</em> model (identical pretraining without them). Under an idealized bucket/member comparison this estimate recovers exactly log<sub>2</sub> M. Experiments use Hubble-8B pretrained on 100B and 500B tokens in two settings: <strong>verbatim recall</strong> of 80 Gutenberg Popular passages (top/bottom 30% by floor form High/Low forget sets; GA, GD, NPO, CEU) and <strong>factual recall</strong> of synthetic YAGO biographies over four relations (nationality, birthplace, email, UUID) with 16-way candidate accuracy (GA, GD, NPO, DPO).</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">5</div>
+                <div class="step-title">Practical Insights: Two Objectives and Where Probability Goes</div>
+                <div class="step-desc">First, the findings separate two goals often conflated under "unlearning": <em>removing a forget set's training contribution</em> versus <em>suppressing the answers it induced</em>. Retraining without the forget set is the gold standard for the former, but when the memorization floor is small the retrained model can re-derive the targeted answers from the shared rule. Second, the probability mass removed from a targeted answer must go somewhere; the paper compares RL with replacement targets drawn from the full answer space versus restricted to the <em>correct bucket</em> and extends the principle to token-wise regularizers in LLM unlearning.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+
+        <h3>Grokking: Retain Accuracy at Chance-Level Forget Accuracy (%)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Phase</th><th>Epoch</th><th>RL</th><th>GD</th></tr>
+            </thead>
+            <tbody>
+                <tr><td class="highlight-cell">Memorization</td><td class="highlight-cell">1,000</td><td class="highlight-cell">59.5 &plusmn; 3.3</td><td class="highlight-cell">23.0 &plusmn; 6.5</td></tr>
+                <tr><td>Circuit formation</td><td>3,800</td><td>52.4 &plusmn; 7.3</td><td>19.3 &plusmn; 5.3</td></tr>
+                <tr><td>Cleanup</td><td>10,000</td><td>14.2 &plusmn; 1.5</td><td>8.7 &plusmn; 3.2</td></tr>
+                <tr><td>Grokked (generalized)</td><td>25,300</td><td>8.1 &plusmn; 0.7</td><td>3.3 &plusmn; 1.0</td></tr>
+            </tbody>
+        </table>
+        <p style="margin-top: 8px; font-size: 0.92em; color: #666;">Mean &plusmn; 95% CI across five forget-set seeds. All four checkpoints have 100% training accuracy; only their learning strategy differs.</p>
+
+        <h3>Protecting the Fourier Circuit Reduces Retain Damage (Grokked Model, RL)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Intervention</th><th>Retain acc. (%)</th><th>FVE</th><th>Restricted loss</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>RL</td><td>8.1 &plusmn; 0.7</td><td>0.186 &plusmn; 0.026</td><td>2.324 &plusmn; 0.183</td></tr>
+                <tr><td>RL + filtering (non-key frequencies)</td><td>8.2 &plusmn; 0.7</td><td>0.187 &plusmn; 0.027</td><td>2.316 &plusmn; 0.187</td></tr>
+                <tr><td class="highlight-cell">RL + filtering (key frequencies)</td><td class="highlight-cell">30.6 &plusmn; 4.1</td><td class="highlight-cell">0.509 &plusmn; 0.020</td><td class="highlight-cell">0.167 &plusmn; 0.167</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Verbatim Recall: ID Retain Damage at P&#772;<sub>f</sub> = 0.1 (Hubble-8B, percentage points &darr;)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>Forget set</th><th>GA</th><th>GD</th><th>NPO</th><th>CEU</th></tr>
+            </thead>
+            <tbody>
+                <tr><td rowspan="2">Hubble-8B-100B</td><td class="highlight-cell">High floor</td><td class="highlight-cell">45.5 &plusmn; 3.8</td><td class="highlight-cell">17.3 &plusmn; 2.3</td><td class="highlight-cell">45.0 &plusmn; 3.8</td><td class="highlight-cell">54.2 &plusmn; 6.5</td></tr>
+                <tr><td>Low floor</td><td>54.0 &plusmn; 3.2</td><td>17.9 &plusmn; 1.8</td><td>52.8 &plusmn; 3.3</td><td>74.0 &plusmn; 5.1</td></tr>
+                <tr><td rowspan="2">Hubble-8B-500B</td><td class="highlight-cell">High floor</td><td class="highlight-cell">14.8 &plusmn; 2.1</td><td class="highlight-cell">0.2 &plusmn; 0.6</td><td class="highlight-cell">13.4 &plusmn; 2.1</td><td class="highlight-cell">44.1 &plusmn; 6.1</td></tr>
+                <tr><td>Low floor</td><td>26.4 &plusmn; 2.9</td><td>3.6 &plusmn; 1.1</td><td>25.2 &plusmn; 2.9</td><td>63.1 &plusmn; 4.2</td></tr>
+            </tbody>
+        </table>
+        <p style="margin-top: 8px; font-size: 0.92em; color: #666;">High / Low forget sets are the top / bottom 30% of 80 Gutenberg Popular passages by estimated memorization floor (e.g., 1136 vs. 881 bits for Hubble-8B-100B). GD's retain term is anchored on the ID group itself, so its ID entries are a cheating baseline.</p>
+
+        <h3>Factual Recall: Memorization Floor and In-Relation Retain Damage (Hubble-8B-100B)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>Relation</th><th>Mem. floor (bits)</th><th>In-relation damage (pp)</th><th>Out-relation damage (pp)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Email</td><td>0.93 &plusmn; 0.64</td><td>45.7 &plusmn; 40.8</td><td>3.0 &plusmn; 1.1</td></tr>
+                <tr><td>Nationality</td><td>1.61 &plusmn; 0.44</td><td>40.7 &plusmn; 16.3</td><td>3.2 &plusmn; 0.7</td></tr>
+                <tr><td>Birthplace</td><td>4.30 &plusmn; 2.05</td><td>16.4 &plusmn; 13.1</td><td>1.6 &plusmn; 0.6</td></tr>
+                <tr><td class="highlight-cell">UUID</td><td class="highlight-cell">5.00 &plusmn; 0.62</td><td class="highlight-cell">13.6 &plusmn; 2.3</td><td class="highlight-cell">0.9 &plusmn; 1.1</td></tr>
+            </tbody>
+        </table>
+        <p style="margin-top: 8px; font-size: 0.92em; color: #666;">Damage is the accuracy decrease at 10% forget accuracy, averaged over GA, GD, NPO and DPO. Email addresses follow name-based formats (e.g., Maurice Clauss &rarr; clauss@gmail.com) and are largely predictable; UUIDs are random and must be memorized.</p>
+
+        <h3>Within-Bucket Redistribution Preserves Retain Performance (BMA, RL, 10% forget accuracy)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>p</th><th>M</th><th>Relabeling target</th><th>Retain acc. (%)</th><th>Forget bucket acc. (%)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>131</td><td>2</td><td>Unrestricted</td><td>15.4</td><td>12.5</td></tr>
+                <tr><td class="highlight-cell">131</td><td class="highlight-cell">2</td><td class="highlight-cell">Within bucket</td><td class="highlight-cell">75.7</td><td class="highlight-cell">99.9</td></tr>
+                <tr><td>277</td><td>4</td><td>Unrestricted</td><td>28.0</td><td>14.7</td></tr>
+                <tr><td class="highlight-cell">277</td><td class="highlight-cell">4</td><td class="highlight-cell">Within bucket</td><td class="highlight-cell">71.3</td><td class="highlight-cell">99.7</td></tr>
+            </tbody>
+        </table>
+
+        <ul class="key-points">
+            <li><strong>Generalizing models pay far more for forgetting:</strong> At chance-level forget accuracy, the memorizing checkpoint retains 59.5% (RL) / 23.0% (GD) accuracy versus only 8.1% / 3.3% for the grokked model, with circuit-formation and cleanup checkpoints falling in between.</li>
+            <li><strong>Unlearning breaks the shared circuit:</strong> In the grokked model, RL unlearning drops FVE from 0.97 to 0.33 and raises restricted loss from near zero to 2.44, while in the memorizing model both stay flat. Filtering gradients along key Fourier directions lifts retain accuracy from 8.1% to 30.6%, showing circuit damage causally contributes to retain damage.</li>
+            <li><strong>The trend is nearly monotonic across the spectrum:</strong> In BMA, retain damage 1 &minus; P<sub>r</sub> at P<sub>f</sub> = 0.1 decreases as the memorization floor rises from 0 to 8 bits; Spearman correlations are &minus;0.9 or &minus;1.0 for every method (GD, RL, DPO, ME) and every forget fraction (1%, 5%, 10%).</li>
+            <li><strong>Linguistic regularities govern verbatim recall:</strong> Passages with rarer vocabulary (higher TF-IDF) have higher estimated floors, and unlearning the High-floor set causes less ID damage than the Low-floor set for every method on both Hubble-8B models (e.g., GA on 500B: 14.8 vs. 26.4 pp). Damage is also greater on in-distribution than out-of-distribution passages.</li>
+            <li><strong>Semantic regularities govern factual recall:</strong> Predictable attributes (email, nationality; 0.43&ndash;1.61 bits) suffer 36&ndash;46 pp in-relation damage, whereas unpredictable ones (birthplace, UUID; 2.30&ndash;5.70 bits) suffer 13&ndash;16 pp, and the in-/out-relation gap shrinks as the floor grows.</li>
+            <li><strong>Where removed probability goes matters:</strong> Redirecting mass to rule-consistent (within-bucket) alternatives preserves 71&ndash;76% retain accuracy versus 15&ndash;28% for arbitrary targets, while keeping forget bucket accuracy near 100%.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>This work offers a principled explanation for a long-observed but poorly understood phenomenon: <strong>why unlearning so often damages what it is supposed to preserve</strong>. By linking retain damage to a model's reliance on generalization during learning, it reframes unlearning difficulty as a property of learning dynamics rather than of the unlearning algorithm alone. The <em>memorization floor</em> gives practitioners a concrete, measurable quantity, computable for real LLMs via a reference model, that predicts in advance how costly a given forget request will be.</p>
+        <p style="margin-top: 12px;">The findings also carry two actionable lessons for method design. First, <strong>contribution removal and behavior suppression are different goals</strong>: when a shared rule explains most of an answer, even the retraining gold standard will reproduce the targeted output, so unlearning methods should state explicitly which objective they pursue. Second, <strong>unlearning objectives should favor alternatives that preserve the structure underlying generalization</strong>. Redistributing probability toward rule-consistent answers, or weighting suppression toward tokens a reference model does not already predict, dramatically reduces collateral damage. Together, these insights highlight that accounting for how a model learned is essential for making it forget safely.</p>
+    </div>
+
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://arxiv.org/abs/2610.08577" target="_blank" class="paper-link">arXiv Paper</a>
+        </div>
+    </div>
+
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-unlearning">Unlearning</span>
+        <span class="tag tag-interpretability">Interpretability</span>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="../index.html">&#8592; Back to All Publications</a></p>
+    <p style="margin-top:8px;">Hanyang University NLP Lab | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

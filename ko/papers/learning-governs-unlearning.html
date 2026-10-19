@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learning Governs Unlearning - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="../../papers/learning-governs-unlearning.html">EN</a>
+        <a href="learning-governs-unlearning.html" class="active">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; 전체 논문 목록</a>
+        <h1>How Learning Governs Unlearning across the Memorization-Generalization Spectrum</h1>
+        <div class="meta">
+            <span class="venue-badge">arXiv 2026</span>
+        </div>
+        <div class="authors">Hwiyeong Lee*, Hyelim Lim*, Ingyu Bang, Hoki Kim, Taeuk Kim (*: equal contribution)</div>
+    </div>
+</div>
+
+<div class="detail-content">
+    <div class="section">
+        <h2>한줄 요약</h2>
+        <p><strong>모델이 어떻게 학습했는지가 어떻게 언러닝되는지를 결정한다</strong>는 것을 보여줍니다. 모델이 암기(memorization, 샘플별 정보)보다 일반화(generalization, 공유된 해결 메커니즘)에 많이 의존할수록 언러닝이 유발하는 <strong>보존 손상(retain damage)</strong>이 커집니다. 그로킹된 모듈러 덧셈에서 암기 모델은 언러닝 후 59.5%의 보존 정확도를 유지하지만 일반화 모델은 8.1%만 유지하며, 새롭게 제안한 <strong>버킷 모듈러 덧셈(BMA)</strong>에서는 이 경향이 스펙트럼 전반에 걸쳐 거의 단조적으로 나타납니다(Spearman &rho; &minus;0.9 ~ &minus;1.0). 동일한 관계가 Hubble-8B LLM의 원문 재현(verbatim recall)과 사실 재현(factual recall)에서도 확인됩니다.</p>
+
+        <figure class="paper-figure">
+            <img src="../../images/learning-governs-unlearning/figure1.png" alt="암기-일반화 스펙트럼에 걸친 언러닝 분석: 그로킹, 버킷 모듈러 덧셈, LLM 언러닝">
+            <figcaption><strong>Figure 1.</strong> 암기&ndash;일반화 스펙트럼에 걸친 언러닝 분석. 보존 손상은 모델이 암기보다 일반화에 의존하는 정도에 따라 증가합니다. 연구는 세 단계로 진행됩니다: 그로킹으로 구분되는 암기 모델과 일반화 모델의 대비(&sect;3), <em>암기 하한(memorization floor)</em>으로 정량화한 스펙트럼 전반의 세밀한 분석(&sect;4), LLM 언러닝에서의 확인(&sect;5).</figcaption>
+        </figure>
+    </div>
+
+    <div class="section">
+        <h2>배경 및 동기</h2>
+        <p>LLM과 같은 사전학습 모델은 데이터 소유자가 나중에 삭제를 요청할 수 있는 개인정보나 저작권 자료를 학습 과정에서 흡수합니다. <strong>머신 언러닝(machine unlearning)</strong>은 이러한 <em>삭제 세트(forget set)</em>에서 학습된 지식을 제거하면서 <em>보존 세트(retain set)</em>에 대한 성능은 유지하는 것을 목표로 합니다. 그러나 실제로 기존 방법들은 이 균형을 거의 달성하지 못합니다. 망각에는 대개 무관한 지식과 능력의 부수적 손실이 동반되며, 본 논문은 이를 <strong>보존 손상(retain damage)</strong>이라 부릅니다.</p>
+
+        <p style="margin-top: 12px;">신경망은 두 가지 경쟁적인 전략으로 데이터를 학습합니다. <strong>암기</strong>는 개별 학습 예제에 묶인 정보를 저장하고, <strong>일반화</strong>는 여러 예제에 공통으로 적용되는 공유된 해결 메커니즘을 학습합니다. 저자들은 이 둘을 <em>암기&ndash;일반화 스펙트럼</em>의 양 끝점으로 간주하고, 기존 언러닝 연구가 대체로 간과해 온 질문을 던집니다: 모델이 이 스펙트럼에서 어디에 위치하는지가 언러닝이 유발하는 손상의 크기를 결정하는가?</p>
+
+        <div class="highlight-box">
+            <p><strong>핵심 가설:</strong> 언러닝은 학습을 되돌리려는 시도이므로, 모델이 데이터를 학습할 때 사용한 전략이 이후 언러닝에 얼마나 쉽게 반응할지를 결정해야 합니다. 삭제 세트와 보존 세트가 <em>동일한 공유 메커니즘</em>으로 풀린다면, 삭제 세트를 억제하는 것은 반드시 그 메커니즘을 훼손하여 보존된 예측에도 손상을 입힙니다. 반면 암기된 예제는 개별적으로 제거할 수 있어 부작용이 작습니다.</p>
+        </div>
+
+        <p style="margin-top: 12px;">실질적인 장벽은 모델의 정확한 스펙트럼 위치를 직접 관측할 수 없다는 점입니다. 따라서 본 논문은 다루기 쉬운 대리 지표들을 단계적으로 도입합니다: 모듈러 덧셈에서의 그로킹 전이(명확한 이분법적 구분), 필요한 암기량을 설계 단계에서 고정할 수 있는 통제 가능한 과제, 그리고 실제 LLM을 위한 비의도적 암기(unintended memorization)의 정보이론적 추정치입니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>제안 방법: 분석 프레임워크</h2>
+        <p>본 연구는 점진적으로 현실에 가까워지는 세 가지 설정으로 구성되며, 그 결과로부터 도출된 두 가지 실용적 개입이 뒤따릅니다.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">모듈러 덧셈의 그로킹을 통한 이분법적 관점</div>
+                <div class="step-desc">Nanda et al. (2023)을 따라 1층 트랜스포머를 전체 입력 쌍의 30%로 <em>y = (a + b) mod 113</em> 과제에 학습시킵니다. 학습은 암기, 회로 형성, 정리(cleanup), 완전 그로킹 단계를 거치며, 네 개의 체크포인트(에폭 1,000 / 3,800 / 10,000 / 25,300)는 모두 학습 정확도 100%를 달성하지만 전략이 다릅니다. 학습 세트의 무작위 10%를 삭제 세트로 두고, 무작위 라벨링(RL)과 그래디언트 차이(GD)를 삭제 정확도가 처음으로 우연 수준(1/113)에 도달할 때까지 적용한 뒤, 5개의 삭제 세트 시드에 걸쳐 보존 정확도를 비교합니다. 그로킹의 관점에서 언러닝을 해석한 최초의 연구입니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">푸리에 회로의 기계론적 추적</div>
+                <div class="step-desc">그로킹된 모델에서 일반화는 소수의 핵심 주파수에서 작동하는 <strong>푸리에 회로</strong>로 구현됩니다. 저자들은 (i) 핵심 주파수 성분이 설명하는 로짓 분산의 비율인 <strong>FVE</strong>와 (ii) 해당 성분만으로 재구성한 로짓으로 계산한 테스트 손실인 <strong>제한 손실(restricted loss)</strong>을 추적합니다. 핵심 주파수 방향의 업데이트를 제거하는 그래디언트 필터링 개입을 통해 회로 손상이 보존 손상을 <em>인과적으로</em> 유발하는지 검증합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">버킷 모듈러 덧셈(BMA)과 암기 하한</div>
+                <div class="step-desc">스펙트럼의 중간 위치를 연구하기 위해 BMA를 제안합니다: <em>y(a, b) = M &middot; ((a + b) mod p) + u<sub>a,b</sub></em>, 단 <em>pM = 256</em>으로 고정. 모듈러 규칙은 <em>버킷</em>을 선택하고(일반화 가능), 인덱스 <em>u<sub>a,b</sub></em>는 입력 쌍마다 균등 분포에서 무작위로 추출되어 고정됩니다(암기 필요). <strong>암기 하한(memorization floor)</strong>은 공유 규칙을 학습한 뒤에도 필요한 최소 샘플별 정보량으로, 예제당 log<sub>2</sub> M 비트입니다. 버킷 크기 <em>M &isin; {1, 4, 16, 64, 256}</em>은 0, 2, 4, 6, 8비트의 하한에 대응합니다. 모델을 30,000 에폭 학습한 뒤 1%, 5%, 10% 삭제 세트에 GD, RL, DPO, ME를 적용하고, 삭제 확률 <em>P<sub>f</sub> = 0.1</em>로 맞춘 시점에서 보존 손상 <em>1 &minus; P<sub>r</sub></em>을 측정합니다.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">LLM에서의 스펙트럼: Hubble을 이용한 하한 추정</div>
+                <div class="step-desc">언어 모델에서는 공유 규칙성이 설계로 명시되지 않으므로, 암기 하한을 <em>비의도적 암기</em>(Morris et al., 2026)로 추정합니다. 즉, 통제된 텍스트 삽입을 포함해 사전학습한 Hubble <em>perturbed</em> 모델과 삽입 없이 동일하게 사전학습한 <em>standard</em> 모델 간의 로그 확률 이득 log<sub>2</sub> p<sub>pert</sub>(x) &minus; log<sub>2</sub> p<sub>std</sub>(x)를 사용합니다. 이상적인 버킷/멤버 비교 하에서 이 추정치는 정확히 log<sub>2</sub> M을 복원합니다. 실험은 100B 및 500B 토큰으로 사전학습된 Hubble-8B를 두 설정에서 사용합니다: Gutenberg Popular 80개 지문의 <strong>원문 재현</strong>(하한 기준 상위/하위 30%를 High/Low 삭제 세트로 구성; GA, GD, NPO, CEU)과 네 가지 관계(국적, 출생지, 이메일, UUID)에 대한 합성 YAGO 전기의 <strong>사실 재현</strong>(16지선다 후보 정확도; GA, GD, NPO, DPO).</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">5</div>
+                <div class="step-title">실용적 통찰: 두 가지 목표와 확률의 재분배 방향</div>
+                <div class="step-desc">첫째, 연구 결과는 "언러닝"으로 흔히 혼용되는 두 목표, 즉 <em>삭제 세트의 학습 기여 제거</em>와 <em>그로 인해 유도된 답변의 억제</em>를 구분합니다. 삭제 세트 없이 재학습하는 것은 전자의 황금 기준이지만, 암기 하한이 작으면 재학습된 모델도 공유 규칙으로부터 대상 답변을 다시 도출할 수 있습니다. 둘째, 대상 답변에서 제거된 확률 질량은 어디론가 재배치되어야 합니다. 논문은 RL의 대체 타깃을 전체 답변 공간에서 추출하는 경우와 <em>올바른 버킷 내</em>로 제한하는 경우를 비교하고, 이 원리를 LLM 언러닝의 토큰별 정규화 항으로 확장합니다.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>실험 결과</h2>
+
+        <h3>그로킹: 우연 수준 삭제 정확도 도달 시 보존 정확도 (%)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>단계</th><th>에폭</th><th>RL</th><th>GD</th></tr>
+            </thead>
+            <tbody>
+                <tr><td class="highlight-cell">암기</td><td class="highlight-cell">1,000</td><td class="highlight-cell">59.5 &plusmn; 3.3</td><td class="highlight-cell">23.0 &plusmn; 6.5</td></tr>
+                <tr><td>회로 형성</td><td>3,800</td><td>52.4 &plusmn; 7.3</td><td>19.3 &plusmn; 5.3</td></tr>
+                <tr><td>정리(cleanup)</td><td>10,000</td><td>14.2 &plusmn; 1.5</td><td>8.7 &plusmn; 3.2</td></tr>
+                <tr><td>그로킹(일반화)</td><td>25,300</td><td>8.1 &plusmn; 0.7</td><td>3.3 &plusmn; 1.0</td></tr>
+            </tbody>
+        </table>
+        <p style="margin-top: 8px; font-size: 0.92em; color: #666;">5개 삭제 세트 시드에 대한 평균 &plusmn; 95% 신뢰구간. 네 체크포인트 모두 학습 정확도 100%이며 학습 전략만 다릅니다.</p>
+
+        <h3>푸리에 회로 보호 시 보존 손상 감소 (그로킹 모델, RL)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>개입</th><th>보존 정확도 (%)</th><th>FVE</th><th>제한 손실</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>RL</td><td>8.1 &plusmn; 0.7</td><td>0.186 &plusmn; 0.026</td><td>2.324 &plusmn; 0.183</td></tr>
+                <tr><td>RL + 필터링 (비핵심 주파수)</td><td>8.2 &plusmn; 0.7</td><td>0.187 &plusmn; 0.027</td><td>2.316 &plusmn; 0.187</td></tr>
+                <tr><td class="highlight-cell">RL + 필터링 (핵심 주파수)</td><td class="highlight-cell">30.6 &plusmn; 4.1</td><td class="highlight-cell">0.509 &plusmn; 0.020</td><td class="highlight-cell">0.167 &plusmn; 0.167</td></tr>
+            </tbody>
+        </table>
+
+        <h3>원문 재현: P&#772;<sub>f</sub> = 0.1에서의 ID 보존 손상 (Hubble-8B, 퍼센트포인트 &darr;)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>모델</th><th>삭제 세트</th><th>GA</th><th>GD</th><th>NPO</th><th>CEU</th></tr>
+            </thead>
+            <tbody>
+                <tr><td rowspan="2">Hubble-8B-100B</td><td class="highlight-cell">High (높은 하한)</td><td class="highlight-cell">45.5 &plusmn; 3.8</td><td class="highlight-cell">17.3 &plusmn; 2.3</td><td class="highlight-cell">45.0 &plusmn; 3.8</td><td class="highlight-cell">54.2 &plusmn; 6.5</td></tr>
+                <tr><td>Low (낮은 하한)</td><td>54.0 &plusmn; 3.2</td><td>17.9 &plusmn; 1.8</td><td>52.8 &plusmn; 3.3</td><td>74.0 &plusmn; 5.1</td></tr>
+                <tr><td rowspan="2">Hubble-8B-500B</td><td class="highlight-cell">High (높은 하한)</td><td class="highlight-cell">14.8 &plusmn; 2.1</td><td class="highlight-cell">0.2 &plusmn; 0.6</td><td class="highlight-cell">13.4 &plusmn; 2.1</td><td class="highlight-cell">44.1 &plusmn; 6.1</td></tr>
+                <tr><td>Low (낮은 하한)</td><td>26.4 &plusmn; 2.9</td><td>3.6 &plusmn; 1.1</td><td>25.2 &plusmn; 2.9</td><td>63.1 &plusmn; 4.2</td></tr>
+            </tbody>
+        </table>
+        <p style="margin-top: 8px; font-size: 0.92em; color: #666;">High / Low 삭제 세트는 Gutenberg Popular 80개 지문 중 추정 암기 하한 기준 상위 / 하위 30%입니다(예: Hubble-8B-100B에서 1136 vs. 881비트). GD의 보존 항은 ID 그룹 자체에 고정되어 있어 ID 항목은 공정하지 않은 기준선입니다.</p>
+
+        <h3>사실 재현: 암기 하한과 동일 관계 내 보존 손상 (Hubble-8B-100B)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>관계</th><th>암기 하한 (비트)</th><th>동일 관계 손상 (pp)</th><th>타 관계 손상 (pp)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>이메일</td><td>0.93 &plusmn; 0.64</td><td>45.7 &plusmn; 40.8</td><td>3.0 &plusmn; 1.1</td></tr>
+                <tr><td>국적</td><td>1.61 &plusmn; 0.44</td><td>40.7 &plusmn; 16.3</td><td>3.2 &plusmn; 0.7</td></tr>
+                <tr><td>출생지</td><td>4.30 &plusmn; 2.05</td><td>16.4 &plusmn; 13.1</td><td>1.6 &plusmn; 0.6</td></tr>
+                <tr><td class="highlight-cell">UUID</td><td class="highlight-cell">5.00 &plusmn; 0.62</td><td class="highlight-cell">13.6 &plusmn; 2.3</td><td class="highlight-cell">0.9 &plusmn; 1.1</td></tr>
+            </tbody>
+        </table>
+        <p style="margin-top: 8px; font-size: 0.92em; color: #666;">손상은 삭제 정확도 10% 시점의 정확도 감소량으로, GA, GD, NPO, DPO에 대해 평균한 값입니다. 이메일 주소는 이름 기반 형식(예: Maurice Clauss &rarr; clauss@gmail.com)을 따라 대부분 예측 가능하지만, UUID는 무작위이므로 암기해야 합니다.</p>
+
+        <h3>버킷 내 재분배가 보존 성능을 유지 (BMA, RL, 삭제 정확도 10%)</h3>
+        <table class="results-table">
+            <thead>
+                <tr><th>p</th><th>M</th><th>재라벨링 타깃</th><th>보존 정확도 (%)</th><th>삭제 버킷 정확도 (%)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>131</td><td>2</td><td>제한 없음</td><td>15.4</td><td>12.5</td></tr>
+                <tr><td class="highlight-cell">131</td><td class="highlight-cell">2</td><td class="highlight-cell">버킷 내</td><td class="highlight-cell">75.7</td><td class="highlight-cell">99.9</td></tr>
+                <tr><td>277</td><td>4</td><td>제한 없음</td><td>28.0</td><td>14.7</td></tr>
+                <tr><td class="highlight-cell">277</td><td class="highlight-cell">4</td><td class="highlight-cell">버킷 내</td><td class="highlight-cell">71.3</td><td class="highlight-cell">99.7</td></tr>
+            </tbody>
+        </table>
+
+        <ul class="key-points">
+            <li><strong>일반화 모델은 망각에 훨씬 큰 대가를 지불:</strong> 우연 수준의 삭제 정확도에서 암기 체크포인트는 59.5%(RL) / 23.0%(GD)의 보존 정확도를 유지하지만 그로킹 모델은 8.1% / 3.3%에 그치며, 회로 형성과 정리 단계의 체크포인트는 그 사이에 위치합니다.</li>
+            <li><strong>언러닝이 공유 회로를 파괴:</strong> 그로킹 모델에서 RL 언러닝은 FVE를 0.97에서 0.33으로 떨어뜨리고 제한 손실을 0 근처에서 2.44로 올리지만, 암기 모델에서는 둘 다 변화가 없습니다. 핵심 푸리에 방향의 그래디언트를 필터링하면 보존 정확도가 8.1%에서 30.6%로 상승하여, 회로 손상이 보존 손상에 인과적으로 기여함을 보여줍니다.</li>
+            <li><strong>스펙트럼 전반에 걸쳐 거의 단조적인 경향:</strong> BMA에서 P<sub>f</sub> = 0.1 시점의 보존 손상 1 &minus; P<sub>r</sub>은 암기 하한이 0에서 8비트로 증가함에 따라 감소하며, 모든 방법(GD, RL, DPO, ME)과 모든 삭제 비율(1%, 5%, 10%)에서 Spearman 상관계수가 &minus;0.9 또는 &minus;1.0입니다.</li>
+            <li><strong>언어적 규칙성이 원문 재현을 지배:</strong> 희귀 어휘가 많은(TF-IDF가 높은) 지문은 추정 하한이 높으며, High 세트를 언러닝하면 두 Hubble-8B 모델의 모든 방법에서 Low 세트보다 ID 손상이 적습니다(예: 500B에서 GA 14.8 vs. 26.4 pp). 또한 분포 외(OOD) 지문보다 분포 내(ID) 지문에서 손상이 더 큽니다.</li>
+            <li><strong>의미적 규칙성이 사실 재현을 지배:</strong> 예측 가능한 속성(이메일, 국적; 0.43&ndash;1.61비트)은 36&ndash;46 pp의 동일 관계 손상을 입지만, 예측 불가능한 속성(출생지, UUID; 2.30&ndash;5.70비트)은 13&ndash;16 pp에 그치며, 하한이 커질수록 동일 관계/타 관계 손상 격차가 줄어듭니다.</li>
+            <li><strong>제거된 확률이 어디로 가는지가 중요:</strong> 확률 질량을 규칙에 부합하는(버킷 내) 대안으로 재배치하면 보존 정확도 71&ndash;76%를 유지하지만 임의의 타깃으로 보내면 15&ndash;28%에 그치며, 삭제 버킷 정확도는 100%에 가깝게 유지됩니다.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>의의</h2>
+        <p>본 연구는 오랫동안 관찰되었지만 제대로 이해되지 않았던 현상, 즉 <strong>언러닝이 왜 보존해야 할 것까지 그토록 자주 손상시키는가</strong>에 대한 원리적 설명을 제공합니다. 보존 손상을 학습 과정에서의 일반화 의존도와 연결함으로써, 언러닝의 어려움을 언러닝 알고리즘만의 속성이 아니라 학습 역학의 속성으로 재정의합니다. <em>암기 하한</em>은 참조 모델을 통해 실제 LLM에서도 계산할 수 있는 구체적이고 측정 가능한 양으로, 특정 삭제 요청이 얼마나 큰 비용을 초래할지 사전에 예측할 수 있게 해줍니다.</p>
+        <p style="margin-top: 12px;">연구 결과는 방법 설계에 대한 두 가지 실행 가능한 교훈도 담고 있습니다. 첫째, <strong>기여 제거와 행동 억제는 서로 다른 목표입니다</strong>. 공유 규칙이 답변의 대부분을 설명하는 경우 재학습이라는 황금 기준조차 대상 출력을 재현하므로, 언러닝 방법은 어느 목표를 추구하는지 명시해야 합니다. 둘째, <strong>언러닝 목적 함수는 일반화의 근간이 되는 구조를 보존하는 대안을 선호해야 합니다</strong>. 규칙에 부합하는 답변으로 확률을 재분배하거나, 참조 모델이 이미 예측하지 못하는 토큰에 억제 가중치를 집중하면 부수적 손상이 크게 줄어듭니다. 이러한 통찰은 모델이 어떻게 학습했는지를 고려하는 것이 안전한 망각의 필수 조건임을 강조합니다.</p>
+    </div>
+
+    <div class="section">
+        <h2>링크</h2>
+        <div class="links-section">
+            <a href="https://arxiv.org/abs/2610.08577" target="_blank" class="paper-link">arXiv Paper</a>
+        </div>
+    </div>
+
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-unlearning">Unlearning</span>
+        <span class="tag tag-interpretability">Interpretability</span>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="../index.html">&#8592; 전체 논문 목록으로 돌아가기</a></p>
+    <p style="margin-top:8px;">한양대학교 자연어처리 연구실 | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>
