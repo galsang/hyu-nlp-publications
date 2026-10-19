@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified Mechanistic Analysis of Refusals - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="unified-refusals.html" class="active">EN</a>
+        <a href="../ko/papers/unified-refusals.html">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; All Publications</a>
+        <h1>A Unified Mechanistic Analysis of Knowledge- and Safety-Based Refusals</h1>
+        <div class="meta">
+            <span class="venue-badge">EMNLP 2026</span>
+        </div>
+        <div class="authors">Yuri Son, Seunghee Kim, Hyuhng Joon Kim, Taeuk Kim</div>
+    </div>
+</div>
+
+<div class="detail-content">
+    <div class="section">
+        <h2>One-Line Summary</h2>
+        <p>We present the first unified mechanistic study of <strong>knowledge-based refusal (KR)</strong> and <strong>safety-based refusal (SR)</strong>, using a new dataset of <strong>213 matched contrastive quadruples</strong> and a controlled refusal-tuning protocol across Llama-3-8B, Qwen2.5-7B, and Gemma-2-9B. KR and SR share a dominant refusal direction (peak-layer cosine alignment <strong>0.699&ndash;0.794</strong>), but the overlap is asymmetric: SR probes transfer to KR at <strong>0.80&ndash;0.86</strong> accuracy while KR probes transfer to SR at only <strong>0.58&ndash;0.63</strong>, and type-specific features emerge sharply in the final layers. We characterize refusal as a <strong>commit-then-specify</strong> process.</p>
+    </div>
+
+    <figure class="paper-figure">
+        <img src="../images/unified-refusals/figure1.png" alt="Knowledge- and safety-based refusals stem from different conditions yet produce similar responses">
+        <figcaption><strong>Figure 1.</strong> Knowledge- and safety-based refusals stem from different conditions yet produce similar responses, motivating a unified analysis of their inner workings.</figcaption>
+    </figure>
+
+    <div class="section">
+        <h2>Background &amp; Motivation</h2>
+        <p>Large language models are increasingly deployed in settings where knowing <em>when to refuse</em> is as important as knowing how to answer. A request may lie beyond the model's knowledge (unverifiable facts, fictional entities), giving rise to <strong>knowledge-based refusal (KR)</strong>, an expression of the model's awareness of its epistemic limits. Alternatively, a request may violate normative constraints (private information, harmful instructions), leading to <strong>safety-based refusal (SR)</strong>, which reflects adherence to safety and usage guidelines.</p>
+        <p>Although KR and SR produce superficially similar responses, the two have been studied almost entirely in isolation. KR has been investigated in work on uncertainty estimation, hallucination mitigation, and epistemic honesty, while SR has been explored in the alignment, jailbreaking, and policy-compliance literature. Mechanistic studies of refusal, such as the discovery that refusal is mediated by a single residual-stream direction, have focused almost exclusively on SR. As a result, a fundamental question remains open: do KR and SR share an internal mechanism, or do they arise from distinct processes? The answer matters because improving one type of refusal may transfer to, interfere with, or fail to affect the other.</p>
+        <p>Studying this question head-to-head is non-trivial. Existing KR and SR benchmarks differ substantially in topic coverage, domain, prompt structure, and lexical style, so any observed representational difference could simply reflect input differences. Moreover, standard instruction-tuned models acquire refusal through distinct and often undisclosed alignment pipelines, so it is unclear whether a given model was ever explicitly trained for KR or SR, and differences could reflect training history rather than the internal organization of refusal.</p>
+        <div class="highlight-box">
+            <p><strong>Key Challenge:</strong> A fair comparison of KR and SR requires controlling for two confounds at once: <strong>prompt content</strong> (topic, format, and wording must be matched across refusal types) and <strong>training history</strong> (both refusal capabilities must be instilled under a unified protocol). Without both controls, it is impossible to attribute observed differences in hidden representations to the refusal type itself.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Analysis Framework</h2>
+        <p>The paper combines a controlled dataset, a controlled training protocol, and a suite of representation-level analyses to address three research questions: (RQ1) whether KR and SR share an internal mechanism, (RQ2) whether transfer between them is symmetric, and (RQ3) where and how type-specific signals arise.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Matched Contrastive Quadruples (KR, SR, KC, SC)</div>
+                <div class="step-desc">Each quadruple shares a common topic and request template but differs in whether the model should refuse. The KR variant references a fictional or unsupported referent (epistemically unanswerable), while the SR variant references a comparable but real and sensitive target (inappropriate on safety or privacy grounds). The knowledge control (KC) and safety control (SC) are minimal edits that lift the refusal trigger while preserving topic, key terms, and structure. The schema spans <strong>20 topic categories</strong> (e.g., personal data access, document authenticity, cybersecurity abuse, regulated guidance), designed with GPT-5 and human-verified; GPT-4o-mini generates candidates. Rule-based and LLM-based filtering yields 384 pairs, control construction yields 269 clean quadruples, and behavioral verification (all six target models must refuse KR/SR and answer KC/SC) yields the final <strong>213 quadruples</strong>.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Controlled Refusal Tuning (Seq-KS)</div>
+                <div class="step-desc">To decouple refusal mechanisms from undisclosed alignment history, three model families (Llama-3-8B-Instruct, Qwen2.5-7B-Instruct, Gemma-2-9B-it) are refusal-tuned under a unified protocol: CRaFT for KR and FalseReject for SR. Among sequential orderings, <strong>Seq-KS</strong> (knowledge tuning first, then safety tuning) best preserves general capability (MMLU, GSM8K) and open-domain QA correctness (TriviaQA, NQ) while achieving both refusal behaviors. The reverse order, Seq-SK, achieves high safety refusal but severely over-refuses on benign prompts (XSTest safe-refusal rate 74.80 for Llama and 84.20 for Gemma) and degrades general capability. The resulting variants are denoted Llama*, Qwen*, and Gemma*; the main analysis covers all six models (three base, three tuned).</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Refusal Direction Alignment and Decomposition (RQ1)</div>
+                <div class="step-desc">Hidden states are extracted at the final prompt-token position. For each layer, the mean refusal direction of each type is the average shift from control to refusal: KR&minus;KC and SR&minus;SC. The cosine similarity between the two normalized shifts measures alignment, and the normalized bisector defines a <strong>common refusal direction</strong>. Each shift is decomposed into a projection onto the common direction and an orthogonal type-specific residual. To rule out a template artifact, the pairwise similarity sim(KR, SR) is compared against sim(KC, SC) for the matched controls; linear probes trained against shuffled-label nulls provide an independent check.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Cross-Type Probe Transfer (RQ2)</div>
+                <div class="step-desc">Two cross-type linear probes are trained at the peak alignment layer: <strong>SR&rarr;KR</strong> (trained to separate SR from SC, evaluated on KR vs. KC) and <strong>KR&rarr;SR</strong> (trained on KR vs. KC, evaluated on SR vs. SC). If the two refusal types were organized symmetrically around the shared structure, both transfer directions should reach comparable accuracy. The gap &Delta; = (SR&rarr;KR) &minus; (KR&rarr;SR) is tracked across all layers.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">5</div>
+                <div class="step-title">Localizing Type-Specific Signals and Behavioral Validation (RQ3)</div>
+                <div class="step-desc">The final-layer KR-specific residual serves as a fixed reference axis; both KR&minus;KC and SR&minus;SC shifts at every layer are projected onto it to see where they diverge, with robustness checked across alternative reference layers. A <strong>logit-lens</strong> decoding of the final-layer common direction and the K&minus;S contrast direction reveals the vocabulary each promotes. The top-10 attention heads by contribution to the reference direction are ablated and compared against random-head baselines, complemented by an MLP ablation scan. Finally, <strong>activation steering</strong> adds the estimated directions to the residual stream at the peak layer to test whether they raise refusal rates on control prompts and change the stated rationale of the refusal.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <p>The main experiments analyze six models (Llama, Qwen, Gemma and their Seq-KS refusal-tuned variants marked with *) on the 213 matched quadruples. The first table reports the RQ1 similarity and alignment results; the second reports the RQ2 within-type probe accuracy and cross-type transfer at the peak layer.</p>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>sim(KR, SR)</th><th>sim(KC, SC)</th><th>Peak-layer shift alignment</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Llama</td><td>0.898</td><td>0.938</td><td>0.794</td></tr>
+                <tr><td>Llama*</td><td>0.898</td><td>0.923</td><td>0.745</td></tr>
+                <tr><td>Qwen</td><td>0.983</td><td>0.988</td><td>0.789</td></tr>
+                <tr><td>Qwen*</td><td>0.980</td><td>0.985</td><td>0.750</td></tr>
+                <tr><td>Gemma</td><td>0.951</td><td>0.957</td><td>0.711</td></tr>
+                <tr><td>Gemma*</td><td>0.942</td><td>0.947</td><td>0.699</td></tr>
+            </tbody>
+        </table>
+        <p style="font-size:0.9em;color:#666;">Table 1. KR&ndash;SR activations are <em>less</em> similar than the matched controls at every layer (so shared templates cannot explain the similarity), yet the KR&minus;KC and SR&minus;SC refusal directions remain strongly aligned at their peak layer.</p>
+
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>KR (within)</th><th>SR (within)</th><th>SR&rarr;KR</th><th>KR&rarr;SR</th><th>&Delta;</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Llama</td><td>0.947</td><td>0.818</td><td class="highlight-cell">0.847</td><td>0.589</td><td>+0.258</td></tr>
+                <tr><td>Llama*</td><td>0.960</td><td>0.834</td><td class="highlight-cell">0.854</td><td>0.631</td><td>+0.223</td></tr>
+                <tr><td>Qwen</td><td>0.962</td><td>0.816</td><td class="highlight-cell">0.805</td><td>0.580</td><td>+0.225</td></tr>
+                <tr><td>Qwen*</td><td>0.962</td><td>0.858</td><td class="highlight-cell">0.847</td><td>0.597</td><td>+0.250</td></tr>
+                <tr><td>Gemma</td><td>0.962</td><td>0.856</td><td class="highlight-cell">0.859</td><td>0.586</td><td>+0.273</td></tr>
+                <tr><td>Gemma*</td><td>0.956</td><td>0.861</td><td class="highlight-cell">0.863</td><td>0.595</td><td>+0.268</td></tr>
+            </tbody>
+        </table>
+        <p style="font-size:0.9em;color:#666;">Table 2. Within-type probe accuracy and cross-type transfer at the peak layer. &Delta; = (SR&rarr;KR) &minus; (KR&rarr;SR). SR-trained boundaries generalize to KR far better than the reverse in every model.</p>
+
+        <ul class="key-points">
+            <li><strong>RQ1 &mdash; A shared refusal direction:</strong> Alignment between KR&minus;KC and SR&minus;SC shifts rises through the first half of the network, peaks at relative depth 0.25&ndash;0.50, and stays elevated; peak-layer cosine ranges from 0.699 to 0.794 across all six models. At the peak layer the projection onto the common direction reaches <strong>0.92&ndash;0.95</strong>, while the orthogonal type-specific residual norm remains <strong>0.32&ndash;0.39</strong>.</li>
+            <li><strong>Not a template artifact:</strong> &Delta;<sub>sim</sub> = sim(KR, SR) &minus; sim(KC, SC) is negative at every layer in all six models, so the KR&ndash;SR similarity cannot be attributed to shared prompt structure.</li>
+            <li><strong>Probe-based confirmation:</strong> The common refusal probe exceeds its shuffled-label null by about <strong>0.45 AUC</strong>, whereas the type-specific probe exceeds its null by only about <strong>0.11</strong>, consistently across all models and layers.</li>
+            <li><strong>RQ2 &mdash; Asymmetric transfer:</strong> SR&rarr;KR transfer reaches 0.80&ndash;0.86 while KR&rarr;SR stays at 0.58&ndash;0.63, a 0.22&ndash;0.27 gap in every model that is present from early layers and stable across depth. The asymmetry also holds for two additional recent models, the reversed Seq-SK tuning order, and an XSTest-derived matched set.</li>
+            <li><strong>RQ3 &mdash; Late specialization with distinct framing:</strong> Projections of both shifts onto the final-layer KR-specific axis stay near zero through most of the network and diverge only in the final layers (KR positive, SR negative), robustly across reference layers. Logit-lens decoding shows the common direction promotes generic refusal tokens (<em>sorry</em>, <em>regret</em>, <em>currently</em>) and suppresses affirmatives (<em>yes</em>, <em>sure</em>, <em>certainly</em>), while the K&minus;S contrast separates uncertainty tokens (<em>Based</em>, <em>presently</em>) from normative tokens (<em>legal</em>, <em>illegal</em>, <em>privacy</em>).</li>
+            <li><strong>Component-level and behavioral evidence:</strong> Ablating the top-10 heads contributing to the KR-specific direction reduces the type-specific projection substantially more than random-head ablation in all three tuned models. Activation steering along the estimated directions raises refusal on otherwise-accepted control prompts (strongest in Llama*, moderate in Qwen*, smaller in Gemma*), and steering with the K- vs. S-specific directions shifts the generated rationale toward epistemic vs. safety-oriented framing, respectively.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>The results support a <strong>commit-then-specify</strong> view of LLM refusal: the model first commits to refusing through a shared component, then specifies the grounds, as epistemic uncertainty in KR or a normative constraint in SR, through type-specific features in the upper layers. This explains why the two refusal types look alike on the surface despite having distinct underlying grounds, and reframes refusal as a layered rather than monolithic behavior.</p>
+        <ul class="key-points">
+            <li><strong>Interpreting the asymmetry:</strong> SR transfers well to KR, suggesting SR relies heavily on the shared component (plausibly reinforced by alignment training against norm-violating responses), whereas KR depends more on the later grounding stage where the model assesses answerability and evidential support. The asymmetry reflects the relative contributions of shared vs. type-specific components, not the strength of refusal itself.</li>
+            <li><strong>Implications for post-training:</strong> General refusal objectives are likely to affect both KR and SR through the shared mechanism, while KR may additionally require targeted calibration of epistemic uncertainty and answerability. This motivates distinguishing shared refusal objectives from objectives aimed at specific grounds.</li>
+            <li><strong>Implications for inference-time control:</strong> Interventions along a generic refusal direction will influence both refusal types via the common component; selective control of one type likely requires targeting the later, grounding-specific mechanisms.</li>
+            <li><strong>A practical training recipe and diagnostic resource:</strong> The sequential KR-then-SR schedule (Seq-KS) offers a concrete recipe for instilling both refusal types without degrading utility, and the 213 matched quadruples provide a controlled diagnostic set for future joint studies of refusal.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="https://arxiv.org/abs/2609.00760" target="_blank" class="paper-link">arXiv Paper</a>
+        </div>
+    </div>
+
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-interpretability">Interpretability</span>
+        <span class="tag tag-abstention">Abstention</span>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="../index.html">&#8592; Back to All Publications</a></p>
+    <p style="margin-top:8px;">Hanyang University NLP Lab | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>

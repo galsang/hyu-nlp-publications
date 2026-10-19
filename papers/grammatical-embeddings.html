@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intrinsic Evaluation of Grammatical Information within Word Embeddings - HYU NLP Lab</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="detail-hero">
+    <div class="lang-toggle">
+        <a href="grammatical-embeddings.html" class="active">EN</a>
+        <a href="../ko/papers/grammatical-embeddings.html">KO</a>
+    </div>
+    <div class="container">
+        <a href="../index.html" class="back-link" style="color:white;opacity:0.8;">&#8592; All Publications</a>
+        <h1>Intrinsic Evaluation of Grammatical Information within Word Embeddings</h1>
+        <div class="meta"><span class="venue-badge">PACLIC 33</span></div>
+        <div class="authors">Daniel Edmiston, Taeuk Kim</div>
+    </div>
+</div>
+<div class="detail-content">
+    <div class="section">
+        <h2>One-Line Summary</h2>
+        <p>A proof-of-concept framework for <strong>intrinsically evaluating grammatical (rather than lexical) information</strong> in word embeddings: six Korean embedding models are distilled into three morphologically-aware learner networks, and the resulting affix representations are compared against a hand-built, 62-dimensional discrete feature space over 107 Korean affixes. All models beat a random baseline, syntactic information is captured even by linear affix representations, semantic information requires non-linearity (up to 33% overlap vs. 2% random), and no model is sensitive to phonological or pragmatic features.</p>
+        <figure class="paper-figure">
+            <img src="../images/grammatical-embeddings/figure1.png" alt="StaffNet architecture composing cheese-burger.PL.NOM">
+            <figcaption><strong>Figure 1.</strong> The StaffNet learner architecture showing the dynamic composition of <em>cheese-burger</em>.PL.NOM. Stems ("cheese", "burger") are fed through a BiLSTM and combined by a convex combination; affixes (PL, NOM) are then applied iteratively as matrix transformations on the compound stem representation.</figcaption>
+        </figure>
+    </div>
+
+    <div class="section">
+        <h2>Background &amp; Motivation</h2>
+        <p>Neural NLP systems have dominated the field, but their improved performance has often come at the cost of understanding what the models actually learn. Work on natural language inference (McCoy et al., 2019) showed that carefully chosen examples can fool such systems, suggesting they learn dataset heuristics rather than genuine linguistic generalizations. Methods for probing the information encoded in these models are therefore of growing importance.</p>
+        <p>Existing intrinsic evaluation methods for word embeddings (e.g., the word analogy task: <em>king</em> is to <em>queen</em> as <em>man</em> is to what?) overwhelmingly test for <strong>lexical semantics</strong>. Extrinsic probing methods, which train classifiers on top of fixed representations, have examined morphological and syntactic content, but they measure linguistic knowledge only indirectly, through the performance of a downstream classifier.</p>
+        <div class="highlight-box">
+            <p><strong>Key Idea:</strong> Instead of asking whether embeddings know that Paris relates to France, ask whether their <em>geometry</em> reflects <em>grammatical</em> properties. The paper compares continuous embeddings with ground-truth embeddings living in a linguistically-inspired, discrete binary feature space -- the corners of an <em>n</em>-dimensional hypercube -- so that similarity between the two spaces can be read as grammatical, rather than lexical, content.</p>
+        </div>
+        <div class="highlight-box">
+            <p><strong>Why Korean affixes?</strong> (i) Korean is agglutinative, so there is largely a one-to-one mapping between affixes and meanings; (ii) its morphology is highly regular, enabling high-fidelity parsing; and (iii) Korean affixes encode at least four distinct types of information: <em>phonological</em> (allomorphy such as accusative -을 after a coda vs. -를 after a vowel), <em>syntactic</em> (place of attachment), <em>semantic</em> (focus markers, logical operators, case), and <em>pragmatic</em> (formal register, honorifics). This lets the authors run focused tests on which information types models are sensitive to.</p>
+        </div>
+        <p>A further obstacle is that most embedding models (Word2Vec, GloVe, even character- and syllable-level models) have no explicit notion of an affix, so there is no affix vector to inspect. The paper resolves this with <strong>transparent model distillation</strong> (Tan et al., 2017, 2018): it trains a morphologically-aware learner network to reproduce the black-box embeddings, and then inspects the learner's affix parameters as a proxy for what the original model captured. To the authors' knowledge, this is the first application of transparent model distillation for interpretation in an NLP setting.</p>
+    </div>
+
+    <div class="section">
+        <h2>Proposed Method</h2>
+        <p>The pipeline has four stages: train ground-truth embedding models, distill each into morphologically-aware learner networks, build a discrete ground-truth feature space for affixes, and compare neighbourhoods across the continuous and discrete spaces.</p>
+
+        <div class="method-steps">
+            <div class="method-step">
+                <div class="step-num">1</div>
+                <div class="step-title">Ground-Truth Embedding Models</div>
+                <div class="step-desc">Six Korean embedding models spanning three granularities are trained on a Korean WikiDump with vocabulary limited to 10,000 words and 300-dimensional embeddings (following Choi et al., 2016). <strong>Character-level:</strong> fastText (Bojanowski et al., 2017) and Naver's kor2vec (based on Kim et al., 2016). <strong>Syllable-level:</strong> the model of Choi et al. (2017). <strong>Word-level:</strong> Word2Vec Skip-gram, Word2Vec CBOW (Mikolov et al., 2013), and GloVe (Pennington et al., 2014). Other hyperparameters follow the original publications.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">2</div>
+                <div class="step-title">Transparent Model Distillation into Three Learner Networks</div>
+                <div class="step-desc">Each ground-truth model is distilled into three learner architectures that explicitly compose words from morphemes (parsed with the Komoran POS-tagger from KoNLPy). The learner iterates over the same corpus, computes its embedding ŷ for each word, and minimizes the squared distance to the ground-truth embedding y. <strong>StaffNet</strong> (Edmiston and Stratos, 2018) treats stems as vectors (combined via a BiLSTM and convex combination) and affixes as <em>linear functions</em>, i.e., 300&times;300 matrices applied iteratively to the stem. <strong>MRNN</strong> (Luong et al., 2013) is a recursive network over the binary morphological parse, computing parents as p = tanh(W[c1; c2] + b). <strong>Tree-LSTM</strong> (Tai et al., 2015) is an N-ary Tree-LSTM with N = 2 over the same binary parses. In MRNN and Tree-LSTM, affixes become 300-dimensional vectors.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">3</div>
+                <div class="step-title">Discrete Ground-Truth Feature Space</div>
+                <div class="step-desc">A hand-constructed dataset embeds <strong>107 Korean affixes</strong> into a binary feature space {0, 1}<sup>62</sup>, where each dimension is a linguistic feature such as [+CODA] or [+HONORIFIC]. The 62 features are partitioned into four subsets: phonological ([&plusmn;CODA], [&plusmn;LOW]), syntactic ([+POSTPOSITION], [+CONJUNCTIVE], [+X-LIMITER], [+Z-LIMITER], [+V1]..[+V4]), semantic (46 features such as [+NOMINATIVE], [+TOPIC], [+PAST], [+CONDITIONAL], [+QUOTATIVE], [+ONLY]), and pragmatic ([&plusmn;FORMAL], [+HONORIFIC], [+FAMILIAR]). Across the affixes there are 5 distinct phonological, 8 syntactic, 55 semantic and 5 pragmatic configurations. Distance in this space is Hamming distance d<sub>H</sub>.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">4</div>
+                <div class="step-title">Similarity in the Continuous Space</div>
+                <div class="step-desc">For vector-valued affixes (MRNN, Tree-LSTM), cosine similarity is used. For StaffNet's matrix-valued affixes, cosine similarity does not apply, so the paper uses <strong>subspace similarity</strong> (Mu et al., 2017): take the first N principal directions of each affix matrix, stack them into X, Y &isin; R<sup>d&times;N</sup>, and score the pair by the root mean of the squared singular values of X<sup>T</sup>Y, yielding a value in [0, 1]. The intuition is that similar affixes should map stems to similar subspaces. N is chosen as the minimum number of principal components explaining 25%, 50% or 75% of the average affix variance for each model.</div>
+            </div>
+            <div class="method-step">
+                <div class="step-num">5</div>
+                <div class="step-title">Nearest-Affix Evaluation with Two Graded Scores</div>
+                <div class="step-desc">For each affix, the set Y<sub>Aff</sub> of its closest affixes under Hamming distance in the discrete space is computed (size k), and the k most similar affixes in the continuous space form Ŷ<sub>Aff</sub>. Two scores are reported: <strong>percentage of overlap</strong> between the two sets (equivalent to an F1 measure on cluster analysis since the sets have equal cardinality), and the <strong>Hamming offset</strong> -- the average Hamming distance from the affix to the continuous-space neighbours minus the minimum possible distance. Unlike all-or-nothing analogy tests, both measures are graded. The same procedure is re-run restricting the discrete space to each feature subset (phonological, syntactic, semantic, pragmatic), and compared to a random baseline.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results</h2>
+        <h3>Verifying the Distillations</h3>
+        <p>Before evaluating, the paper checks that the learners faithfully reproduce the original embeddings. Average cosine similarity between ground-truth and distilled embeddings over the 10k vocabulary is high for all combinations, which is notable given that almost all of the volume of R<sup>300</sup> is orthogonal to any given point.</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>StaffNet</th><th>MRNN</th><th>Tree-LSTM</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>kor2vec</td><td class="highlight-cell"><strong>0.971</strong></td><td>0.840</td><td>0.952</td></tr>
+                <tr><td>fastText</td><td>0.949</td><td>0.824</td><td>0.946</td></tr>
+                <tr><td>Syllable</td><td>0.967</td><td class="highlight-cell"><strong>0.869</strong></td><td class="highlight-cell"><strong>0.979</strong></td></tr>
+                <tr><td>W2V-SG</td><td>0.953</td><td>0.755</td><td>0.920</td></tr>
+                <tr><td>W2V-CBOW</td><td>0.941</td><td>0.786</td><td>0.878</td></tr>
+                <tr><td>GloVe</td><td>0.935</td><td>0.690</td><td>0.875</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Closest-Affix Task over All 62 Features</h3>
+        <p>Percentage of overlap (higher is better) and Hamming offset (lower is better), averaged over all 107 affixes. StaffNet is shown for the subspace rank explaining 25% of variance (its best setting); the 50% and 75% settings score slightly lower.</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>StaffNet-25% Overlap</th><th>StaffNet-25% Offset</th><th>MRNN Overlap</th><th>MRNN Offset</th><th>Tree-LSTM Overlap</th><th>Tree-LSTM Offset</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>kor2vec</td><td>12%</td><td>3.35</td><td>16%</td><td>2.82</td><td class="highlight-cell"><strong>19%</strong></td><td class="highlight-cell"><strong>2.62</strong></td></tr>
+                <tr><td>fastText</td><td>13%</td><td>3.23</td><td class="highlight-cell"><strong>18%</strong></td><td class="highlight-cell"><strong>2.59</strong></td><td>16%</td><td>2.63</td></tr>
+                <tr><td>Syllable</td><td>13%</td><td>3.18</td><td>17%</td><td>2.88</td><td>17%</td><td>3.29</td></tr>
+                <tr><td>W2V-SG</td><td>12%</td><td>3.17</td><td>18%</td><td>2.59</td><td>15%</td><td>3.01</td></tr>
+                <tr><td>W2V-CBOW</td><td>13%</td><td>3.19</td><td>18%</td><td>2.63</td><td>16%</td><td>2.86</td></tr>
+                <tr><td>GloVe</td><td>10%</td><td>3.30</td><td>16%</td><td>2.80</td><td>11%</td><td>3.13</td></tr>
+                <tr><td>Random</td><td>2%</td><td>4.23</td><td>2%</td><td>4.32</td><td>1%</td><td>4.35</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Semantic Feature Subset</h3>
+        <p>The sharpest contrast between learner architectures appears when the discrete space is restricted to the semantic features (55 distinct configurations). Linear StaffNet affixes stay at the random baseline, whereas non-linear MRNN and Tree-LSTM affixes reach up to 33% overlap.</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Model</th><th>StaffNet-25% Overlap</th><th>StaffNet-25% Offset</th><th>MRNN Overlap</th><th>MRNN Offset</th><th>Tree-LSTM Overlap</th><th>Tree-LSTM Offset</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>kor2vec</td><td>6%</td><td>2.54</td><td>23%</td><td>1.85</td><td>25%</td><td>1.80</td></tr>
+                <tr><td>fastText</td><td>6%</td><td>2.39</td><td class="highlight-cell"><strong>33%</strong></td><td class="highlight-cell"><strong>1.65</strong></td><td>24%</td><td>1.72</td></tr>
+                <tr><td>Syllable</td><td>5%</td><td>2.47</td><td>18%</td><td>1.96</td><td>19%</td><td>2.04</td></tr>
+                <tr><td>W2V-SG</td><td>5%</td><td>2.48</td><td>26%</td><td>1.77</td><td class="highlight-cell"><strong>29%</strong></td><td>1.78</td></tr>
+                <tr><td>W2V-CBOW</td><td>6%</td><td>2.56</td><td>24%</td><td>1.89</td><td>19%</td><td>2.04</td></tr>
+                <tr><td>GloVe</td><td>5%</td><td>2.49</td><td>24%</td><td>1.89</td><td>23%</td><td>1.92</td></tr>
+                <tr><td>Random</td><td>3%</td><td>2.79</td><td>2%</td><td>2.72</td><td>2%</td><td>2.67</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Summary across Feature Subsets</h3>
+        <p>Percentage-of-overlap ranges for the six embedding models versus the random baseline, by feature subset. Because the average neighbourhood size k differs greatly across subsets (e.g., avg. k = 2.21 for all features but 73.91 for pragmatic), performance must be read relative to the random baseline rather than in absolute terms.</p>
+        <table class="results-table">
+            <thead>
+                <tr><th>Feature Subset</th><th>Avg. k</th><th>StaffNet Overlap (models)</th><th>MRNN / Tree-LSTM Overlap (models)</th><th>Random Overlap</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Phonological</td><td>29.93</td><td>29-32%</td><td>28-32%</td><td>26-29%</td></tr>
+                <tr><td class="highlight-cell"><strong>Syntactic</strong></td><td>30.92</td><td class="highlight-cell"><strong>35-41%</strong></td><td class="highlight-cell"><strong>34-39%</strong></td><td>28-30%</td></tr>
+                <tr><td class="highlight-cell"><strong>Semantic</strong></td><td>3.25</td><td>4-6%</td><td class="highlight-cell"><strong>18-33%</strong></td><td>2-3%</td></tr>
+                <tr><td>Pragmatic</td><td>73.91</td><td>68-71%</td><td>69-72%</td><td>69-71%</td></tr>
+            </tbody>
+        </table>
+
+        <ul class="key-points">
+            <li><strong>Distillation is faithful:</strong> Every ground-truth model is reproduced with high average cosine similarity (0.935-0.979 for StaffNet and Tree-LSTM; 0.690-0.869 for MRNN), so the distilled affix representations can stand in for the original models</li>
+            <li><strong>All models beat random on the full task:</strong> Overlap of 10-19% versus 1-3% for the random baseline, and Hamming offsets of 2.59-3.57 versus 4.23-4.47, show that the geometry of discrete grammatical features is partly reflected in continuous embeddings -- though no model reaches high absolute accuracy</li>
+            <li><strong>Non-linear learners extract more:</strong> MRNN and Tree-LSTM outperform StaffNet by a large margin on the full task; the authors attribute this to StaffNet's affixes being purely linear maps applied post-non-linearity</li>
+            <li><strong>Syntax is linearly capturable:</strong> All architectures exceed the random baseline on syntactic features at similar levels, with a StaffNet distillation (fastText, 75% variance) achieving the highest score of 41%, suggesting non-linearity is not required for syntactic relations</li>
+            <li><strong>Semantics requires non-linearity:</strong> StaffNet distillations sit at the random baseline (4-6% vs. 2-3%), while MRNN and Tree-LSTM reach 18-33% (best: fastText distilled into MRNN at 33%), indicating that grammatical meaning of a semantic nature is captured only through non-linear composition</li>
+            <li><strong>No sensitivity to phonology or pragmatics:</strong> All models perform virtually the same as random on both subsets; surprisingly, character- and syllable-level models do no better than word-atomic models on phonological features, and the Wikipedia training corpus is nearly devoid of pragmatically-marked language such as honorifics</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Why It Matters</h2>
+        <p>This paper is an early, linguistically-grounded attempt to move intrinsic evaluation of word embeddings beyond lexical semantics toward <strong>grammatical information</strong>. Its contributions and implications include:</p>
+        <ul>
+            <li><strong>A new kind of intrinsic evaluation:</strong> By building a discrete, interpretable feature space and comparing neighbourhoods across spaces, the method yields graded, feature-specific diagnostics (percentage overlap and Hamming offset) instead of all-or-nothing analogy accuracy. The feature-subset design makes it possible to ask precisely <em>which</em> kind of linguistic information a model encodes.</li>
+            <li><strong>Transparent model distillation for NLP interpretability:</strong> The paper shows that distilling a black-box embedding model into a morphologically-aware learner is a viable way to induce representations for linguistic units (affixes) that the original model never explicitly represented -- the first such use of transparent model distillation in NLP, according to the authors.</li>
+            <li><strong>Different information types, different geometry:</strong> The finding that syntactic information is captured by linear relations while semantic information needs non-linearities echoes theoretical linguistics, where semantic analyses typically require more complex algebraic structures built on top of syntactic parses.</li>
+            <li><strong>Attention to an under-studied, typologically distant language:</strong> Korean's agglutinative, highly regular morphology and multi-faceted affix system make it an ideal testbed, and the 107-affix, 62-feature resource constructed here is itself a contribution.</li>
+            <li><strong>Honest scoping:</strong> The authors present this as a proof-of-concept whose principal takeaway is that the evaluation is possible and reveals interesting characteristics of neural representations; they also note that pragmatic insensitivity may partly reflect the academic register of the Wikipedia training data.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Links</h2>
+        <div class="links-section">
+            <a href="http://jaslli.org/files/proceedings/46_paclic33_postconf.pdf" target="_blank" class="paper-link">PDF</a>
+            <a href="http://jaslli.org/files/proceedings/paclic33_proceedings.html" target="_blank" class="paper-link">PACLIC 33 Proceedings</a>
+        </div>
+    </div>
+    <div class="paper-tags" style="margin-top:24px;">
+        <span class="tag tag-repr">Representation Learning</span>
+        <span class="tag tag-interpretability">Interpretability</span>
+    </div>
+</div>
+<div class="footer">
+    <p><a href="../index.html">&#8592; Back to All Publications</a></p>
+    <p style="margin-top:8px;">Hanyang University NLP Lab | <a href="https://nlp.hanyang.ac.kr" target="_blank">nlp.hanyang.ac.kr</a></p>
+</div>
+</body>
+</html>
